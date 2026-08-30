@@ -2121,21 +2121,16 @@ client.on(
                 '#2b2d31'
               )
               .setTitle(
-                '💳 MÉTODOS DE PAGO'
+                'MÉTODOS DE PAGO'
               )
               .setDescription(
                 'Selecciona el método de pago que quieras utilizar.\n\n' +
 
-                '🟨 **Robux**\n' +
-                'Precio por camisa: **200 Robux**\n\n' +
+                '🪙 **Robux**\n' +
 
                 '🏦 **Transferencia**\n' +
-                'Precio por camisa: **$100 MXN**\n\n' +
 
                 '💵 **Depósito**\n' +
-                'Precio por camisa: **$100 MXN**\n\n' +
-
-                '> Después de seleccionar el método de pago, se te pedirá la cantidad de camisas que deseas comprar.'
               )
               .setFooter({
                 text:
@@ -2155,18 +2150,14 @@ client.on(
                 {
                   label:
                     'Robux',
-                  description:
-                    '200 Robux por camisa',
                   value:
                     'robux',
                   emoji:
-                    '🟨'
+                    '🪙'
                 },
                 {
                   label:
                     'Transferencia',
-                  description:
-                    '$100 MXN por camisa',
                   value:
                     'transferencia',
                   emoji:
@@ -2175,8 +2166,6 @@ client.on(
                 {
                   label:
                     'Depósito',
-                  description:
-                    '$100 MXN por camisa',
                   value:
                     'deposito',
                   emoji:
