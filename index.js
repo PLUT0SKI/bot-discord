@@ -34,12 +34,14 @@ client.on('guildMemberAdd', async member => {
   const embed = new EmbedBuilder()
     .setColor('#2b2d31')
     .setTitle('¡Bienvenido/a!')
-    .setDescription(`Hola ${member}, es un placer tenerte aquí.\n\nPásate por los canales y disfruta 🔥`)
+.setDescription(
+  'Hola ' + member + ', es un placer tenerte aquí.\n\nPásate por los canales y disfruta 🔥'
+)
     .setThumbnail(member.user.displayAvatarURL({ dynamic: true }))
     .setImage('https://i.imgur.com/tuimagen.png');
 
   canal.send({
-    content: `👋 ¡Hola ${member}!`,
+content: '👋 ¡Hola ' + member + '!',
     embeds: [embed]
   });
 
