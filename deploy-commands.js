@@ -6,49 +6,39 @@ const CLIENT_ID = '1543644668967780462';
 const GUILD_ID = '1216948563834175488';
 
 const commands = [
+  // =======================
+  // /TICKETS
+  // =======================
+
   new SlashCommandBuilder()
     .setName('tickets')
     .setDescription('Muestra el panel de tickets')
     .toJSON(),
 
+  // =======================
+  // /ADDREACTION
+  // =======================
+
   new SlashCommandBuilder()
-    .setName('embed')
-    .setDescription('Crea un embed personalizado')
+    .setName('addreaction')
+    .setDescription('Configura una reacción para dar un rol')
     .addStringOption(option =>
       option
-        .setName('titulo')
-        .setDescription('Titulo del embed')
+        .setName('mensaje')
+        .setDescription('ID del mensaje al que quieres agregar la reacción')
         .setRequired(true)
     )
     .addStringOption(option =>
       option
-        .setName('descripcion')
-        .setDescription('Descripcion del embed')
+        .setName('emoji')
+        .setDescription('Emoji que deben reaccionar')
         .setRequired(true)
     )
-    .addStringOption(option =>
+    .addRoleOption(option =>
       option
-        .setName('color')
-        .setDescription('Color hexadecimal, ejemplo: #ff0000')
-        .setRequired(false)
-    )
-    .addStringOption(option =>
-      option
-        .setName('imagen')
-        .setDescription('URL de la imagen grande')
-        .setRequired(false)
-    )
-    .addStringOption(option =>
-      option
-        .setName('thumbnail')
-        .setDescription('URL de la imagen pequeña')
-        .setRequired(false)
-    )
-    .addStringOption(option =>
-      option
-        .setName('footer')
-        .setDescription('Texto del pie del embed')
-        .setRequired(false)
+        .setName('rol')
+        .setDescription('Rol que recibirá el usuario')
+        .setRequired(true)
     )
     .toJSON()
 ];
@@ -58,6 +48,7 @@ const rest = new REST({ version: '10' })
 
 (async () => {
   try {
+
     console.log('🗑️ Eliminando comandos globales...');
 
     await rest.put(
@@ -67,7 +58,7 @@ const rest = new REST({ version: '10' })
 
     console.log('✅ Comandos globales eliminados.');
 
-    console.log('🔄 Registrando comandos en el servidor...');
+    console.log('🔄 Registrando comandos del servidor...');
 
     await rest.put(
       Routes.applicationGuildCommands(
@@ -79,10 +70,12 @@ const rest = new REST({ version: '10' })
 
     console.log('✅ Comandos registrados correctamente.');
     console.log('✅ /tickets');
-    console.log('✅ /embed');
+    console.log('✅ /addreaction');
 
   } catch (error) {
+
     console.error('❌ ERROR AL REGISTRAR COMANDOS:');
     console.error(error);
+
   }
 })();
