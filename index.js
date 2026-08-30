@@ -72,6 +72,7 @@ if (fs.existsSync(REACTION_FILE)) {
     );
 
     reactionRoles = {};
+
   }
 }
 
@@ -168,6 +169,12 @@ const SPAM_TIME = 5000;
 const MUTE_TIME = 60000;
 
 // ==========================================
+// MENSAJES ELIMINADOS POR EL BOT
+// ==========================================
+
+const mensajesEliminadosPorBot = new Set();
+
+// ==========================================
 // LOG DE SPAM
 // ==========================================
 
@@ -194,6 +201,7 @@ async function enviarLogSpam(
       );
 
       return;
+
     }
 
     const canalLogs =
@@ -208,6 +216,7 @@ async function enviarLogSpam(
       );
 
       return;
+
     }
 
     const embed =
@@ -278,7 +287,7 @@ async function enviarLogSpam(
 
             value:
               canal
-                ? `<#${canal.id}>`
+                ? '<#' + canal.id + '>'
                 : 'No disponible',
 
             inline: true
@@ -327,6 +336,373 @@ async function enviarLogSpam(
   }
 
 }
+
+// ==========================================
+// LOG MENSAJE ELIMINADO
+// ==========================================
+
+client.on(
+  'messageDelete',
+  async (message) => {
+
+    try {
+
+      // ====================================
+      // IGNORAR MENSAJES BORRADOS POR EL BOT
+      // ====================================
+
+      if (
+        mensajesEliminadosPorBot.has(
+          message.id
+        )
+      ) {
+
+        mensajesEliminadosPorBot.delete(
+          message.id
+        );
+
+        return;
+
+      }
+
+      if (!message.guild) return;
+
+      if (
+        message.author &&
+        message.author.bot
+      ) {
+        return;
+      }
+
+      const canalLogsId =
+        logsConfig[
+          message.guild.id
+        ];
+
+      if (!canalLogsId) return;
+
+      const canalLogs =
+        message.guild.channels.cache.get(
+          canalLogsId
+        );
+
+      if (!canalLogs) return;
+
+      const contenido =
+        message.content &&
+        message.content.trim()
+          ? message.content.trim()
+          : '*Sin contenido de texto*';
+
+      const usuario =
+        message.author;
+
+      if (!usuario) return;
+
+      const embed =
+        new EmbedBuilder()
+
+          .setColor('#ff0000')
+
+          .setTitle(
+            '🗑️ Mensaje eliminado'
+          )
+
+          .setDescription(
+            'Un mensaje fue eliminado de un canal.'
+          )
+
+          .addFields(
+
+            {
+              name: '👤 Usuario',
+
+              value:
+                '<@' +
+                usuario.id +
+                '> `' +
+                usuario.tag +
+                '`',
+
+              inline: false
+            },
+
+            {
+              name: '🆔 ID',
+
+              value:
+                '`' +
+                usuario.id +
+                '`',
+
+              inline: true
+            },
+
+            {
+              name: '📍 Canal',
+
+              value:
+                '<#' +
+                message.channel.id +
+                '>',
+
+              inline: true
+            },
+
+            {
+              name: '💬 Mensaje',
+
+              value:
+                '```' +
+                contenido.slice(
+                  0,
+                  1000
+                ) +
+                '```',
+
+              inline: false
+            },
+
+            {
+              name: '📅 Fecha',
+
+              value:
+                '<t:' +
+                Math.floor(
+                  Date.now() / 1000
+                ) +
+                ':F>',
+
+              inline: false
+            }
+
+          )
+
+          .setThumbnail(
+            usuario.displayAvatarURL({
+              size: 256
+            })
+          )
+
+          .setFooter({
+            text: 'Sistema de seguridad'
+          })
+
+          .setTimestamp();
+
+      await canalLogs.send({
+        embeds: [
+          embed
+        ]
+      });
+
+    } catch (error) {
+
+      console.error(
+        'ERROR AL ENVIAR LOG DE MENSAJE ELIMINADO:',
+        error
+      );
+
+    }
+
+  }
+);
+
+// ==========================================
+// LOG MENSAJE EDITADO
+// ==========================================
+
+client.on(
+  'messageUpdate',
+  async (
+    mensajeAnterior,
+    mensajeNuevo
+  ) => {
+
+    try {
+
+      if (!mensajeNuevo.guild) return;
+
+      if (
+        mensajeNuevo.author &&
+        mensajeNuevo.author.bot
+      ) {
+        return;
+      }
+
+      if (
+        mensajeAnterior.partial ||
+        mensajeNuevo.partial
+      ) {
+        return;
+      }
+
+      // ==================================
+      // SI NO CAMBIÓ EL CONTENIDO
+      // ==================================
+
+      if (
+        mensajeAnterior.content ===
+        mensajeNuevo.content
+      ) {
+
+        return;
+
+      }
+
+      const canalLogsId =
+        logsConfig[
+          mensajeNuevo.guild.id
+        ];
+
+      if (!canalLogsId) return;
+
+      const canalLogs =
+        mensajeNuevo.guild.channels.cache.get(
+          canalLogsId
+        );
+
+      if (!canalLogs) return;
+
+      const usuario =
+        mensajeNuevo.author;
+
+      if (!usuario) return;
+
+      const anterior =
+        mensajeAnterior.content &&
+        mensajeAnterior.content.trim()
+          ? mensajeAnterior.content.trim()
+          : '*Sin contenido*';
+
+      const nuevo =
+        mensajeNuevo.content &&
+        mensajeNuevo.content.trim()
+          ? mensajeNuevo.content.trim()
+          : '*Sin contenido*';
+
+      const embed =
+        new EmbedBuilder()
+
+          .setColor('#ffaa00')
+
+          .setTitle(
+            '✏️ Mensaje editado'
+          )
+
+          .setDescription(
+            'Un usuario editó un mensaje.'
+          )
+
+          .addFields(
+
+            {
+              name: '👤 Usuario',
+
+              value:
+                '<@' +
+                usuario.id +
+                '> `' +
+                usuario.tag +
+                '`',
+
+              inline: false
+            },
+
+            {
+              name: '🆔 ID',
+
+              value:
+                '`' +
+                usuario.id +
+                '`',
+
+              inline: true
+            },
+
+            {
+              name: '📍 Canal',
+
+              value:
+                '<#' +
+                mensajeNuevo.channel.id +
+                '>',
+
+              inline: true
+            },
+
+            {
+              name: '📝 Antes',
+
+              value:
+                '```' +
+                anterior.slice(
+                  0,
+                  1000
+                ) +
+                '```',
+
+              inline: false
+            },
+
+            {
+              name: '✏️ Después',
+
+              value:
+                '```' +
+                nuevo.slice(
+                  0,
+                  1000
+                ) +
+                '```',
+
+              inline: false
+            },
+
+            {
+              name: '📅 Fecha',
+
+              value:
+                '<t:' +
+                Math.floor(
+                  Date.now() / 1000
+                ) +
+                ':F>',
+
+              inline: false
+            }
+
+          )
+
+          .setThumbnail(
+            usuario.displayAvatarURL({
+              size: 256
+            })
+          )
+
+          .setFooter({
+            text: 'Sistema de seguridad'
+          })
+
+          .setTimestamp();
+
+      await canalLogs.send({
+        embeds: [
+          embed
+        ]
+      });
+
+    } catch (error) {
+
+      console.error(
+        'ERROR AL ENVIAR LOG DE MENSAJE EDITADO:',
+        error
+      );
+
+    }
+
+  }
+);
 
 // ==========================================
 // DETECTOR DE SPAM
@@ -399,7 +775,7 @@ client.on(
         );
 
       // ====================================
-      // GUARDAR MENSAJE ACTUAL
+      // GUARDAR MENSAJE
       // ====================================
 
       datos.mensajes.push({
@@ -428,17 +804,18 @@ client.on(
         const cantidad =
           datos.mensajes.length;
 
-        // Guardar los mensajes
-        // que provocaron el spam
         const mensajesSpam =
-          [...datos.mensajes];
+          [
+            ...datos.mensajes
+          ];
 
-        datos.mensajes = [];
+        datos.mensajes =
+          [];
 
         try {
 
           // ==================================
-          // SILENCIAR USUARIO
+          // SILENCIAR
           // ==================================
 
           if (
@@ -446,12 +823,15 @@ client.on(
           ) {
 
             await member.timeout(
+
               MUTE_TIME,
+
               'Spam detectado automáticamente'
+
             );
 
             // ==================================
-            // BORRAR MENSAJES DEL SPAM
+            // MARCAR Y BORRAR MENSAJES
             // ==================================
 
             for (
@@ -466,11 +846,22 @@ client.on(
                   !dato.message.deleted
                 ) {
 
+                  // Marcar antes de borrar
+                  mensajesEliminadosPorBot.add(
+                    dato.message.id
+                  );
+
                   await dato.message.delete();
 
                 }
 
               } catch (error) {
+
+                // Si Discord ya eliminó
+                // el mensaje, limpiar el ID
+                mensajesEliminadosPorBot.delete(
+                  dato.message?.id
+                );
 
                 console.log(
                   'NO SE PUDO ELIMINAR UN MENSAJE DE SPAM.'
@@ -481,7 +872,7 @@ client.on(
             }
 
             // ==================================
-            // ENVIAR LOG
+            // ENVIAR LOG DE SPAM
             // ==================================
 
             await enviarLogSpam(
@@ -582,6 +973,30 @@ client.on(
 );
 
 // ==========================================
+// LIMPIEZA DE IDS DE MENSAJES DEL BOT
+// ==========================================
+
+setInterval(
+  () => {
+
+    // Evita que el Set crezca
+    // indefinidamente si Discord
+    // no dispara algún evento.
+
+    if (
+      mensajesEliminadosPorBot.size >
+      1000
+    ) {
+
+      mensajesEliminadosPorBot.clear();
+
+    }
+
+  },
+  60000
+);
+
+// ==========================================
 // BOT ENCENDIDO
 // ==========================================
 
@@ -635,10 +1050,13 @@ client.on(
           )
 
           .setDescription(
+
             'Hola <@' +
             member.id +
             '>, es un placer tenerte aqui.\n\n' +
+
             'Pasate por los canales y disfruta.'
+
           )
 
           .setThumbnail(
