@@ -1,8 +1,7 @@
 const {
   REST,
   Routes,
-  SlashCommandBuilder,
-  PermissionFlagsBits
+  SlashCommandBuilder
 } = require('discord.js');
 
 const DISCORD_TOKEN = process.env.DISCORD_TOKEN;
@@ -19,9 +18,6 @@ const commands = [
   new SlashCommandBuilder()
     .setName('tickets')
     .setDescription('Muestra el panel de tickets')
-    .setDefaultMemberPermissions(
-      PermissionFlagsBits.ManageChannels
-    )
     .toJSON(),
 
   // =======================
@@ -49,9 +45,6 @@ const commands = [
         .setDescription('Rol que recibirá el usuario')
         .setRequired(true)
     )
-    .setDefaultMemberPermissions(
-      PermissionFlagsBits.ManageRoles
-    )
     .toJSON(),
 
   // =======================
@@ -67,15 +60,13 @@ const commands = [
         .setDescription('Canal donde se enviarán los logs')
         .setRequired(true)
     )
-    .setDefaultMemberPermissions(
-      PermissionFlagsBits.ManageGuild
-    )
     .toJSON()
 
 ];
 
-const rest = new REST({ version: '10' })
-  .setToken(DISCORD_TOKEN);
+const rest = new REST({
+  version: '10'
+}).setToken(DISCORD_TOKEN);
 
 (async () => {
 
@@ -85,7 +76,9 @@ const rest = new REST({ version: '10' })
 
     await rest.put(
       Routes.applicationCommands(CLIENT_ID),
-      { body: [] }
+      {
+        body: []
+      }
     );
 
     console.log('✅ Comandos globales eliminados.');
@@ -97,10 +90,12 @@ const rest = new REST({ version: '10' })
         CLIENT_ID,
         GUILD_ID
       ),
-      { body: commands }
+      {
+        body: commands
+      }
     );
 
-    console.log('✅ Comandos registrados correctamente.');
+    console.log('✅ COMANDOS REGISTRADOS CORRECTAMENTE.');
     console.log('✅ /tickets');
     console.log('✅ /addreaction');
     console.log('✅ /setlogs');
