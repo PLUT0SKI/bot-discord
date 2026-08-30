@@ -16,65 +16,58 @@ const client = new Client({
   ]
 });
 
-// =======================
-// ⚙️ CONFIGURACIÓN
-// =======================
-
 const TICKET_CATEGORY_ID = '1357832792699834548';
 
-// =======================
-// 🤖 BOT ENCENDIDO
-// =======================
-
 client.once('ready', () => {
-  console.log(`✅ Bot encendido como ${client.user.tag}`);
+  console.log('BOT ENCENDIDO COMO ' + client.user.tag);
 });
 
 // =======================
-// 🎉 BIENVENIDA
+// BIENVENIDA
 // =======================
 
-client.on('guildMemberAdd', async member => {
+client.on('guildMemberAdd', async (member) => {
   try {
     const canal = member.guild.channels.cache.find(
-      c => c.name === 'bienvenida' && c.isTextBased()
+      (channel) =>
+        channel.name === 'bienvenida' &&
+        channel.isTextBased()
     );
 
     if (!canal) return;
 
     const embed = new EmbedBuilder()
       .setColor('#2b2d31')
-      .setTitle('¡Bienvenido/a!')
+      .setTitle('Bienvenido/a')
       .setDescription(
-        `Hola ${member}, es un placer tenerte aquí.\n\n` +
-        `Pásate por los canales y disfruta 🔥`
+        'Hola ' + member + ', es un placer tenerte aqui.\n\n' +
+        'Pasate por los canales y disfruta.'
       )
       .setThumbnail(
         member.user.displayAvatarURL({
-          dynamic: true,
           size: 256
         })
       );
 
     await canal.send({
-      content: `👋 ¡Hola ${member}!`,
+      content: 'Hola ' + member + '!',
       embeds: [embed]
     });
 
   } catch (error) {
-    console.error('❌ Error en bienvenida:', error);
+    console.error('ERROR EN BIENVENIDA:', error);
   }
 });
 
 // =======================
-// 🎟️ INTERACCIONES
+// INTERACCIONES
 // =======================
 
-client.on('interactionCreate', async interaction => {
+client.on('interactionCreate', async (interaction) => {
   try {
 
     // =======================
-    // 🎟️ COMANDO /TICKETS
+    // COMANDO /TICKETS
     // =======================
 
     if (interaction.isChatInputCommand()) {
@@ -83,23 +76,23 @@ client.on('interactionCreate', async interaction => {
 
       const embed = new EmbedBuilder()
         .setColor('#2b2d31')
-        .setTitle('Centro de Atención')
+        .setTitle('Centro de Atencion')
         .setDescription(
           '**Comprar**\n' +
-          '🛍️ Ticket para compras\n\n' +
+          'Ticket para compras.\n\n' +
 
           '**Dudas/Soporte**\n' +
-          '➕ Problemas o dudas\n\n' +
+          'Problemas o dudas.\n\n' +
 
           '**Alianzas**\n' +
-          '🤝 Colaboraciones\n\n' +
+          'Colaboraciones.\n\n' +
 
-          '⚠️ Solo un ticket a la vez'
+          'Solo puedes tener un ticket abierto a la vez.'
         );
 
       const menu = new StringSelectMenuBuilder()
         .setCustomId('ticket_menu')
-        .setPlaceholder('Selecciona una opción')
+        .setPlaceholder('Selecciona una opcion')
         .addOptions([
           {
             label: 'Comprar',
@@ -130,7 +123,7 @@ client.on('interactionCreate', async interaction => {
     }
 
     // =======================
-    // 📂 CREAR TICKET
+    // CREAR TICKET
     // =======================
 
     if (interaction.isStringSelectMenu()) {
@@ -143,50 +136,54 @@ client.on('interactionCreate', async interaction => {
 
       if (!guild) {
         await interaction.reply({
-          content: '❌ Esta acción solo puede utilizarse dentro de un servidor.',
+          content: 'Esta accion solo puede utilizarse dentro de un servidor.',
           ephemeral: true
         });
         return;
       }
 
       // =======================
-      // 🔎 COMPROBAR SI YA TIENE TICKET
+      // COMPROBAR TICKET EXISTENTE
       // =======================
 
-      const ticketExistente = guild.channels.cache.find(channel =>
-        channel.type === ChannelType.GuildText &&
-        channel.topic?.includes(`TICKET_USER:${user.id}`)
+      const ticketExistente = guild.channels.cache.find(
+        (channel) =>
+          channel.type === ChannelType.GuildText &&
+          channel.topic &&
+          channel.topic.includes('TICKET_USER:' + user.id)
       );
 
       if (ticketExistente) {
         await interaction.reply({
-          content: `⚠️ Ya tienes un ticket abierto: ${ticketExistente}`,
+          content: 'Ya tienes un ticket abierto: ' + ticketExistente,
           ephemeral: true
         });
         return;
       }
 
       // =======================
-      // 📂 COMPROBAR CATEGORÍA
+      // COMPROBAR CATEGORIA
       // =======================
 
-      const categoria = guild.channels.cache.get(TICKET_CATEGORY_ID);
+      const categoria = guild.channels.cache.get(
+        TICKET_CATEGORY_ID
+      );
 
       if (!categoria) {
         await interaction.reply({
-          content: '❌ No se encontró la categoría de tickets.',
+          content: 'No se encontro la categoria de tickets.',
           ephemeral: true
         });
 
         console.error(
-          `❌ Categoría no encontrada: ${TICKET_CATEGORY_ID}`
+          'CATEGORIA NO ENCONTRADA: ' + TICKET_CATEGORY_ID
         );
 
         return;
       }
 
       // =======================
-      // 🧹 LIMPIAR NOMBRE
+      // NOMBRE DEL CANAL
       // =======================
 
       const username = user.username
@@ -194,10 +191,11 @@ client.on('interactionCreate', async interaction => {
         .replace(/[^a-z0-9-_]/g, '')
         .slice(0, 20);
 
-      const channelName = `ticket-${tipo}-${username}`;
+      const channelName =
+        'ticket-' + tipo + '-' + username;
 
       // =======================
-      // 📂 CREAR CANAL
+      // CREAR CANAL
       // =======================
 
       const canal = await guild.channels.create({
@@ -205,7 +203,11 @@ client.on('interactionCreate', async interaction => {
         type: ChannelType.GuildText,
         parent: TICKET_CATEGORY_ID,
 
-        topic: `TICKET_USER:${user.id} | TIPO:${tipo}`,
+        topic:
+          'TICKET_USER:' +
+          user.id +
+          ' | TIPO:' +
+          tipo,
 
         permissionOverwrites: [
           {
@@ -237,41 +239,49 @@ client.on('interactionCreate', async interaction => {
       });
 
       // =======================
-      // 🎫 MENSAJE DEL TICKET
+      // MENSAJE DEL TICKET
       // =======================
 
       const ticketEmbed = new EmbedBuilder()
         .setColor('#2b2d31')
-        .setTitle('🎫 Ticket creado')
+        .setTitle('Ticket creado')
         .setDescription(
-          `Hola ${user}, gracias por contactar con nosotros.\n\n` +
-          `**Tipo:** ${tipo}\n\n` +
-          `Explica tu problema o solicitud y espera a que un miembro del equipo te atienda.\n\n` +
-          `⚠️ No abras otro ticket mientras este permanezca abierto.`
+          'Hola ' + user + ', gracias por contactar con nosotros.\n\n' +
+          '**Tipo:** ' + tipo + '\n\n' +
+          'Explica tu problema o solicitud y espera a que un miembro del equipo te atienda.'
         )
         .setTimestamp();
 
       await canal.send({
-        content: `👋 Bienvenido ${user}`,
+        content: 'Bienvenido ' + user,
         embeds: [ticketEmbed]
       });
 
       await interaction.reply({
-        content: `✅ Tu ticket fue creado correctamente: ${canal}`,
+        content:
+          'Tu ticket fue creado correctamente: ' + canal,
         ephemeral: true
       });
 
       console.log(
-        `🎫 Ticket creado: ${canal.name} | Usuario: ${user.tag}`
+        'TICKET CREADO: ' +
+        canal.name +
+        ' | USUARIO: ' +
+        user.tag
       );
     }
 
   } catch (error) {
-    console.error('❌ Error en interactionCreate:', error);
+
+    console.error(
+      'ERROR EN INTERACTIONCREATE:',
+      error
+    );
 
     if (!interaction.replied && !interaction.deferred) {
       await interaction.reply({
-        content: '❌ Ocurrió un error al realizar esta acción.',
+        content:
+          'Ocurrio un error al realizar esta accion.',
         ephemeral: true
       }).catch(() => {});
     }
@@ -279,15 +289,26 @@ client.on('interactionCreate', async interaction => {
 });
 
 // =======================
-// ❌ ERRORES
+// ERRORES DEL CLIENTE
 // =======================
 
-client.on('error', error => {
-  console.error('❌ Error del cliente Discord:', error);
+client.on('error', (error) => {
+  console.error(
+    'ERROR DEL CLIENTE DE DISCORD:',
+    error
+  );
 });
 
 // =======================
-// 🔑 LOGIN RAILWAY
+// LOGIN
 // =======================
 
+if (!process.env.DISCORD_TOKEN) {
+  console.error(
+    'NO SE ENCONTRO DISCORD_TOKEN EN RAILWAY.'
+  );
+  process.exit(1);
+}
+
 client.login(process.env.DISCORD_TOKEN);
+```
