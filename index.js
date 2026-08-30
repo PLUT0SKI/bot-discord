@@ -2902,142 +2902,94 @@ client.on(
           cantidad *
           precioPorUnidad;
 
-        // ==================================
-        // RESUMEN FINAL
-        // ==================================
+// ==================================
+// RESUMEN FINAL
+// ==================================
 
-        const embed =
-          new EmbedBuilder()
-            .setColor(
-              '#2b2d31'
-            )
-            .setTitle(
-              '🧾 RESUMEN DE TU PEDIDO'
-            )
-            .setDescription(
-              'Aquí están los detalles completos de tu pedido:'
-            )
-            .addFields(
-              {
-                name:
-                  '💳 Método de pago',
-                value:
-                  '`' +
-                  nombreMetodo +
-                  '`',
-                inline:
-                  true
-              },
-              {
-                name:
-                  '🛍️ Producto',
-                value:
-                  '`' +
-                  nombreProducto +
-                  '`',
-                inline:
-                  true
-              },
-              {
-                name:
-                  '📦 Cantidad',
-                value:
-                  '`' +
-                  cantidad +
-                  '`',
-                inline:
-                  true
-              },
-              {
-                name:
-                  '💰 Precio por unidad',
-                value:
-                  '**' +
-                  precioPorUnidad +
-                  ' ' +
-                  moneda +
-                  '**',
-                inline:
-                  true
-              },
-              {
-                name:
-                  '💵 TOTAL',
-                value:
-                  '**' +
-                  total +
-                  ' ' +
-                  moneda +
-                  '**',
-                inline:
-                  false
-              },
-{
-  name: '\u200B',
-  value: '🛒 Para comprar abre un <#1357832842561978505>',
-  inline: false
-}
-
-            .setTimestamp();
-
-        await interaction.reply({
-          embeds: [
-            embed
-          ],
-          ephemeral:
-            true
-        });
-
-        console.log(
-          'PEDIDO DE PAGO | ' +
-          'USUARIO: ' +
-          interaction.user.tag +
-          ' | METODO: ' +
+const embed =
+  new EmbedBuilder()
+    .setColor(
+      '#2b2d31'
+    )
+    .setTitle(
+      '🧾 RESUMEN DE TU PEDIDO'
+    )
+    .setDescription(
+      'Aquí están los detalles completos de tu pedido:'
+    )
+    .addFields(
+      {
+        name:
+          '💳 Método de pago',
+        value:
+          '`' +
           nombreMetodo +
-          ' | PRODUCTO: ' +
+          '`',
+        inline:
+          true
+      },
+      {
+        name:
+          '🛍️ Producto',
+        value:
+          '`' +
           nombreProducto +
-          ' | CANTIDAD: ' +
+          '`',
+        inline:
+          true
+      },
+      {
+        name:
+          '📦 Cantidad',
+        value:
+          '`' +
           cantidad +
-          ' | PRECIO: ' +
+          '`',
+        inline:
+          true
+      },
+      {
+        name:
+          '💰 Precio por unidad',
+        value:
+          '**' +
           precioPorUnidad +
           ' ' +
           moneda +
-          ' | TOTAL: ' +
+          '**',
+        inline:
+          true
+      },
+      {
+        name:
+          '💵 TOTAL',
+        value:
+          '**' +
           total +
           ' ' +
-          moneda
-        );
-
-        return;
+          moneda +
+          '**',
+        inline:
+          false
+      },
+      {
+        name:
+          '\u200B',
+        value:
+          '🛒 Para comprar abre un <#1357832842561978505>',
+        inline:
+          false
       }
+    )
+    .setTimestamp();
 
-    } catch (error) {
-
-      console.error(
-        'ERROR EN INTERACTIONCREATE:',
-        error
-      );
-
-      if (
-        !interaction.replied &&
-        !interaction.deferred
-      ) {
-
-        await interaction.reply({
-          content:
-            'Ocurrio un error al realizar esta accion.',
-          ephemeral:
-            true
-        }).catch(
-          () => {}
-        );
-
-      }
-
-    }
-
-  }
-);
+await interaction.reply({
+  embeds: [
+    embed
+  ],
+  ephemeral:
+    true
+});
 
 // ==========================================
 // ERROR DEL CLIENTE
