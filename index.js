@@ -8,7 +8,8 @@ const {
   ButtonStyle,
   PermissionsBitField,
   ChannelType,
-  Partials
+  Partials,
+  SlashCommandBuilder
 } = require('discord.js');
 
 const fs = require('fs');
@@ -41,6 +42,7 @@ const TICKET_CATEGORY_ID = '1357832792699834548';
 const WELCOME_CHANNEL_ID = '1357832795547893861';
 
 const REACTION_FILE = './reactionRoles.json';
+const LOGS_FILE = './logsConfig.json';
 
 // ==========================================
 // REACTION ROLES
@@ -80,12 +82,285 @@ function guardarReactionRoles() {
 }
 
 // ==========================================
+// LOGS
+// ==========================================
+
+let logsConfig = {};
+
+if (fs.existsSync(LOGS_FILE)) {
+  try {
+    logsConfig = JSON.parse(
+      fs.readFileSync(LOGS_FILE, 'utf8')
+    );
+
+    console.log('CONFIGURACIÓN DE LOGS CARGADA.');
+  } catch (error) {
+    console.error(
+      'ERROR AL CARGAR logsConfig.json:',
+      error
+    );
+
+    logsConfig = {};
+  }
+}
+
+function guardarLogsConfig() {
+  try {
+    fs.writeFileSync(
+      LOGS_FILE,
+      JSON.stringify(logsConfig, null, 2)
+    );
+  } catch (error) {
+    console.error(
+      'ERROR AL GUARDAR CONFIGURACIÓN DE LOGS:',
+      error
+    );
+  }
+}
+
+// ==========================================
+// SPAM
+// ==========================================
+
+const spamUsers = new Map();
+
+const SPAM_LIMIT = 5;
+const SPAM_TIME = 5000;
+const MUTE_TIME = 60000;
+
+async function enviarLogSpam(member, cantidad, duracion) {
+  try {
+    const guild = member.guild;
+
+    const canalLogsId = logsConfig[guild.id];
+
+    if (!canalLogsId) {
+      console.log(
+        'NO HAY CANAL DE LOGS CONFIGURADO PARA: ' +
+        guild.name
+      );
+      return;
+    }
+
+    const canalLogs =
+      guild.channels.cache.get(canalLogsId);
+
+    if (!canalLogs) {
+      console.error(
+        'EL CANAL DE LOGS CONFIGURADO NO EXISTE.'
+      );
+      return;
+    }
+
+    const embed = new EmbedBuilder()
+      .setColor('#ff0000')
+      .setTitle('🚨 Spam detectado')
+      .setDescription(
+        'Un usuario fue silenciado automáticamente por enviar demasiados mensajes en poco tiempo.'
+      )
+      .addFields(
+        {
+          name: '👤 Usuario',
+          value:
+            '<@' + member.id + '> `' +
+            member.user.tag +
+            '`',
+          inline: false
+        },
+        {
+          name: '🆔 ID',
+          value:
+            '`' + member.id + '`',
+          inline: true
+        },
+        {
+          name: '📨 Mensajes',
+          value:
+            '`' + cantidad + '`',
+          inline: true
+        },
+        {
+          name: '⏱️ Silenciado',
+          value:
+            '`' + Math.floor(duracion / 1000) + ' segundos`',
+          inline: true
+        },
+        {
+          name: '📍 Canal',
+          value:
+            '<#' + member.guild.id + '>',
+          inline: true
+        },
+        {
+          name: '📅 Fecha',
+          value:
+            '<t:' +
+            Math.floor(Date.now() / 1000) +
+            ':F>',
+          inline: false
+        }
+      )
+      .setThumbnail(
+        member.user.displayAvatarURL({
+          size: 256
+        })
+      )
+      .setFooter({
+        text: 'Sistema de seguridad'
+      })
+      .setTimestamp();
+
+    await canalLogs.send({
+      embeds: [embed]
+    });
+
+  } catch (error) {
+    console.error(
+      'ERROR AL ENVIAR LOG DE SPAM:',
+      error
+    );
+  }
+}
+
+// ==========================================
+// DETECTOR DE SPAM
+// ==========================================
+
+client.on('messageCreate', async (message) => {
+  try {
+    if (!message.guild) return;
+    if (message.author.bot) return;
+
+    const member =
+      message.member;
+
+    if (!member) return;
+
+    // No detectar administradores
+    if (
+      member.permissions.has(
+        PermissionsBitField.Flags.Administrator
+      )
+    ) {
+      return;
+    }
+
+    const ahora = Date.now();
+
+    let datos =
+      spamUsers.get(message.author.id);
+
+    if (!datos) {
+      datos = {
+        mensajes: [],
+        silenciado: false
+      };
+
+      spamUsers.set(
+        message.author.id,
+        datos
+      );
+    }
+
+    // Eliminar mensajes antiguos
+    datos.mensajes =
+      datos.mensajes.filter(
+        (tiempo) =>
+          ahora - tiempo <= SPAM_TIME
+      );
+
+    datos.mensajes.push(ahora);
+
+    // Comprobar spam
+    if (
+      datos.mensajes.length >= SPAM_LIMIT &&
+      !datos.silenciado
+    ) {
+
+      datos.silenciado = true;
+
+      const cantidad =
+        datos.mensajes.length;
+
+      datos.mensajes = [];
+
+      try {
+
+        if (
+          member.moderatable
+        ) {
+
+          await member.timeout(
+            MUTE_TIME,
+            'Spam detectado automáticamente'
+          );
+
+          await enviarLogSpam(
+            member,
+            cantidad,
+            MUTE_TIME
+          );
+
+          console.log(
+            'SPAM DETECTADO | ' +
+            member.user.tag +
+            ' | SILENCIADO 60 SEGUNDOS'
+          );
+
+          setTimeout(() => {
+
+            const usuario =
+              spamUsers.get(
+                member.id
+              );
+
+            if (usuario) {
+              usuario.silenciado = false;
+              usuario.mensajes = [];
+            }
+
+          }, MUTE_TIME);
+
+        } else {
+
+          console.log(
+            'NO PUDE SILENCIAR A ' +
+            member.user.tag +
+            ' POR JERARQUÍA DE ROLES.'
+          );
+
+          datos.silenciado = false;
+        }
+
+      } catch (error) {
+
+        console.error(
+          'ERROR AL SILENCIAR USUARIO:',
+          error
+        );
+
+        datos.silenciado = false;
+      }
+    }
+
+  } catch (error) {
+
+    console.error(
+      'ERROR EN DETECTOR DE SPAM:',
+      error
+    );
+
+  }
+});
+
+// ==========================================
 // BOT ENCENDIDO
 // ==========================================
 
 client.once('ready', () => {
   console.log(
-    'BOT ENCENDIDO COMO ' + client.user.tag
+    'BOT ENCENDIDO COMO ' +
+    client.user.tag
   );
 });
 
@@ -95,6 +370,7 @@ client.once('ready', () => {
 
 client.on('guildMemberAdd', async (member) => {
   try {
+
     const canal =
       member.guild.channels.cache.get(
         WELCOME_CHANNEL_ID
@@ -134,10 +410,12 @@ client.on('guildMemberAdd', async (member) => {
     });
 
   } catch (error) {
+
     console.error(
       'ERROR EN BIENVENIDA:',
       error
     );
+
   }
 });
 
@@ -150,6 +428,7 @@ client.on(
   async (reaction, user) => {
 
     try {
+
       if (user.bot) return;
 
       if (reaction.partial) {
@@ -224,10 +503,12 @@ client.on(
       );
 
     } catch (error) {
+
       console.error(
         'ERROR AL DAR ROL:',
         error
       );
+
     }
   }
 );
@@ -241,6 +522,7 @@ client.on(
   async (reaction, user) => {
 
     try {
+
       if (user.bot) return;
 
       if (reaction.partial) {
@@ -293,10 +575,12 @@ client.on(
       );
 
     } catch (error) {
+
       console.error(
         'ERROR AL QUITAR ROL:',
         error
       );
+
     }
   }
 );
@@ -318,6 +602,69 @@ client.on(
       if (
         interaction.isChatInputCommand()
       ) {
+
+        // ====================================
+        // /SETLOGS
+        // ====================================
+
+        if (
+          interaction.commandName ===
+          'setlogs'
+        ) {
+
+          const canal =
+            interaction.options.getChannel(
+              'canal'
+            );
+
+          if (
+            canal.type !==
+            ChannelType.GuildText
+          ) {
+
+            await interaction.reply({
+              content:
+                '❌ Selecciona un canal de texto.',
+              ephemeral: true
+            });
+
+            return;
+          }
+
+          logsConfig[
+            interaction.guild.id
+          ] = canal.id;
+
+          guardarLogsConfig();
+
+          const embed =
+            new EmbedBuilder()
+              .setColor('#00ff88')
+              .setTitle('⚙️ Sistema de logs configurado')
+              .setDescription(
+                'El canal de logs fue configurado correctamente.'
+              )
+              .addFields({
+                name: '📋 Canal',
+                value:
+                  '<#' + canal.id + '>'
+              })
+              .setTimestamp();
+
+          await interaction.reply({
+            embeds: [embed],
+            ephemeral: true
+          });
+
+          console.log(
+            'LOGS CONFIGURADOS | ' +
+            interaction.guild.name +
+            ' | CANAL: ' +
+            canal.id
+          );
+
+          return;
+        }
 
         // ====================================
         // /ADDREACTION
@@ -347,11 +694,13 @@ client.on(
             interaction.channel;
 
           if (!canal) {
+
             await interaction.reply({
               content:
                 '❌ No se pudo encontrar el canal.',
               ephemeral: true
             });
+
             return;
           }
 
@@ -375,10 +724,6 @@ client.on(
 
             return;
           }
-
-          // =================================
-          // PROCESAR EMOJI
-          // =================================
 
           const customEmoji =
             emojiInput.match(
@@ -414,10 +759,6 @@ client.on(
               emojiInput;
           }
 
-          // =================================
-          // AGREGAR REACCIÓN
-          // =================================
-
           try {
 
             await mensaje.react(
@@ -433,17 +774,12 @@ client.on(
 
             await interaction.reply({
               content:
-                '❌ No pude agregar esa reacción.\n\n' +
-                'Comprueba que el emoji sea válido y que el bot tenga permiso para reaccionar.',
+                '❌ No pude agregar esa reacción.',
               ephemeral: true
             });
 
             return;
           }
-
-          // =================================
-          // GUARDAR CONFIGURACIÓN
-          // =================================
 
           reactionRoles[
             mensajeId +
@@ -468,10 +804,6 @@ client.on(
           };
 
           guardarReactionRoles();
-
-          // =================================
-          // RESPUESTA
-          // =================================
 
           await interaction.reply({
             content:
@@ -540,10 +872,8 @@ client.on(
                 {
                   label:
                     'Comprar',
-
                   value:
                     'Comprar',
-
                   emoji:
                     '🛒'
                 },
@@ -551,10 +881,8 @@ client.on(
                 {
                   label:
                     'Soporte',
-
                   value:
                     'Soporte',
-
                   emoji:
                     '🛠️'
                 },
@@ -562,10 +890,8 @@ client.on(
                 {
                   label:
                     'Alianzas',
-
                   value:
                     'Alianza',
-
                   emoji:
                     '🤝'
                 }
@@ -597,7 +923,9 @@ client.on(
       // BOTONES
       // ======================================
 
-      if (interaction.isButton()) {
+      if (
+        interaction.isButton()
+      ) {
 
         // ====================================
         // CERRAR TICKET
@@ -648,10 +976,8 @@ client.on(
           await interaction.reply({
             content:
               '⚠️ ¿Estas seguro de que quieres cerrar este ticket?',
-
             components:
               [rowConfirmacion],
-
             ephemeral:
               true
           });
@@ -660,7 +986,7 @@ client.on(
         }
 
         // ====================================
-        // CANCELAR CIERRE
+        // CANCELAR
         // ====================================
 
         if (
@@ -671,7 +997,6 @@ client.on(
           await interaction.update({
             content:
               '❌ Cierre cancelado.',
-
             components:
               []
           });
@@ -691,7 +1016,6 @@ client.on(
           await interaction.update({
             content:
               '🔒 Cerrando ticket...',
-
             components:
               []
           });
@@ -740,15 +1064,12 @@ client.on(
           await interaction.reply({
             content:
               'Esta accion solo puede utilizarse dentro de un servidor.',
-            ephemeral: true
+            ephemeral:
+              true
           });
 
           return;
         }
-
-        // ====================================
-        // COMPROBAR TICKET EXISTENTE
-        // ====================================
 
         const ticketExistente =
           guild.channels.cache.find(
@@ -784,10 +1105,6 @@ client.on(
           return;
         }
 
-        // ====================================
-        // COMPROBAR CATEGORIA
-        // ====================================
-
         const categoria =
           guild.channels.cache.get(
             TICKET_CATEGORY_ID
@@ -798,7 +1115,6 @@ client.on(
           await interaction.reply({
             content:
               'No se encontro la categoria de tickets.',
-
             ephemeral:
               true
           });
@@ -810,10 +1126,6 @@ client.on(
 
           return;
         }
-
-        // ====================================
-        // NOMBRE DEL CANAL
-        // ====================================
 
         const username =
           user.username
@@ -831,10 +1143,6 @@ client.on(
           tipo +
           '-' +
           username;
-
-        // ====================================
-        // CREAR CANAL
-        // ====================================
 
         const canal =
           await guild.channels.create({
@@ -893,10 +1201,6 @@ client.on(
             ]
           });
 
-        // ====================================
-        // EMBED DEL TICKET
-        // ====================================
-
         const ticketEmbed =
           new EmbedBuilder()
             .setColor(
@@ -918,10 +1222,6 @@ client.on(
             )
             .setTimestamp();
 
-        // ====================================
-        // BOTON CERRAR
-        // ====================================
-
         const cerrarBoton =
           new ButtonBuilder()
             .setCustomId(
@@ -942,10 +1242,6 @@ client.on(
             .addComponents(
               cerrarBoton
             );
-
-        // ====================================
-        // MENSAJE DEL TICKET
-        // ====================================
 
         await canal.send({
 
