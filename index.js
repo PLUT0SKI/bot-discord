@@ -52,12 +52,8 @@ let reactionRoles = {};
 
 if (fs.existsSync(REACTION_FILE)) {
   try {
-
     reactionRoles = JSON.parse(
-      fs.readFileSync(
-        REACTION_FILE,
-        'utf8'
-      )
+      fs.readFileSync(REACTION_FILE, 'utf8')
     );
 
     console.log(
@@ -65,21 +61,17 @@ if (fs.existsSync(REACTION_FILE)) {
     );
 
   } catch (error) {
-
     console.error(
       'ERROR AL CARGAR reactionRoles.json:',
       error
     );
 
     reactionRoles = {};
-
   }
 }
 
 function guardarReactionRoles() {
-
   try {
-
     fs.writeFileSync(
       REACTION_FILE,
       JSON.stringify(
@@ -90,14 +82,11 @@ function guardarReactionRoles() {
     );
 
   } catch (error) {
-
     console.error(
       'ERROR AL GUARDAR REACTION ROLES:',
       error
     );
-
   }
-
 }
 
 // ==========================================
@@ -107,9 +96,7 @@ function guardarReactionRoles() {
 let logsConfig = {};
 
 if (fs.existsSync(LOGS_FILE)) {
-
   try {
-
     logsConfig = JSON.parse(
       fs.readFileSync(
         LOGS_FILE,
@@ -122,22 +109,17 @@ if (fs.existsSync(LOGS_FILE)) {
     );
 
   } catch (error) {
-
     console.error(
       'ERROR AL CARGAR logsConfig.json:',
       error
     );
 
     logsConfig = {};
-
   }
-
 }
 
 function guardarLogsConfig() {
-
   try {
-
     fs.writeFileSync(
       LOGS_FILE,
       JSON.stringify(
@@ -148,14 +130,11 @@ function guardarLogsConfig() {
     );
 
   } catch (error) {
-
     console.error(
       'ERROR AL GUARDAR CONFIGURACIÓN DE LOGS:',
       error
     );
-
   }
-
 }
 
 // ==========================================
@@ -175,6 +154,12 @@ const MUTE_TIME = 60000;
 const mensajesEliminadosPorBot = new Set();
 
 // ==========================================
+// MENSAJES ELIMINADOS POR /CLEAR
+// ==========================================
+
+const mensajesEliminadosPorClear = new Set();
+
+// ==========================================
 // DETECTOR DE LINKS
 // ==========================================
 
@@ -186,9 +171,7 @@ const LINK_REGEX =
 // ==========================================
 
 function esGifPermitido(url) {
-
   try {
-
     const urlLimpia =
       url.toLowerCase();
 
@@ -197,9 +180,7 @@ function esGifPermitido(url) {
         urlLimpia
       )
     ) {
-
       return true;
-
     }
 
     if (
@@ -207,9 +188,7 @@ function esGifPermitido(url) {
         'tenor.com'
       )
     ) {
-
       return true;
-
     }
 
     if (
@@ -217,19 +196,14 @@ function esGifPermitido(url) {
         'giphy.com'
       )
     ) {
-
       return true;
-
     }
 
     return false;
 
   } catch (error) {
-
     return false;
-
   }
-
 }
 
 // ==========================================
@@ -237,7 +211,6 @@ function esGifPermitido(url) {
 // ==========================================
 
 function obtenerLinksNoPermitidos(contenido) {
-
   if (!contenido) return [];
 
   const links =
@@ -253,7 +226,6 @@ function obtenerLinksNoPermitidos(contenido) {
         link
       )
   );
-
 }
 
 // ==========================================
@@ -266,9 +238,7 @@ async function enviarLogSpam(
   duracion,
   canal
 ) {
-
   try {
-
     const guild =
       member.guild;
 
@@ -276,14 +246,12 @@ async function enviarLogSpam(
       logsConfig[guild.id];
 
     if (!canalLogsId) {
-
       console.log(
         'NO HAY CANAL DE LOGS CONFIGURADO PARA: ' +
         guild.name
       );
 
       return;
-
     }
 
     const canalLogs =
@@ -292,114 +260,86 @@ async function enviarLogSpam(
       );
 
     if (!canalLogs) {
-
       console.error(
         'EL CANAL DE LOGS CONFIGURADO NO EXISTE.'
       );
 
       return;
-
     }
 
     const embed =
       new EmbedBuilder()
-
         .setColor('#ff0000')
-
         .setTitle(
           '🚨 Spam detectado'
         )
-
         .setDescription(
           'Un usuario fue silenciado automáticamente por enviar demasiados mensajes en poco tiempo.'
         )
-
         .addFields(
-
           {
             name: '👤 Usuario',
-
             value:
               '<@' +
               member.id +
               '> `' +
               member.user.tag +
               '`',
-
             inline: false
           },
-
           {
             name: '🆔 ID',
-
             value:
               '`' +
               member.id +
               '`',
-
             inline: true
           },
-
           {
             name: '📨 Mensajes',
-
             value:
               '`' +
               cantidad +
               '`',
-
             inline: true
           },
-
           {
             name: '⏱️ Silenciado',
-
             value:
               '`' +
               Math.floor(
                 duracion / 1000
               ) +
               ' segundos`',
-
             inline: true
           },
-
           {
             name: '📍 Canal',
-
             value:
               canal
                 ? '<#' + canal.id + '>'
                 : 'No disponible',
-
             inline: true
           },
-
           {
             name: '📅 Fecha',
-
             value:
               '<t:' +
               Math.floor(
                 Date.now() / 1000
               ) +
               ':F>',
-
             inline: false
           }
-
         )
-
         .setThumbnail(
           member.user.displayAvatarURL({
             size: 256
           })
         )
-
         .setFooter({
           text: 'Sistema de seguridad'
         })
-
         .setTimestamp();
 
     await canalLogs.send({
@@ -409,14 +349,11 @@ async function enviarLogSpam(
     });
 
   } catch (error) {
-
     console.error(
       'ERROR AL ENVIAR LOG DE SPAM:',
       error
     );
-
   }
-
 }
 
 // ==========================================
@@ -428,9 +365,7 @@ async function enviarLogLink(
   link,
   canal
 ) {
-
   try {
-
     const guild =
       member.guild;
 
@@ -438,14 +373,12 @@ async function enviarLogLink(
       logsConfig[guild.id];
 
     if (!canalLogsId) {
-
       console.log(
         'NO HAY CANAL DE LOGS CONFIGURADO PARA: ' +
         guild.name
       );
 
       return;
-
     }
 
     const canalLogs =
@@ -454,68 +387,51 @@ async function enviarLogLink(
       );
 
     if (!canalLogs) {
-
       console.error(
         'EL CANAL DE LOGS CONFIGURADO NO EXISTE.'
       );
 
       return;
-
     }
 
     const embed =
       new EmbedBuilder()
-
         .setColor('#ff0000')
-
         .setTitle(
           '🚨 Link dudoso detectado'
         )
-
         .setDescription(
           'Un usuario envió un enlace no permitido. El mensaje fue eliminado automáticamente.'
         )
-
         .addFields(
-
           {
             name: '👤 Usuario',
-
             value:
               '<@' +
               member.id +
               '> `' +
               member.user.tag +
               '`',
-
             inline: false
           },
-
           {
             name: '🆔 ID',
-
             value:
               '`' +
               member.id +
               '`',
-
             inline: true
           },
-
           {
             name: '📍 Canal',
-
             value:
               canal
                 ? '<#' + canal.id + '>'
                 : 'No disponible',
-
             inline: true
           },
-
           {
             name: '🔗 Link eliminado',
-
             value:
               '```' +
               link.slice(
@@ -523,35 +439,27 @@ async function enviarLogLink(
                 1000
               ) +
               '```',
-
             inline: false
           },
-
           {
             name: '📅 Fecha',
-
             value:
               '<t:' +
               Math.floor(
                 Date.now() / 1000
               ) +
               ':F>',
-
             inline: false
           }
-
         )
-
         .setThumbnail(
           member.user.displayAvatarURL({
             size: 256
           })
         )
-
         .setFooter({
           text: 'Sistema de seguridad'
         })
-
         .setTimestamp();
 
     await canalLogs.send({
@@ -561,14 +469,11 @@ async function enviarLogLink(
     });
 
   } catch (error) {
-
     console.error(
       'ERROR AL ENVIAR LOG DE LINK:',
       error
     );
-
   }
-
 }
 
 // ==========================================
@@ -592,7 +497,19 @@ client.on(
         );
 
         return;
+      }
 
+      if (
+        mensajesEliminadosPorClear.has(
+          message.id
+        )
+      ) {
+
+        mensajesEliminadosPorClear.delete(
+          message.id
+        );
+
+        return;
       }
 
       if (!message.guild) return;
@@ -601,9 +518,7 @@ client.on(
         message.author &&
         message.author.bot
       ) {
-
         return;
-
       }
 
       const canalLogsId =
@@ -633,57 +548,42 @@ client.on(
 
       const embed =
         new EmbedBuilder()
-
           .setColor('#ff0000')
-
           .setTitle(
             '🗑️ Mensaje eliminado'
           )
-
           .setDescription(
             'Un mensaje fue eliminado de un canal.'
           )
-
           .addFields(
-
             {
               name: '👤 Usuario',
-
               value:
                 '<@' +
                 usuario.id +
                 '> `' +
                 usuario.tag +
                 '`',
-
               inline: false
             },
-
             {
               name: '🆔 ID',
-
               value:
                 '`' +
                 usuario.id +
                 '`',
-
               inline: true
             },
-
             {
               name: '📍 Canal',
-
               value:
                 '<#' +
                 message.channel.id +
                 '>',
-
               inline: true
             },
-
             {
               name: '💬 Mensaje',
-
               value:
                 '```' +
                 contenido.slice(
@@ -691,35 +591,27 @@ client.on(
                   1000
                 ) +
                 '```',
-
               inline: false
             },
-
             {
               name: '📅 Fecha',
-
               value:
                 '<t:' +
                 Math.floor(
                   Date.now() / 1000
                 ) +
                 ':F>',
-
               inline: false
             }
-
           )
-
           .setThumbnail(
             usuario.displayAvatarURL({
               size: 256
             })
           )
-
           .setFooter({
             text: 'Sistema de seguridad'
           })
-
           .setTimestamp();
 
       await canalLogs.send({
@@ -759,27 +651,21 @@ client.on(
         mensajeNuevo.author &&
         mensajeNuevo.author.bot
       ) {
-
         return;
-
       }
 
       if (
         mensajeAnterior.partial ||
         mensajeNuevo.partial
       ) {
-
         return;
-
       }
 
       if (
         mensajeAnterior.content ===
         mensajeNuevo.content
       ) {
-
         return;
-
       }
 
       const canalLogsId =
@@ -815,57 +701,42 @@ client.on(
 
       const embed =
         new EmbedBuilder()
-
           .setColor('#ffaa00')
-
           .setTitle(
             '✏️ Mensaje editado'
           )
-
           .setDescription(
             'Un usuario editó un mensaje.'
           )
-
           .addFields(
-
             {
               name: '👤 Usuario',
-
               value:
                 '<@' +
                 usuario.id +
                 '> `' +
                 usuario.tag +
                 '`',
-
               inline: false
             },
-
             {
               name: '🆔 ID',
-
               value:
                 '`' +
                 usuario.id +
                 '`',
-
               inline: true
             },
-
             {
               name: '📍 Canal',
-
               value:
                 '<#' +
                 mensajeNuevo.channel.id +
                 '>',
-
               inline: true
             },
-
             {
               name: '📝 Antes',
-
               value:
                 '```' +
                 anterior.slice(
@@ -873,13 +744,10 @@ client.on(
                   1000
                 ) +
                 '```',
-
               inline: false
             },
-
             {
               name: '✏️ Después',
-
               value:
                 '```' +
                 nuevo.slice(
@@ -887,35 +755,27 @@ client.on(
                   1000
                 ) +
                 '```',
-
               inline: false
             },
-
             {
               name: '📅 Fecha',
-
               value:
                 '<t:' +
                 Math.floor(
                   Date.now() / 1000
                 ) +
                 ':F>',
-
               inline: false
             }
-
           )
-
           .setThumbnail(
             usuario.displayAvatarURL({
               size: 256
             })
           )
-
           .setFooter({
             text: 'Sistema de seguridad'
           })
-
           .setTimestamp();
 
       await canalLogs.send({
@@ -960,9 +820,7 @@ client.on(
           PermissionsBitField.Flags.Administrator
         )
       ) {
-
         return;
-
       }
 
       // ====================================
@@ -1009,11 +867,9 @@ client.on(
             'ERROR AL ELIMINAR LINK:',
             error
           );
-
         }
 
         return;
-
       }
 
       // ====================================
@@ -1031,18 +887,14 @@ client.on(
       if (!datos) {
 
         datos = {
-
           mensajes: [],
-
           silenciado: false
-
         };
 
         spamUsers.set(
           message.author.id,
           datos
         );
-
       }
 
       datos.mensajes =
@@ -1054,13 +906,11 @@ client.on(
         );
 
       datos.mensajes.push({
-
         timestamp:
           ahora,
 
         message:
           message
-
       });
 
       if (
@@ -1090,11 +940,8 @@ client.on(
           ) {
 
             await member.timeout(
-
               MUTE_TIME,
-
               'Spam detectado automáticamente'
-
             );
 
             for (
@@ -1114,7 +961,6 @@ client.on(
                   );
 
                   await dato.message.delete();
-
                 }
 
               } catch (error) {
@@ -1126,9 +972,7 @@ client.on(
                 console.log(
                   'NO SE PUDO ELIMINAR UN MENSAJE DE SPAM.'
                 );
-
               }
-
             }
 
             await enviarLogSpam(
@@ -1139,19 +983,12 @@ client.on(
             );
 
             console.log(
-
               'SPAM DETECTADO | ' +
-
               member.user.tag +
-
               ' | ' +
-
               cantidad +
-
               ' MENSAJES ELIMINADOS | ' +
-
               'SILENCIADO 60 SEGUNDOS'
-
             );
 
             setTimeout(
@@ -1169,7 +1006,6 @@ client.on(
 
                   usuario.mensajes =
                     [];
-
                 }
 
               },
@@ -1179,18 +1015,13 @@ client.on(
           } else {
 
             console.log(
-
               'NO PUDE SILENCIAR A ' +
-
               member.user.tag +
-
               ' POR JERARQUÍA DE ROLES.'
-
             );
 
             datos.silenciado =
               false;
-
           }
 
         } catch (error) {
@@ -1202,9 +1033,7 @@ client.on(
 
           datos.silenciado =
             false;
-
         }
-
       }
 
     } catch (error) {
@@ -1230,9 +1059,14 @@ setInterval(
       mensajesEliminadosPorBot.size >
       1000
     ) {
-
       mensajesEliminadosPorBot.clear();
+    }
 
+    if (
+      mensajesEliminadosPorClear.size >
+      5000
+    ) {
+      mensajesEliminadosPorClear.clear();
     }
 
   },
@@ -1278,30 +1112,22 @@ client.on(
         );
 
         return;
-
       }
 
       const embed =
         new EmbedBuilder()
-
           .setColor(
             '#2b2d31'
           )
-
           .setTitle(
             'Bienvenido/a'
           )
-
           .setDescription(
-
             'Hola <@' +
             member.id +
             '>, es un placer tenerte aqui.\n\n' +
-
             'Pasate por los canales y disfruta.'
-
           )
-
           .setThumbnail(
             member.user.displayAvatarURL({
               size: 256
@@ -1309,7 +1135,6 @@ client.on(
           );
 
       await canal.send({
-
         content:
           'Hola <@' +
           member.id +
@@ -1318,7 +1143,6 @@ client.on(
         embeds: [
           embed
         ]
-
       });
 
     } catch (error) {
@@ -1356,30 +1180,22 @@ client.on(
         );
 
         return;
-
       }
 
       const embed =
         new EmbedBuilder()
-
           .setColor(
             '#2b2d31'
           )
-
           .setTitle(
             'Hasta luego'
           )
-
           .setDescription(
-
             'Adios <@' +
             member.id +
             '>, esperamos volver a verte pronto.\n\n' +
-
             'Gracias por haber formado parte del servidor.'
-
           )
-
           .setThumbnail(
             member.user.displayAvatarURL({
               size: 256
@@ -1387,7 +1203,6 @@ client.on(
           );
 
       await canal.send({
-
         content:
           'Adios <@' +
           member.id +
@@ -1396,7 +1211,6 @@ client.on(
         embeds: [
           embed
         ]
-
       });
 
     } catch (error) {
@@ -1424,9 +1238,7 @@ client.on(
       if (user.bot) return;
 
       if (reaction.partial) {
-
         await reaction.fetch();
-
       }
 
       const messageId =
@@ -1471,7 +1283,6 @@ client.on(
         );
 
         return;
-
       }
 
       const botMember =
@@ -1490,7 +1301,6 @@ client.on(
         );
 
         return;
-
       }
 
       await member.roles.add(
@@ -1529,9 +1339,7 @@ client.on(
       if (user.bot) return;
 
       if (reaction.partial) {
-
         await reaction.fetch();
-
       }
 
       const messageId =
@@ -1620,7 +1428,10 @@ client.on(
           'clear'
         ) {
 
-          // Comprobar permisos del usuario
+          // ----------------------------------
+          // COMPROBAR PERMISOS DEL USUARIO
+          // ----------------------------------
+
           if (
             !interaction.memberPermissions.has(
               PermissionsBitField.Flags.ManageMessages
@@ -1628,17 +1439,13 @@ client.on(
           ) {
 
             await interaction.reply({
-
               content:
                 '❌ No tienes permiso para usar este comando.',
-
               ephemeral:
                 true
-
             });
 
             return;
-
           }
 
           const canal =
@@ -1647,25 +1454,50 @@ client.on(
           if (!canal) {
 
             await interaction.reply({
-
               content:
-                '❌ No se pudo encontrar el canal.',
-
+                '❌ No se pudo encontrar este canal.',
               ephemeral:
                 true
-
             });
 
             return;
-
           }
 
-          // Comprobar permisos del bot
+          if (
+            canal.type !==
+            ChannelType.GuildText
+          ) {
+
+            await interaction.reply({
+              content:
+                '❌ Este comando solo funciona en canales de texto.',
+              ephemeral:
+                true
+            });
+
+            return;
+          }
+
+          // ----------------------------------
+          // COMPROBAR PERMISOS DEL BOT
+          // ----------------------------------
+
           const botMember =
             interaction.guild.members.me;
 
+          if (!botMember) {
+
+            await interaction.reply({
+              content:
+                '❌ No pude comprobar mis permisos.',
+              ephemeral:
+                true
+            });
+
+            return;
+          }
+
           if (
-            !botMember ||
             !canal
               .permissionsFor(botMember)
               .has(
@@ -1674,67 +1506,107 @@ client.on(
           ) {
 
             await interaction.reply({
-
               content:
-                '❌ No tengo permiso para administrar mensajes en este canal.',
-
+                '❌ Necesito el permiso **Gestionar mensajes** para poder vaciar este canal.',
               ephemeral:
                 true
-
             });
 
             return;
-
           }
 
+          // ----------------------------------
+          // RESPUESTA INICIAL
+          // ----------------------------------
+
           await interaction.reply({
-
             content:
-              '🧹 **Vaciando el canal...**\n\nEsto puede tardar si hay muchos mensajes.',
-
+              '🧹 **Vaciando el canal...**',
             ephemeral:
               true
-
           });
 
           let totalEliminados = 0;
+          let errores = 0;
+
+          // ----------------------------------
+          // BUCLE PRINCIPAL
+          // ----------------------------------
 
           while (true) {
 
-            const mensajes =
-              await canal.messages.fetch({
-                limit: 100
-              });
+            let mensajes;
+
+            try {
+
+              mensajes =
+                await canal.messages.fetch({
+                  limit: 100
+                });
+
+            } catch (error) {
+
+              console.error(
+                'ERROR AL OBTENER MENSAJES PARA /CLEAR:',
+                error
+              );
+
+              errores++;
+              break;
+            }
 
             if (
               mensajes.size === 0
             ) {
-
               break;
-
             }
 
-            // ====================================
-            // MENSAJES RECIENTES
-            // ====================================
+            const ahora =
+              Date.now();
 
-            const recientes =
+            const mensajesRecientes =
               mensajes.filter(
                 mensaje =>
-                  Date.now() -
+                  ahora -
                   mensaje.createdTimestamp <
                   14 * 24 * 60 * 60 * 1000
               );
 
+            const mensajesAntiguos =
+              mensajes.filter(
+                mensaje =>
+                  ahora -
+                  mensaje.createdTimestamp >=
+                  14 * 24 * 60 * 60 * 1000
+              );
+
+            // --------------------------------
+            // BORRAR RECIENTES EN BLOQUE
+            // --------------------------------
+
             if (
-              recientes.size > 0
+              mensajesRecientes.size > 0
             ) {
 
               try {
 
+                const cantidad =
+                  mensajesRecientes.size;
+
+                for (
+                  const mensaje
+                  of mensajesRecientes.values()
+                ) {
+
+                  mensajesEliminadosPorClear.add(
+                    mensaje.id
+                  );
+
+                }
+
                 const eliminados =
                   await canal.bulkDelete(
-                    recientes,
+                    mensajesRecientes,
                     true
                   );
 
@@ -1748,84 +1620,182 @@ client.on(
                   error
                 );
 
+                for (
+                  const mensaje
+                  of mensajesRecientes.values()
+                ) {
+
+                  try {
+
+                    mensajesEliminadosPorClear.add(
+                      mensaje.id
+                    );
+
+                    await mensaje.delete();
+
+                    totalEliminados++;
+
+                  } catch (deleteError) {
+
+                    mensajesEliminadosPorClear.delete(
+                      mensaje.id
+                    );
+
+                    errores++;
+
+                  }
+
+                }
+
               }
 
             }
 
-            // ====================================
-            // MENSAJES ANTIGUOS
-            // ====================================
+            // --------------------------------
+            // BORRAR ANTIGUOS
+            // --------------------------------
 
-            const antiguos =
-              mensajes.filter(
-                mensaje =>
-                  Date.now() -
-                  mensaje.createdTimestamp >=
-                  14 * 24 * 60 * 60 * 1000
-              );
-
-            for (
-              const mensaje
-              of antiguos.values()
+            if (
+              mensajesAntiguos.size > 0
             ) {
 
-              try {
+              const antiguos =
+                [
+                  ...mensajesAntiguos.values()
+                ];
 
-                await mensaje.delete();
+              // Eliminamos varios a la vez
+              // para hacerlo más rápido.
 
-                totalEliminados++;
+              const BLOQUE =
+                10;
 
-              } catch (error) {
+              for (
+                let i = 0;
+                i < antiguos.length;
+                i += BLOQUE
+              ) {
 
-                console.error(
-                  'NO SE PUDO ELIMINAR MENSAJE ANTIGUO:',
-                  mensaje.id,
-                  error
-                );
+                const bloque =
+                  antiguos.slice(
+                    i,
+                    i + BLOQUE
+                  );
+
+                const resultados =
+                  await Promise.allSettled(
+                    bloque.map(
+                      async (mensaje) => {
+
+                        try {
+
+                          mensajesEliminadosPorClear.add(
+                            mensaje.id
+                          );
+
+                          await mensaje.delete();
+
+                          return true;
+
+                        } catch (error) {
+
+                          mensajesEliminadosPorClear.delete(
+                            mensaje.id
+                          );
+
+                          return false;
+                        }
+
+                      }
+                    )
+                  );
+
+                for (
+                  const resultado
+                  of resultados
+                ) {
+
+                  if (
+                    resultado.status ===
+                    'fulfilled' &&
+                    resultado.value === true
+                  ) {
+
+                    totalEliminados++;
+
+                  } else {
+
+                    errores++;
+
+                  }
+
+                }
 
               }
 
             }
 
-            // Pequeña pausa para evitar problemas
-            // con los límites de Discord
+            // --------------------------------
+            // PEQUEÑA PAUSA PARA EVITAR
+            // RATE LIMITS
+            // --------------------------------
+
             await new Promise(
               resolve =>
                 setTimeout(
                   resolve,
-                  500
+                  250
                 )
             );
 
           }
 
-          await interaction.editReply({
+          // ----------------------------------
+          // RESULTADO FINAL
+          // ----------------------------------
 
-            content:
-              '✅ **Canal completamente vacío.**\n\n' +
-              '🗑️ Mensajes eliminados: **' +
-              totalEliminados +
-              '**'
+          try {
 
-          });
+            await interaction.editReply({
+              content:
+                '✅ **Canal vaciado correctamente.**\n\n' +
+                '🗑️ Mensajes eliminados: **' +
+                totalEliminados +
+                '**' +
+                (
+                  errores > 0
+                    ? '\n⚠️ No se pudieron eliminar: **' +
+                      errores +
+                      '**'
+                    : ''
+                )
+            });
+
+          } catch (error) {
+
+            console.error(
+              'ERROR AL ACTUALIZAR RESPUESTA DE /CLEAR:',
+              error
+            );
+
+          }
 
           console.log(
-
             'CLEAR EJECUTADO | ' +
-
-            'USUARIO: ' +
-            interaction.user.tag +
-
-            ' | CANAL: ' +
+            'SERVIDOR: ' +
+            interaction.guild.name +
+            ' | ' +
+            'CANAL: ' +
             canal.name +
-
-            ' | MENSAJES ELIMINADOS: ' +
-            totalEliminados
-
+            ' | ' +
+            'ELIMINADOS: ' +
+            totalEliminados +
+            ' | ' +
+            'ERRORES: ' +
+            errores
           );
 
           return;
-
         }
 
         // ====================================
@@ -1849,17 +1819,13 @@ client.on(
           ) {
 
             await interaction.reply({
-
               content:
                 '❌ Selecciona un canal de texto.',
-
               ephemeral:
                 true
-
             });
 
             return;
-
           }
 
           logsConfig[
@@ -1871,58 +1837,41 @@ client.on(
 
           const embed =
             new EmbedBuilder()
-
               .setColor(
                 '#00ff88'
               )
-
               .setTitle(
                 '⚙️ Sistema de logs configurado'
               )
-
               .setDescription(
                 'El canal de logs fue configurado correctamente.'
               )
-
               .addFields({
-
                 name:
                   '📋 Canal',
-
                 value:
                   '<#' +
                   canal.id +
                   '>'
-
               })
-
               .setTimestamp();
 
           await interaction.reply({
-
             embeds: [
               embed
             ],
-
             ephemeral:
               true
-
           });
 
           console.log(
-
             'LOGS CONFIGURADOS | ' +
-
             interaction.guild.name +
-
             ' | CANAL: ' +
-
             canal.id
-
           );
 
           return;
-
         }
 
         // ====================================
@@ -1955,17 +1904,13 @@ client.on(
           if (!canal) {
 
             await interaction.reply({
-
               content:
                 '❌ No se pudo encontrar el canal.',
-
               ephemeral:
                 true
-
             });
 
             return;
-
           }
 
           let mensaje;
@@ -1980,18 +1925,14 @@ client.on(
           } catch (error) {
 
             await interaction.reply({
-
               content:
                 '❌ No encontré ese mensaje en este canal.\n\n' +
                 'Asegúrate de usar correctamente el ID del mensaje.',
-
               ephemeral:
                 true
-
             });
 
             return;
-
           }
 
           const customEmoji =
@@ -2026,7 +1967,6 @@ client.on(
 
             emojiMostrar =
               emojiInput;
-
           }
 
           try {
@@ -2043,17 +1983,13 @@ client.on(
             );
 
             await interaction.reply({
-
               content:
                 '❌ No pude agregar esa reacción.',
-
               ephemeral:
                 true
-
             });
 
             return;
-
           }
 
           reactionRoles[
@@ -2076,50 +2012,36 @@ client.on(
 
             emoji:
               emojiMostrar
-
           };
 
           guardarReactionRoles();
 
           await interaction.reply({
-
             content:
-
               '✅ **Reacción configurada correctamente.**\n\n' +
-
               '👤 **Rol:** <@&' +
               rol.id +
               '>\n' +
-
               '😀 **Emoji:** ' +
               emojiMostrar +
               '\n' +
-
               '💬 **Mensaje:** ' +
               mensaje.url,
-
             ephemeral:
               true
-
           });
 
           console.log(
-
             'REACTION ROLE CONFIGURADO | ' +
-
             'MENSAJE: ' +
             mensajeId +
-
             ' | ROL: ' +
             rol.name +
-
             ' | EMOJI: ' +
             emojiMostrar
-
           );
 
           return;
-
         }
 
         // ====================================
@@ -2133,17 +2055,13 @@ client.on(
 
           const embed =
             new EmbedBuilder()
-
               .setColor(
                 '#2b2d31'
               )
-
               .setTitle(
                 'TICKETS'
               )
-
               .setDescription(
-
                 '**🛒 Comprar**\n' +
                 'Abre un ticket privado para realizar tu compra. Nuestro equipo te ayudará durante todo el proceso.\n\n' +
 
@@ -2154,61 +2072,41 @@ client.on(
                 '¿Tienes una propuesta de alianza o colaboración? Cuéntanos todos los detalles mediante un ticket.\n\n' +
 
                 '> ⚠️ Recuerda que solo puedes tener __**un ticket abierto a la vez**__.'
-
               );
 
           const menu =
             new StringSelectMenuBuilder()
-
               .setCustomId(
                 'ticket_menu'
               )
-
               .setPlaceholder(
                 'Selecciona una opcion'
               )
-
               .addOptions([
-
                 {
-
                   label:
                     'Comprar',
-
                   value:
                     'Comprar',
-
                   emoji:
                     '🛒'
-
                 },
-
                 {
-
                   label:
                     'Soporte',
-
                   value:
                     'Soporte',
-
                   emoji:
                     '🛠️'
-
                 },
-
                 {
-
                   label:
                     'Alianzas',
-
                   value:
                     'Alianza',
-
                   emoji:
                     '🤝'
-
                 }
-
               ]);
 
           const row =
@@ -2218,31 +2116,23 @@ client.on(
               );
 
           await interaction.channel.send({
-
             embeds: [
               embed
             ],
-
             components: [
               row
             ]
-
           });
 
           await interaction.reply({
-
             content:
               '✅ Panel de tickets enviado.',
-
             ephemeral:
               true
-
           });
 
           return;
-
         }
-
       }
 
       // ======================================
@@ -2264,38 +2154,30 @@ client.on(
 
           const confirmar =
             new ButtonBuilder()
-
               .setCustomId(
                 'confirmar_cierre'
               )
-
               .setLabel(
                 'Si, cerrar'
               )
-
               .setEmoji(
                 '✅'
               )
-
               .setStyle(
                 ButtonStyle.Success
               );
 
           const cancelar =
             new ButtonBuilder()
-
               .setCustomId(
                 'cancelar_cierre'
               )
-
               .setLabel(
                 'No, cancelar'
               )
-
               .setEmoji(
                 '❌'
               )
-
               .setStyle(
                 ButtonStyle.Danger
               );
@@ -2308,22 +2190,17 @@ client.on(
               );
 
           await interaction.reply({
-
             content:
               '⚠️ ¿Estas seguro de que quieres cerrar este ticket?',
-
             components:
               [
                 rowConfirmacion
               ],
-
             ephemeral:
               true
-
           });
 
           return;
-
         }
 
         // ====================================
@@ -2336,17 +2213,13 @@ client.on(
         ) {
 
           await interaction.update({
-
             content:
               '❌ Cierre cancelado.',
-
             components:
               []
-
           });
 
           return;
-
         }
 
         // ====================================
@@ -2359,13 +2232,10 @@ client.on(
         ) {
 
           await interaction.update({
-
             content:
               '🔒 Cerrando ticket...',
-
             components:
               []
-
           });
 
           setTimeout(
@@ -2382,9 +2252,7 @@ client.on(
           );
 
           return;
-
         }
-
       }
 
       // ======================================
@@ -2399,9 +2267,7 @@ client.on(
           interaction.customId !==
           'ticket_menu'
         ) {
-
           return;
-
         }
 
         const tipo =
@@ -2416,28 +2282,23 @@ client.on(
         if (!guild) {
 
           await interaction.reply({
-
             content:
               'Esta accion solo puede utilizarse dentro de un servidor.',
-
             ephemeral:
               true
-
           });
 
           return;
-
         }
 
         const ticketExistente =
           guild.channels.cache.find(
             (channel) =>
-
               channel.type ===
-              ChannelType.GuildText &&
+                ChannelType.GuildText &&
 
               channel.parentId ===
-              TICKET_CATEGORY_ID &&
+                TICKET_CATEGORY_ID &&
 
               channel.topic &&
 
@@ -2451,19 +2312,15 @@ client.on(
         if (ticketExistente) {
 
           await interaction.reply({
-
             content:
               'Ya tienes un ticket abierto: <#' +
               ticketExistente.id +
               '>',
-
             ephemeral:
               true
-
           });
 
           return;
-
         }
 
         const categoria =
@@ -2474,24 +2331,18 @@ client.on(
         if (!categoria) {
 
           await interaction.reply({
-
             content:
               'No se encontro la categoria de tickets.',
-
             ephemeral:
               true
-
           });
 
           console.error(
-
             'CATEGORIA NO ENCONTRADA: ' +
             TICKET_CATEGORY_ID
-
           );
 
           return;
-
         }
 
         const username =
@@ -2532,73 +2383,51 @@ client.on(
             permissionOverwrites: [
 
               {
-
                 id:
                   guild.id,
 
                 deny: [
                   PermissionsBitField.Flags.ViewChannel
                 ]
-
               },
 
               {
-
                 id:
                   user.id,
 
                 allow: [
-
                   PermissionsBitField.Flags.ViewChannel,
-
                   PermissionsBitField.Flags.SendMessages,
-
                   PermissionsBitField.Flags.ReadMessageHistory,
-
                   PermissionsBitField.Flags.AttachFiles,
-
                   PermissionsBitField.Flags.EmbedLinks
-
                 ]
-
               },
 
               {
-
                 id:
                   client.user.id,
 
                 allow: [
-
                   PermissionsBitField.Flags.ViewChannel,
-
                   PermissionsBitField.Flags.SendMessages,
-
                   PermissionsBitField.Flags.ReadMessageHistory,
-
                   PermissionsBitField.Flags.ManageChannels
-
                 ]
-
               }
 
             ]
-
           });
 
         const ticketEmbed =
           new EmbedBuilder()
-
             .setColor(
               '#2b2d31'
             )
-
             .setTitle(
               'Ticket creado'
             )
-
             .setDescription(
-
               'Hola <@' +
               user.id +
               '>, gracias por contactar con nosotros.\n\n' +
@@ -2608,26 +2437,20 @@ client.on(
               '\n\n' +
 
               'Explica tu problema o solicitud y espera a que un miembro del equipo te atienda.'
-
             )
-
             .setTimestamp();
 
         const cerrarBoton =
           new ButtonBuilder()
-
             .setCustomId(
               'cerrar_ticket'
             )
-
             .setLabel(
               'Cerrar ticket'
             )
-
             .setEmoji(
               '🔒'
             )
-
             .setStyle(
               ButtonStyle.Danger
             );
@@ -2639,7 +2462,6 @@ client.on(
             );
 
         await canal.send({
-
           content:
             'Bienvenido <@' +
             user.id +
@@ -2652,11 +2474,9 @@ client.on(
           components: [
             rowCerrar
           ]
-
         });
 
         await interaction.reply({
-
           content:
             'Tu ticket fue creado correctamente: <#' +
             canal.id +
@@ -2664,20 +2484,16 @@ client.on(
 
           ephemeral:
             true
-
         });
 
         console.log(
-
           'TICKET CREADO: ' +
           canal.name +
           ' | USUARIO: ' +
           user.tag
-
         );
 
         return;
-
       }
 
     } catch (error) {
@@ -2693,13 +2509,10 @@ client.on(
       ) {
 
         await interaction.reply({
-
           content:
             'Ocurrio un error al realizar esta accion.',
-
           ephemeral:
             true
-
         }).catch(
           () => {}
         );
@@ -2740,7 +2553,6 @@ if (
   );
 
   process.exit(1);
-
 }
 
 client.login(
