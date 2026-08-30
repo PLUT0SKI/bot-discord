@@ -7,28 +7,53 @@ const {
   ButtonBuilder,
   ButtonStyle,
   PermissionsBitField,
-  ChannelType
+  ChannelType,
+  Partials
 } = require('discord.js');
 
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
-    GatewayIntentBits.GuildMembers
+    GatewayIntentBits.GuildMembers,
+    GatewayIntentBits.GuildMessageReactions,
+    GatewayIntentBits.GuildMessages
+  ],
+
+  partials: [
+    Partials.Message,
+    Partials.Channel,
+    Partials.Reaction
   ]
 });
 
 const TICKET_CATEGORY_ID = '1357832792699834548';
 const WELCOME_CHANNEL_ID = '1357832795547893861';
 
+// ==========================================
+// CONFIGURACIÓN DE REACCIONES
+// ==========================================
+
+const reactionRoles = new Map();
+
+// ==========================================
+// BOT ENCENDIDO
+// ==========================================
+
 client.once('ready', () => {
-  console.log('BOT ENCENDIDO COMO ' + client.user.tag);
+
+  console.log(
+    'BOT ENCENDIDO COMO ' +
+    client.user.tag
+  );
+
 });
 
-// =======================
+// ==========================================
 // BIENVENIDA
-// =======================
+// ==========================================
 
 client.on('guildMemberAdd', async (member) => {
+
   try {
 
     const canal = member.guild.channels.cache.get(
@@ -36,10 +61,12 @@ client.on('guildMemberAdd', async (member) => {
     );
 
     if (!canal) {
+
       console.error(
         'CANAL DE BIENVENIDA NO ENCONTRADO: ' +
         WELCOME_CHANNEL_ID
       );
+
       return;
     }
 
@@ -57,338 +84,795 @@ client.on('guildMemberAdd', async (member) => {
       );
 
     await canal.send({
-      content: 'Hola <@' + member.id + '>!',
+
+      content:
+        'Hola <@' + member.id + '>!',
+
       embeds: [embed]
+
     });
 
   } catch (error) {
+
     console.error(
       'ERROR EN BIENVENIDA:',
       error
     );
+
   }
+
 });
 
-// =======================
-// INTERACCIONES
-// =======================
+// ==========================================
+// REACCIONES
+// ==========================================
 
-client.on('interactionCreate', async (interaction) => {
+// CUANDO ALGUIEN REACCIONA
+
+client.on('messageReactionAdd', async (reaction, user) => {
+
   try {
 
-    // =======================
-    // COMANDOS SLASH
-    // =======================
+    if (user.bot) return;
 
-    if (interaction.isChatInputCommand()) {
+    if (reaction.partial) {
+      await reaction.fetch();
+    }
 
-      // =======================
-      // /EMBED
-      // =======================
+    const messageId = reaction.message.id;
 
-      if (interaction.commandName === 'embed') {
+    const emoji = reaction.emoji.id
+      ? '<:' + reaction.emoji.name + ':' + reaction.emoji.id + '>'
+      : reaction.emoji.name;
 
-        const titulo = interaction.options.getString('titulo');
-        const descripcion = interaction.options.getString('descripcion');
-        const color = interaction.options.getString('color') || '#2b2d31';
-        const imagen = interaction.options.getString('imagen');
-        const thumbnail = interaction.options.getString('thumbnail');
-        const footer = interaction.options.getString('footer');
+    const config = reactionRoles.get(
+      messageId + ':' + emoji
+    );
 
-        const embed = new EmbedBuilder()
-          .setTitle(titulo)
-          .setDescription(descripcion)
-          .setColor(color);
+    if (!config) return;
 
-        if (imagen) {
-          embed.setImage(imagen);
-        }
+    const guild = reaction.message.guild;
 
-        if (thumbnail) {
-          embed.setThumbnail(thumbnail);
-        }
+    if (!guild) return;
 
-        if (footer) {
-          embed.setFooter({
-            text: footer
-          });
-        }
+    const member = await guild.members.fetch(
+      user.id
+    );
 
-        await interaction.reply({
-          embeds: [embed]
-        });
+    const role = guild.roles.cache.get(
+      config.roleId
+    );
 
-        return;
-      }
+    if (!role) {
 
-      // =======================
-      // /TICKETS
-      // =======================
-
-      if (interaction.commandName !== 'tickets') return;
-
-      const embed = new EmbedBuilder()
-        .setColor('#2b2d31')
-        .setTitle('TICKETS')
-        .setDescription(
-          '**🛒 Comprar**\n' +
-          'Abre un ticket privado para realizar tu compra. Nuestro equipo te ayudará durante todo el proceso.\n\n' +
-
-          '**🛠️ Dudas / Soporte**\n' +
-          '¿Tienes alguna duda, problema o necesitas ayuda? Abre un ticket y estaremos encantados de ayudarte.\n\n' +
-
-          '**🤝 Alianzas**\n' +
-          '¿Tienes una propuesta de alianza o colaboración? Cuéntanos todos los detalles mediante un ticket.\n\n' +
-
-          '> ⚠️ Recuerda que solo puedes tener __**un ticket abierto a la vez**__.'
-        );
-
-      const menu = new StringSelectMenuBuilder()
-        .setCustomId('ticket_menu')
-        .setPlaceholder('Selecciona una opcion')
-        .addOptions([
-          {
-            label: 'Comprar',
-            value: 'Comprar',
-            emoji: '🛒'
-          },
-          {
-            label: 'Soporte',
-            value: 'Soporte',
-            emoji: '🛠️'
-          },
-          {
-            label: 'Alianzas',
-            value: 'Alianza',
-            emoji: '🤝'
-          }
-        ]);
-
-      const row = new ActionRowBuilder()
-        .addComponents(menu);
-
-      await interaction.reply({
-        embeds: [embed],
-        components: [row]
-      });
+      console.error(
+        'ROL NO ENCONTRADO: ' +
+        config.roleId
+      );
 
       return;
     }
 
-    // =======================
-    // BOTONES
-    // =======================
+    await member.roles.add(role);
 
-    if (interaction.isButton()) {
+    console.log(
+      'ROL ENTREGADO: ' +
+      role.name +
+      ' -> ' +
+      user.tag
+    );
 
-      if (interaction.customId === 'cerrar_ticket') {
+  } catch (error) {
 
-        const confirmar = new ButtonBuilder()
-          .setCustomId('confirmar_cierre')
-          .setLabel('Si, cerrar')
-          .setEmoji('✅')
-          .setStyle(ButtonStyle.Success);
+    console.error(
+      'ERROR AL DAR ROL:',
+      error
+    );
 
-        const cancelar = new ButtonBuilder()
-          .setCustomId('cancelar_cierre')
-          .setLabel('No, cerrar')
-          .setEmoji('❌')
-          .setStyle(ButtonStyle.Danger);
+  }
 
-        const rowConfirmacion = new ActionRowBuilder()
-          .addComponents(confirmar, cancelar);
+});
 
-        await interaction.reply({
-          content: '⚠️ ¿Estas seguro de que quieres cerrar este ticket?',
-          components: [rowConfirmacion],
-          ephemeral: true
-        });
+// ==========================================
+// CUANDO QUITAN LA REACCIÓN
+// ==========================================
 
-        return;
-      }
+client.on('messageReactionRemove', async (reaction, user) => {
 
-      if (interaction.customId === 'cancelar_cierre') {
+  try {
 
-        await interaction.update({
-          content: '❌ Cierre cancelado.',
-          components: []
-        });
+    if (user.bot) return;
 
-        return;
-      }
-
-      if (interaction.customId === 'confirmar_cierre') {
-
-        await interaction.update({
-          content: '🔒 Cerrando ticket...',
-          components: []
-        });
-
-        setTimeout(async () => {
-          await interaction.channel.delete().catch(() => {});
-        }, 2000);
-
-        return;
-      }
+    if (reaction.partial) {
+      await reaction.fetch();
     }
 
-    // =======================
-    // CREAR TICKET
-    // =======================
+    const messageId = reaction.message.id;
 
-    if (interaction.isStringSelectMenu()) {
+    const emoji = reaction.emoji.id
+      ? '<:' + reaction.emoji.name + ':' + reaction.emoji.id + '>'
+      : reaction.emoji.name;
 
-      if (interaction.customId !== 'ticket_menu') return;
+    const config = reactionRoles.get(
+      messageId + ':' + emoji
+    );
 
-      const tipo = interaction.values[0];
-      const guild = interaction.guild;
-      const user = interaction.user;
+    if (!config) return;
 
-      if (!guild) {
+    const guild = reaction.message.guild;
+
+    if (!guild) return;
+
+    const member = await guild.members.fetch(
+      user.id
+    );
+
+    const role = guild.roles.cache.get(
+      config.roleId
+    );
+
+    if (!role) return;
+
+    await member.roles.remove(role);
+
+    console.log(
+      'ROL QUITADO: ' +
+      role.name +
+      ' -> ' +
+      user.tag
+    );
+
+  } catch (error) {
+
+    console.error(
+      'ERROR AL QUITAR ROL:',
+      error
+    );
+
+  }
+
+});
+
+// ==========================================
+// INTERACCIONES
+// ==========================================
+
+client.on('interactionCreate', async (interaction) => {
+
+  try {
+
+    // ======================================
+    // COMANDOS SLASH
+    // ======================================
+
+    if (interaction.isChatInputCommand()) {
+
+      // ====================================
+      // /ADDREACTION
+      // ====================================
+
+      if (interaction.commandName === 'addreaction') {
+
+        const mensajeId =
+          interaction.options.getString(
+            'mensaje'
+          );
+
+        const emojiInput =
+          interaction.options.getString(
+            'emoji'
+          );
+
+        const rol =
+          interaction.options.getRole(
+            'rol'
+          );
+
+        const canal = interaction.channel;
+
+        if (!canal) {
+
+          await interaction.reply({
+            content:
+              '❌ No se pudo encontrar el canal.',
+            ephemeral: true
+          });
+
+          return;
+        }
+
+        let mensaje;
+
+        try {
+
+          mensaje = await canal.messages.fetch(
+            mensajeId
+          );
+
+        } catch {
+
+          await interaction.reply({
+
+            content:
+              '❌ No encontré ese mensaje en este canal.\n\n' +
+              'Asegúrate de usar el ID correcto del mensaje.',
+
+            ephemeral: true
+
+          });
+
+          return;
+        }
+
+        // =================================
+        // PROCESAR EMOJI
+        // =================================
+
+        let emoji;
+
+        const customEmoji =
+          emojiInput.match(
+            /^<a?:([a-zA-Z0-9_]+):(\d+)>$/
+          );
+
+        if (customEmoji) {
+
+          emoji = customEmoji[2];
+
+        } else {
+
+          emoji = emojiInput;
+
+        }
+
+        // =================================
+        // AGREGAR REACCIÓN
+        // =================================
+
+        try {
+
+          await mensaje.react(emoji);
+
+        } catch (error) {
+
+          await interaction.reply({
+
+            content:
+              '❌ No pude agregar esa reacción.\n\n' +
+              'Comprueba que el emoji sea válido y que el bot tenga permiso para reaccionar.',
+
+            ephemeral: true
+
+          });
+
+          console.error(
+            'ERROR AL AGREGAR EMOJI:',
+            error
+          );
+
+          return;
+        }
+
+        // =================================
+        // GUARDAR CONFIGURACIÓN
+        // =================================
+
+        const emojiKey =
+          customEmoji
+            ? '<:' +
+              customEmoji[1] +
+              ':' +
+              customEmoji[2] +
+              '>'
+            : emoji;
+
+        reactionRoles.set(
+          mensajeId + ':' + emojiKey,
+          {
+            roleId: rol.id
+          }
+        );
+
         await interaction.reply({
-          content: 'Esta accion solo puede utilizarse dentro de un servidor.',
+
+          content:
+            '✅ Reacción configurada correctamente.\n\n' +
+            '👤 Rol: <@&' + rol.id + '>\n' +
+            '💬 Mensaje: ' + mensaje.url + '\n' +
+            '😀 Emoji: ' + emojiInput,
+
           ephemeral: true
-        });
-        return;
-      }
 
-      // =======================
-      // COMPROBAR TICKET EXISTENTE
-      // =======================
-
-      const ticketExistente = guild.channels.cache.find(
-        (channel) =>
-          channel.type === ChannelType.GuildText &&
-          channel.parentId === TICKET_CATEGORY_ID &&
-          channel.topic &&
-          channel.topic.startsWith('TICKET_USER:' + user.id + ' |')
-      );
-
-      if (ticketExistente) {
-        await interaction.reply({
-          content: 'Ya tienes un ticket abierto: <#' + ticketExistente.id + '>',
-          ephemeral: true
-        });
-        return;
-      }
-
-      // =======================
-      // COMPROBAR CATEGORIA
-      // =======================
-
-      const categoria = guild.channels.cache.get(
-        TICKET_CATEGORY_ID
-      );
-
-      if (!categoria) {
-        await interaction.reply({
-          content: 'No se encontro la categoria de tickets.',
-          ephemeral: true
         });
 
-        console.error(
-          'CATEGORIA NO ENCONTRADA: ' + TICKET_CATEGORY_ID
+        console.log(
+          'REACTION ROLE CONFIGURADO | ' +
+          'MENSAJE: ' +
+          mensajeId +
+          ' | ROL: ' +
+          rol.name +
+          ' | EMOJI: ' +
+          emojiInput
         );
 
         return;
       }
 
-      // =======================
-      // NOMBRE DEL CANAL
-      // =======================
+      // ====================================
+      // /TICKETS
+      // ====================================
 
-      const username = user.username
-        .toLowerCase()
-        .replace(/[^a-z0-9-_]/g, '')
-        .slice(0, 20);
+      if (interaction.commandName === 'tickets') {
+
+        const embed = new EmbedBuilder()
+          .setColor('#2b2d31')
+          .setTitle('TICKETS')
+          .setDescription(
+
+            '**🛒 Comprar**\n' +
+            'Abre un ticket privado para realizar tu compra. Nuestro equipo te ayudará durante todo el proceso.\n\n' +
+
+            '**🛠️ Dudas / Soporte**\n' +
+            '¿Tienes alguna duda, problema o necesitas ayuda? Abre un ticket y estaremos encantados de ayudarte.\n\n' +
+
+            '**🤝 Alianzas**\n' +
+            '¿Tienes una propuesta de alianza o colaboración? Cuéntanos todos los detalles mediante un ticket.\n\n' +
+
+            '> ⚠️ Recuerda que solo puedes tener __**un ticket abierto a la vez**__.'
+
+          );
+
+        const menu =
+          new StringSelectMenuBuilder()
+            .setCustomId(
+              'ticket_menu'
+            )
+            .setPlaceholder(
+              'Selecciona una opcion'
+            )
+            .addOptions([
+
+              {
+                label: 'Comprar',
+                value: 'Comprar',
+                emoji: '🛒'
+              },
+
+              {
+                label: 'Soporte',
+                value: 'Soporte',
+                emoji: '🛠️'
+              },
+
+              {
+                label: 'Alianzas',
+                value: 'Alianza',
+                emoji: '🤝'
+              }
+
+            ]);
+
+        const row =
+          new ActionRowBuilder()
+            .addComponents(menu);
+
+        await interaction.reply({
+
+          embeds: [embed],
+          components: [row]
+
+        });
+
+        return;
+      }
+
+    }
+
+    // ======================================
+    // BOTONES
+    // ======================================
+
+    if (interaction.isButton()) {
+
+      // ====================================
+      // CERRAR TICKET
+      // ====================================
+
+      if (
+        interaction.customId ===
+        'cerrar_ticket'
+      ) {
+
+        const confirmar =
+          new ButtonBuilder()
+            .setCustomId(
+              'confirmar_cierre'
+            )
+            .setLabel(
+              'Si, cerrar'
+            )
+            .setEmoji('✅')
+            .setStyle(
+              ButtonStyle.Success
+            );
+
+        const cancelar =
+          new ButtonBuilder()
+            .setCustomId(
+              'cancelar_cierre'
+            )
+            .setLabel(
+              'No, cerrar'
+            )
+            .setEmoji('❌')
+            .setStyle(
+              ButtonStyle.Danger
+            );
+
+        const rowConfirmacion =
+          new ActionRowBuilder()
+            .addComponents(
+              confirmar,
+              cancelar
+            );
+
+        await interaction.reply({
+
+          content:
+            '⚠️ ¿Estas seguro de que quieres cerrar este ticket?',
+
+          components: [
+            rowConfirmacion
+          ],
+
+          ephemeral: true
+
+        });
+
+        return;
+      }
+
+      // ====================================
+      // CANCELAR
+      // ====================================
+
+      if (
+        interaction.customId ===
+        'cancelar_cierre'
+      ) {
+
+        await interaction.update({
+
+          content:
+            '❌ Cierre cancelado.',
+
+          components: []
+
+        });
+
+        return;
+      }
+
+      // ====================================
+      // CONFIRMAR CIERRE
+      // ====================================
+
+      if (
+        interaction.customId ===
+        'confirmar_cierre'
+      ) {
+
+        await interaction.update({
+
+          content:
+            '🔒 Cerrando ticket...',
+
+          components: []
+
+        });
+
+        setTimeout(async () => {
+
+          await interaction.channel
+            .delete()
+            .catch(() => {});
+
+        }, 2000);
+
+        return;
+      }
+
+    }
+
+    // ======================================
+    // CREAR TICKET
+    // ======================================
+
+    if (
+      interaction.isStringSelectMenu()
+    ) {
+
+      if (
+        interaction.customId !==
+        'ticket_menu'
+      ) return;
+
+      const tipo =
+        interaction.values[0];
+
+      const guild =
+        interaction.guild;
+
+      const user =
+        interaction.user;
+
+      if (!guild) {
+
+        await interaction.reply({
+
+          content:
+            'Esta accion solo puede utilizarse dentro de un servidor.',
+
+          ephemeral: true
+
+        });
+
+        return;
+      }
+
+      // ====================================
+      // COMPROBAR TICKET EXISTENTE
+      // ====================================
+
+      const ticketExistente =
+        guild.channels.cache.find(
+
+          (channel) =>
+
+            channel.type ===
+              ChannelType.GuildText &&
+
+            channel.parentId ===
+              TICKET_CATEGORY_ID &&
+
+            channel.topic &&
+
+            channel.topic.startsWith(
+              'TICKET_USER:' +
+              user.id +
+              ' |'
+            )
+
+        );
+
+      if (ticketExistente) {
+
+        await interaction.reply({
+
+          content:
+            'Ya tienes un ticket abierto: <#' +
+            ticketExistente.id +
+            '>',
+
+          ephemeral: true
+
+        });
+
+        return;
+      }
+
+      // ====================================
+      // COMPROBAR CATEGORIA
+      // ====================================
+
+      const categoria =
+        guild.channels.cache.get(
+          TICKET_CATEGORY_ID
+        );
+
+      if (!categoria) {
+
+        await interaction.reply({
+
+          content:
+            'No se encontro la categoria de tickets.',
+
+          ephemeral: true
+
+        });
+
+        console.error(
+          'CATEGORIA NO ENCONTRADA: ' +
+          TICKET_CATEGORY_ID
+        );
+
+        return;
+      }
+
+      // ====================================
+      // NOMBRE
+      // ====================================
+
+      const username =
+        user.username
+          .toLowerCase()
+          .replace(
+            /[^a-z0-9-_]/g,
+            ''
+          )
+          .slice(0, 20);
 
       const channelName =
-        tipo + '-' + username;
+        tipo +
+        '-' +
+        username;
 
-      // =======================
+      // ====================================
       // CREAR CANAL
-      // =======================
+      // ====================================
 
-      const canal = await guild.channels.create({
-        name: channelName,
-        type: ChannelType.GuildText,
-        parent: TICKET_CATEGORY_ID,
+      const canal =
+        await guild.channels.create({
 
-        topic:
-          'TICKET_USER:' +
-          user.id +
-          ' | TIPO:' +
-          tipo,
+          name: channelName,
 
-        permissionOverwrites: [
-          {
-            id: guild.id,
-            deny: [
-              PermissionsBitField.Flags.ViewChannel
-            ]
-          },
-          {
-            id: user.id,
-            allow: [
-              PermissionsBitField.Flags.ViewChannel,
-              PermissionsBitField.Flags.SendMessages,
-              PermissionsBitField.Flags.ReadMessageHistory,
-              PermissionsBitField.Flags.AttachFiles,
-              PermissionsBitField.Flags.EmbedLinks
-            ]
-          },
-          {
-            id: client.user.id,
-            allow: [
-              PermissionsBitField.Flags.ViewChannel,
-              PermissionsBitField.Flags.SendMessages,
-              PermissionsBitField.Flags.ReadMessageHistory,
-              PermissionsBitField.Flags.ManageChannels
-            ]
-          }
-        ]
-      });
+          type:
+            ChannelType.GuildText,
 
-      // =======================
-      // MENSAJE DEL TICKET
-      // =======================
+          parent:
+            TICKET_CATEGORY_ID,
 
-      const ticketEmbed = new EmbedBuilder()
-        .setColor('#2b2d31')
-        .setTitle('Ticket creado')
-        .setDescription(
-          'Hola <@' + user.id + '>, gracias por contactar con nosotros.\n\n' +
-          '**Tipo:** ' + tipo + '\n\n' +
-          'Explica tu problema o solicitud y espera a que un miembro del equipo te atienda.'
-        )
-        .setTimestamp();
+          topic:
+            'TICKET_USER:' +
+            user.id +
+            ' | TIPO:' +
+            tipo,
 
-      const cerrarBoton = new ButtonBuilder()
-        .setCustomId('cerrar_ticket')
-        .setLabel('Cerrar ticket')
-        .setEmoji('🔒')
-        .setStyle(ButtonStyle.Danger);
+          permissionOverwrites: [
 
-      const rowCerrar = new ActionRowBuilder()
-        .addComponents(cerrarBoton);
+            {
+              id: guild.id,
+
+              deny: [
+                PermissionsBitField.Flags.ViewChannel
+              ]
+            },
+
+            {
+              id: user.id,
+
+              allow: [
+
+                PermissionsBitField.Flags.ViewChannel,
+
+                PermissionsBitField.Flags.SendMessages,
+
+                PermissionsBitField.Flags.ReadMessageHistory,
+
+                PermissionsBitField.Flags.AttachFiles,
+
+                PermissionsBitField.Flags.EmbedLinks
+
+              ]
+
+            },
+
+            {
+              id: client.user.id,
+
+              allow: [
+
+                PermissionsBitField.Flags.ViewChannel,
+
+                PermissionsBitField.Flags.SendMessages,
+
+                PermissionsBitField.Flags.ReadMessageHistory,
+
+                PermissionsBitField.Flags.ManageChannels
+
+              ]
+
+            }
+
+          ]
+
+        });
+
+      // ====================================
+      // EMBED DEL TICKET
+      // ====================================
+
+      const ticketEmbed =
+        new EmbedBuilder()
+
+          .setColor(
+            '#2b2d31'
+          )
+
+          .setTitle(
+            'Ticket creado'
+          )
+
+          .setDescription(
+
+            'Hola <@' +
+            user.id +
+            '>, gracias por contactar con nosotros.\n\n' +
+
+            '**Tipo:** ' +
+            tipo +
+            '\n\n' +
+
+            'Explica tu problema o solicitud y espera a que un miembro del equipo te atienda.'
+
+          )
+
+          .setTimestamp();
+
+      // ====================================
+      // BOTON CERRAR
+      // ====================================
+
+      const cerrarBoton =
+        new ButtonBuilder()
+
+          .setCustomId(
+            'cerrar_ticket'
+          )
+
+          .setLabel(
+            'Cerrar ticket'
+          )
+
+          .setEmoji(
+            '🔒'
+          )
+
+          .setStyle(
+            ButtonStyle.Danger
+          );
+
+      const rowCerrar =
+        new ActionRowBuilder()
+          .addComponents(
+            cerrarBoton
+          );
 
       await canal.send({
-        content: 'Bienvenido <@' + user.id + '>',
-        embeds: [ticketEmbed],
-        components: [rowCerrar]
+
+        content:
+          'Bienvenido <@' +
+          user.id +
+          '>',
+
+        embeds: [
+          ticketEmbed
+        ],
+
+        components: [
+          rowCerrar
+        ]
+
       });
 
       await interaction.reply({
+
         content:
-          'Tu ticket fue creado correctamente: <#' + canal.id + '>',
+          'Tu ticket fue creado correctamente: <#' +
+          canal.id +
+          '>',
+
         ephemeral: true
+
       });
 
       console.log(
+
         'TICKET CREADO: ' +
         canal.name +
         ' | USUARIO: ' +
         user.tag
+
       );
 
       return;
@@ -401,36 +885,58 @@ client.on('interactionCreate', async (interaction) => {
       error
     );
 
-    if (!interaction.replied && !interaction.deferred) {
+    if (
+      !interaction.replied &&
+      !interaction.deferred
+    ) {
+
       await interaction.reply({
+
         content:
           'Ocurrio un error al realizar esta accion.',
+
         ephemeral: true
+
       }).catch(() => {});
+
     }
+
   }
+
 });
 
-// =======================
-// ERRORES DEL CLIENTE
-// =======================
+// ==========================================
+// ERROR DEL CLIENTE
+// ==========================================
 
-client.on('error', (error) => {
-  console.error(
-    'ERROR DEL CLIENTE DE DISCORD:',
-    error
-  );
-});
+client.on(
+  'error',
+  (error) => {
 
-// =======================
+    console.error(
+      'ERROR DEL CLIENTE DE DISCORD:',
+      error
+    );
+
+  }
+);
+
+// ==========================================
 // LOGIN
-// =======================
+// ==========================================
 
-if (!process.env.DISCORD_TOKEN) {
+if (
+  !process.env.DISCORD_TOKEN
+) {
+
   console.error(
     'NO SE ENCONTRO DISCORD_TOKEN EN RAILWAY.'
   );
+
   process.exit(1);
+
 }
 
-client.login(process.env.DISCORD_TOKEN);
+client.login(
+  process.env.DISCORD_TOKEN
+);
