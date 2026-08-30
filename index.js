@@ -101,21 +101,28 @@ client.on('interactionCreate', async interaction => {
 
       const tipo = interaction.values[0];
 
-      const canal = await interaction.guild.channels.create({
-        name: `${tipo}-${interaction.user.username}`,
-        type: 0,
-        parent: '1357832792699834548',
-        permissionOverwrites: [
-          {
-            id: interaction.guild.id,
-            deny: [PermissionsBitField.Flags.ViewChannel]
-          },
-          {
-            id: interaction.user.id,
-            allow: [PermissionsBitField.Flags.ViewChannel]
-          }
-        ]
-      });
+const canal = await interaction.guild.channels.create({
+  name: `${tipo}-${interaction.user.username}`,
+  type: 0,
+  parent: '1357832792699834548',
+
+  permissionOverwrites: [
+    {
+      id: interaction.guild.id,
+      deny: [
+        PermissionsBitField.Flags.ViewChannel
+      ]
+    },
+    {
+      id: interaction.user.id,
+      allow: [
+        PermissionsBitField.Flags.ViewChannel,
+        PermissionsBitField.Flags.SendMessages,
+        PermissionsBitField.Flags.ReadMessageHistory
+      ]
+    }
+  ]
+});
 
       canal.send(`🎫 Ticket creado para ${interaction.user}`);
 
