@@ -1709,6 +1709,170 @@ client.on(
         }
 
         // ====================================
+        // /CLEAR
+        // ====================================
+
+        if (
+          interaction.commandName ===
+          'clear'
+        ) {
+
+          if (
+            !interaction.member.permissions.has(
+              PermissionsBitField.Flags.ManageMessages
+            )
+          ) {
+
+            await interaction.reply({
+
+              content:
+                '❌ No tienes permisos para eliminar mensajes.',
+
+              ephemeral:
+                true
+
+            });
+
+            return;
+
+          }
+
+          const canal =
+            interaction.channel;
+
+          if (!canal) {
+
+            await interaction.reply({
+
+              content:
+                '❌ No se pudo encontrar el canal.',
+
+              ephemeral:
+                true
+
+            });
+
+            return;
+
+          }
+
+          if (
+            !canal.isTextBased()
+          ) {
+
+            await interaction.reply({
+
+              content:
+                '❌ Este comando solo puede utilizarse en canales de texto.',
+
+              ephemeral:
+                true
+
+            });
+
+            return;
+
+          }
+
+          await interaction.deferReply({
+            ephemeral: true
+          });
+
+          let totalEliminados = 0;
+
+          try {
+
+            while (true) {
+
+              const mensajes =
+                await canal.messages.fetch({
+                  limit: 100
+                });
+
+              if (
+                mensajes.size === 0
+              ) {
+
+                break;
+
+              }
+
+              const mensajesRecientes =
+                mensajes.filter(
+                  mensaje =>
+                    Date.now() -
+                    mensaje.createdTimestamp <
+                    1209600000
+                );
+
+              if (
+                mensajesRecientes.size === 0
+              ) {
+
+                break;
+
+              }
+
+              const eliminados =
+                await canal.bulkDelete(
+                  mensajesRecientes,
+                  true
+                );
+
+              totalEliminados +=
+                eliminados.size;
+
+              if (
+                mensajes.size < 100
+              ) {
+
+                break;
+
+              }
+
+            }
+
+            await interaction.editReply({
+
+              content:
+                '🧹 Se eliminaron **' +
+                totalEliminados +
+                ' mensajes** de este canal.'
+
+            });
+
+            console.log(
+
+              'CLEAR EJECUTADO | ' +
+              interaction.user.tag +
+              ' | CANAL: ' +
+              canal.name +
+              ' | MENSAJES: ' +
+              totalEliminados
+
+            );
+
+          } catch (error) {
+
+            console.error(
+              'ERROR AL EJECUTAR /CLEAR:',
+              error
+            );
+
+            await interaction.editReply({
+
+              content:
+                '❌ Ocurrió un error al eliminar los mensajes.'
+
+            });
+
+          }
+
+          return;
+
+        }
+
+        // ====================================
         // /ADDREACTION
         // ====================================
 
