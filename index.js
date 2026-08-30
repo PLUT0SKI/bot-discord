@@ -2972,10 +2972,12 @@ client.on(
                 inline:
                   false
               },
-              {
-              text:
-                'Para comprar abre un <#1357832842561978505>'
-            }
+{
+  name: '\u200B',
+  value: '🛒 Para comprar abre un <#1357832842561978505>',
+  inline: false
+}
+
             .setTimestamp();
 
         await interaction.reply({
