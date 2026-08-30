@@ -60,6 +60,15 @@ const commands = [
         .setDescription('Canal donde se enviarán los logs')
         .setRequired(true)
     )
+    .toJSON(),
+
+  // =======================
+  // /CLEAR
+  // =======================
+
+  new SlashCommandBuilder()
+    .setName('clear')
+    .setDescription('Elimina todos los mensajes del canal')
     .toJSON()
 
 ];
@@ -99,6 +108,7 @@ const rest = new REST({
     console.log('✅ /tickets');
     console.log('✅ /addreaction');
     console.log('✅ /setlogs');
+    console.log('✅ /clear');
 
   } catch (error) {
 
