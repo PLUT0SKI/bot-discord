@@ -136,13 +136,13 @@ client.on('interactionCreate', async (interaction) => {
           .setCustomId('confirmar_cierre')
           .setLabel('Si, cerrar')
           .setEmoji('✅')
-          .setStyle(ButtonStyle.Danger);
+          .setStyle(ButtonStyle.Success);
 
         const cancelar = new ButtonBuilder()
           .setCustomId('cancelar_cierre')
           .setLabel('Cancelar')
           .setEmoji('❌')
-          .setStyle(ButtonStyle.Secondary);
+          .setStyle(ButtonStyle.Danger);
 
         const rowConfirmacion = new ActionRowBuilder()
           .addComponents(confirmar, cancelar);
