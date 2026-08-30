@@ -97,7 +97,7 @@ client.on('interactionCreate', async (interaction) => {
           '**🤝 Alianzas**\n' +
           '¿Tienes una propuesta de alianza o colaboración? Cuéntanos todos los detalles mediante un ticket.\n\n' +
 
-          '> ⚠️ Recuerda que solo puedes tener **un ticket abierto a la vez**.'
+          '> ⚠️ Recuerda que solo puedes tener __**un ticket abierto a la vez**__.'
         );
 
       const menu = new StringSelectMenuBuilder()
