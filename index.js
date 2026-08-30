@@ -13,6 +13,10 @@ const {
 
 const fs = require('fs');
 
+// ==========================================
+// CLIENTE
+// ==========================================
+
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
@@ -20,7 +24,6 @@ const client = new Client({
     GatewayIntentBits.GuildMessageReactions,
     GatewayIntentBits.GuildMessages
   ],
-
   partials: [
     Partials.Message,
     Partials.Channel,
@@ -28,12 +31,12 @@ const client = new Client({
   ]
 });
 
+// ==========================================
+// CONFIGURACIÓN
+// ==========================================
+
 const TICKET_CATEGORY_ID = '1357832792699834548';
 const WELCOME_CHANNEL_ID = '1357832795547893861';
-
-// ==========================================
-// REACTION ROLES
-// ==========================================
 
 const REACTION_FILE = './reactionRoles.json';
 
@@ -47,11 +50,7 @@ if (fs.existsSync(REACTION_FILE)) {
 
     console.log('CONFIGURACIONES DE REACCIONES CARGADAS.');
   } catch (error) {
-    console.error(
-      'ERROR AL CARGAR reactionRoles.json:',
-      error
-    );
-
+    console.error('ERROR AL CARGAR reactionRoles.json:', error);
     reactionRoles = {};
   }
 }
@@ -63,10 +62,7 @@ function guardarReactionRoles() {
       JSON.stringify(reactionRoles, null, 2)
     );
   } catch (error) {
-    console.error(
-      'ERROR AL GUARDAR REACTION ROLES:',
-      error
-    );
+    console.error('ERROR AL GUARDAR REACTION ROLES:', error);
   }
 }
 
@@ -75,12 +71,7 @@ function guardarReactionRoles() {
 // ==========================================
 
 client.once('ready', () => {
-
-  console.log(
-    'BOT ENCENDIDO COMO ' +
-    client.user.tag
-  );
-
+  console.log('BOT ENCENDIDO COMO ' + client.user.tag);
 });
 
 // ==========================================
@@ -88,20 +79,16 @@ client.once('ready', () => {
 // ==========================================
 
 client.on('guildMemberAdd', async (member) => {
-
   try {
-
     const canal = member.guild.channels.cache.get(
       WELCOME_CHANNEL_ID
     );
 
     if (!canal) {
-
       console.error(
         'CANAL DE BIENVENIDA NO ENCONTRADO: ' +
         WELCOME_CHANNEL_ID
       );
-
       return;
     }
 
@@ -119,33 +106,21 @@ client.on('guildMemberAdd', async (member) => {
       );
 
     await canal.send({
-
-      content:
-        'Hola <@' + member.id + '>!',
-
+      content: 'Hola <@' + member.id + '>!',
       embeds: [embed]
-
     });
 
   } catch (error) {
-
-    console.error(
-      'ERROR EN BIENVENIDA:',
-      error
-    );
-
+    console.error('ERROR EN BIENVENIDA:', error);
   }
-
 });
 
 // ==========================================
-// REACTION ROLE - AGREGAR
+// DAR ROL AL REACCIONAR
 // ==========================================
 
 client.on('messageReactionAdd', async (reaction, user) => {
-
   try {
-
     if (user.bot) return;
 
     if (reaction.partial) {
@@ -154,21 +129,9 @@ client.on('messageReactionAdd', async (reaction, user) => {
 
     const messageId = reaction.message.id;
 
-    let emojiKey;
-
-    if (reaction.emoji.id) {
-
-      emojiKey =
-        'custom:' +
-        reaction.emoji.id;
-
-    } else {
-
-      emojiKey =
-        'unicode:' +
-        reaction.emoji.name;
-
-    }
+    const emojiKey = reaction.emoji.id
+      ? 'custom:' + reaction.emoji.id
+      : 'unicode:' + reaction.emoji.name;
 
     const config =
       reactionRoles[messageId + ':' + emojiKey];
@@ -179,34 +142,27 @@ client.on('messageReactionAdd', async (reaction, user) => {
 
     if (!guild) return;
 
-    const member = await guild.members.fetch(
-      user.id
-    );
+    const member = await guild.members.fetch(user.id);
 
-    const role = guild.roles.cache.get(
-      config.roleId
-    );
+    const role = guild.roles.cache.get(config.roleId);
 
     if (!role) {
-
       console.error(
         'ROL NO ENCONTRADO: ' +
         config.roleId
       );
-
       return;
     }
 
-    if (
-      role.position >=
-      guild.members.me.roles.highest.position
-    ) {
+    const botMember = guild.members.me;
 
+    if (!botMember) return;
+
+    if (role.position >= botMember.roles.highest.position) {
       console.error(
         'EL BOT NO PUEDE DAR EL ROL: ' +
         role.name
       );
-
       return;
     }
 
@@ -220,24 +176,16 @@ client.on('messageReactionAdd', async (reaction, user) => {
     );
 
   } catch (error) {
-
-    console.error(
-      'ERROR AL DAR ROL:',
-      error
-    );
-
+    console.error('ERROR AL DAR ROL:', error);
   }
-
 });
 
 // ==========================================
-// REACTION ROLE - QUITAR
+// QUITAR ROL AL QUITAR REACCIÓN
 // ==========================================
 
 client.on('messageReactionRemove', async (reaction, user) => {
-
   try {
-
     if (user.bot) return;
 
     if (reaction.partial) {
@@ -246,21 +194,9 @@ client.on('messageReactionRemove', async (reaction, user) => {
 
     const messageId = reaction.message.id;
 
-    let emojiKey;
-
-    if (reaction.emoji.id) {
-
-      emojiKey =
-        'custom:' +
-        reaction.emoji.id;
-
-    } else {
-
-      emojiKey =
-        'unicode:' +
-        reaction.emoji.name;
-
-    }
+    const emojiKey = reaction.emoji.id
+      ? 'custom:' + reaction.emoji.id
+      : 'unicode:' + reaction.emoji.name;
 
     const config =
       reactionRoles[messageId + ':' + emojiKey];
@@ -271,13 +207,9 @@ client.on('messageReactionRemove', async (reaction, user) => {
 
     if (!guild) return;
 
-    const member = await guild.members.fetch(
-      user.id
-    );
+    const member = await guild.members.fetch(user.id);
 
-    const role = guild.roles.cache.get(
-      config.roleId
-    );
+    const role = guild.roles.cache.get(config.roleId);
 
     if (!role) return;
 
@@ -291,14 +223,8 @@ client.on('messageReactionRemove', async (reaction, user) => {
     );
 
   } catch (error) {
-
-    console.error(
-      'ERROR AL QUITAR ROL:',
-      error
-    );
-
+    console.error('ERROR AL QUITAR ROL:', error);
   }
-
 });
 
 // ==========================================
@@ -306,7 +232,6 @@ client.on('messageReactionRemove', async (reaction, user) => {
 // ==========================================
 
 client.on('interactionCreate', async (interaction) => {
-
   try {
 
     // ======================================
@@ -319,67 +244,42 @@ client.on('interactionCreate', async (interaction) => {
       // /ADDREACTION
       // ====================================
 
-      if (
-        interaction.commandName ===
-        'addreaction'
-      ) {
+      if (interaction.commandName === 'addreaction') {
 
         const mensajeId =
-          interaction.options.getString(
-            'mensaje'
-          );
+          interaction.options.getString('mensaje');
 
         const emojiInput =
-          interaction.options.getString(
-            'emoji'
-          );
+          interaction.options.getString('emoji');
 
         const rol =
-          interaction.options.getRole(
-            'rol'
-          );
+          interaction.options.getRole('rol');
 
         const canal =
           interaction.channel;
 
         if (!canal) {
-
           await interaction.reply({
-            content:
-              '❌ No se pudo encontrar el canal.',
+            content: '❌ No se pudo encontrar el canal.',
             ephemeral: true
           });
-
           return;
         }
 
         let mensaje;
 
         try {
-
           mensaje =
-            await canal.messages.fetch(
-              mensajeId
-            );
-
-        } catch {
-
+            await canal.messages.fetch(mensajeId);
+        } catch (error) {
           await interaction.reply({
-
             content:
               '❌ No encontré ese mensaje en este canal.\n\n' +
               'Asegúrate de usar correctamente el ID del mensaje.',
-
             ephemeral: true
-
           });
-
           return;
         }
-
-        // =================================
-        // PROCESAR EMOJI
-        // =================================
 
         const customEmoji =
           emojiInput.match(
@@ -392,8 +292,7 @@ client.on('interactionCreate', async (interaction) => {
 
         if (customEmoji) {
 
-          reactionEmoji =
-            customEmoji[2];
+          reactionEmoji = customEmoji[2];
 
           emojiKey =
             'custom:' +
@@ -413,19 +312,10 @@ client.on('interactionCreate', async (interaction) => {
 
           emojiMostrar =
             emojiInput;
-
         }
 
-        // =================================
-        // AGREGAR REACCIÓN
-        // =================================
-
         try {
-
-          await mensaje.react(
-            reactionEmoji
-          );
-
+          await mensaje.react(reactionEmoji);
         } catch (error) {
 
           console.error(
@@ -434,59 +324,34 @@ client.on('interactionCreate', async (interaction) => {
           );
 
           await interaction.reply({
-
             content:
               '❌ No pude agregar esa reacción.\n\n' +
               'Comprueba que el emoji sea válido y que el bot tenga permiso para reaccionar.',
-
             ephemeral: true
-
           });
 
           return;
         }
 
-        // =================================
-        // GUARDAR CONFIGURACIÓN
-        // =================================
-
         reactionRoles[
           mensajeId + ':' + emojiKey
         ] = {
-
-          roleId:
-            rol.id,
-
-          guildId:
-            interaction.guild.id,
-
-          channelId:
-            canal.id,
-
-          messageId:
-            mensajeId,
-
-          emoji:
-            emojiMostrar
-
+          roleId: rol.id,
+          guildId: interaction.guild.id,
+          channelId: canal.id,
+          messageId: mensajeId,
+          emoji: emojiMostrar
         };
 
         guardarReactionRoles();
 
-        // =================================
-        // RESPUESTA
-        // =================================
-
         await interaction.reply({
-
           content:
             '✅ **Reacción configurada correctamente.**\n\n' +
             '👤 **Rol:** <@&' + rol.id + '>\n' +
             '😀 **Emoji:** ' + emojiMostrar + '\n' +
             '💬 **Mensaje:** ' + mensaje.url,
-
           ephemeral: true
-
         });
 
         console.log(
@@ -502,75 +367,70 @@ client.on('interactionCreate', async (interaction) => {
         return;
       }
 
-// ====================================
-// /TICKETS
-// ====================================
+      // ====================================
+      // /TICKETS
+      // ====================================
 
-if (interaction.commandName === 'tickets') {
+      if (interaction.commandName === 'tickets') {
 
-  const embed =
-    new EmbedBuilder()
-      .setColor('#2b2d31')
-      .setTitle('TICKETS')
-      .setDescription(
+        const embed = new EmbedBuilder()
+          .setColor('#2b2d31')
+          .setTitle('TICKETS')
+          .setDescription(
+            '**🛒 Comprar**\n' +
+            'Abre un ticket privado para realizar tu compra. Nuestro equipo te ayudará durante todo el proceso.\n\n' +
 
-        '**🛒 Comprar**\n' +
-        'Abre un ticket privado para realizar tu compra. Nuestro equipo te ayudará durante todo el proceso.\n\n' +
+            '**🛠️ Dudas / Soporte**\n' +
+            '¿Tienes alguna duda, problema o necesitas ayuda? Abre un ticket y estaremos encantados de ayudarte.\n\n' +
 
-        '**🛠️ Dudas / Soporte**\n' +
-        '¿Tienes alguna duda, problema o necesitas ayuda? Abre un ticket y estaremos encantados de ayudarte.\n\n' +
+            '**🤝 Alianzas**\n' +
+            '¿Tienes una propuesta de alianza o colaboración? Cuéntanos todos los detalles mediante un ticket.\n\n' +
 
-        '**🤝 Alianzas**\n' +
-        '¿Tienes una propuesta de alianza o colaboración? Cuéntanos todos los detalles mediante un ticket.\n\n' +
+            '> ⚠️ Recuerda que solo puedes tener __**un ticket abierto a la vez**__.'
+          );
 
-        '> ⚠️ Recuerda que solo puedes tener __**un ticket abierto a la vez**__.'
+        const menu =
+          new StringSelectMenuBuilder()
+            .setCustomId('ticket_menu')
+            .setPlaceholder('Selecciona una opcion')
+            .addOptions([
+              {
+                label: 'Comprar',
+                value: 'Comprar',
+                emoji: '🛒'
+              },
+              {
+                label: 'Soporte',
+                value: 'Soporte',
+                emoji: '🛠️'
+              },
+              {
+                label: 'Alianzas',
+                value: 'Alianza',
+                emoji: '🤝'
+              }
+            ]);
 
-      );
+        const row =
+          new ActionRowBuilder()
+            .addComponents(menu);
 
-  const menu =
-    new StringSelectMenuBuilder()
-      .setCustomId('ticket_menu')
-      .setPlaceholder('Selecciona una opcion')
-      .addOptions([
+        // MENSAJE NORMAL DEL BOT
+        await interaction.channel.send({
+          embeds: [embed],
+          components: [row]
+        });
 
-        {
-          label: 'Comprar',
-          value: 'Comprar',
-          emoji: '🛒'
-        },
+        // RESPUESTA SOLO PARA QUIEN USÓ EL COMANDO
+        await interaction.reply({
+          content: '✅ Panel de tickets enviado.',
+          ephemeral: true
+        });
 
-        {
-          label: 'Soporte',
-          value: 'Soporte',
-          emoji: '🛠️'
-        },
+        return;
+      }
+    }
 
-        {
-          label: 'Alianzas',
-          value: 'Alianza',
-          emoji: '🤝'
-        }
-
-      ]);
-
-  const row =
-    new ActionRowBuilder()
-      .addComponents(menu);
-
-  // ENVIA EL PANEL COMO MENSAJE NORMAL DEL BOT
-  await interaction.channel.send({
-    embeds: [embed],
-    components: [row]
-  });
-
-  // RESPUESTA INVISIBLE AL COMANDO
-  await interaction.reply({
-    content: '✅ Panel de tickets enviado.',
-    ephemeral: true
-  });
-
-  return;
-}
     // ======================================
     // BOTONES
     // ======================================
@@ -581,40 +441,21 @@ if (interaction.commandName === 'tickets') {
       // CERRAR TICKET
       // ====================================
 
-      if (
-        interaction.customId ===
-        'cerrar_ticket'
-      ) {
+      if (interaction.customId === 'cerrar_ticket') {
 
         const confirmar =
           new ButtonBuilder()
-            .setCustomId(
-              'confirmar_cierre'
-            )
-            .setLabel(
-              'Si, cerrar'
-            )
-            .setEmoji(
-              '✅'
-            )
-            .setStyle(
-              ButtonStyle.Success
-            );
+            .setCustomId('confirmar_cierre')
+            .setLabel('Si, cerrar')
+            .setEmoji('✅')
+            .setStyle(ButtonStyle.Success);
 
         const cancelar =
           new ButtonBuilder()
-            .setCustomId(
-              'cancelar_cierre'
-            )
-            .setLabel(
-              'No, cerrar'
-            )
-            .setEmoji(
-              '❌'
-            )
-            .setStyle(
-              ButtonStyle.Danger
-            );
+            .setCustomId('cancelar_cierre')
+            .setLabel('No, cerrar')
+            .setEmoji('❌')
+            .setStyle(ButtonStyle.Danger);
 
         const rowConfirmacion =
           new ActionRowBuilder()
@@ -624,16 +465,10 @@ if (interaction.commandName === 'tickets') {
             );
 
         await interaction.reply({
-
           content:
             '⚠️ ¿Estas seguro de que quieres cerrar este ticket?',
-
-          components: [
-            rowConfirmacion
-          ],
-
+          components: [rowConfirmacion],
           ephemeral: true
-
         });
 
         return;
@@ -643,18 +478,11 @@ if (interaction.commandName === 'tickets') {
       // CANCELAR CIERRE
       // ====================================
 
-      if (
-        interaction.customId ===
-        'cancelar_cierre'
-      ) {
+      if (interaction.customId === 'cancelar_cierre') {
 
         await interaction.update({
-
-          content:
-            '❌ Cierre cancelado.',
-
+          content: '❌ Cierre cancelado.',
           components: []
-
         });
 
         return;
@@ -664,45 +492,30 @@ if (interaction.commandName === 'tickets') {
       // CONFIRMAR CIERRE
       // ====================================
 
-      if (
-        interaction.customId ===
-        'confirmar_cierre'
-      ) {
+      if (interaction.customId === 'confirmar_cierre') {
 
         await interaction.update({
-
-          content:
-            '🔒 Cerrando ticket...',
-
+          content: '🔒 Cerrando ticket...',
           components: []
-
         });
 
         setTimeout(async () => {
-
           await interaction.channel
             .delete()
             .catch(() => {});
-
         }, 2000);
 
         return;
       }
-
     }
 
     // ======================================
     // CREAR TICKET
     // ======================================
 
-    if (
-      interaction.isStringSelectMenu()
-    ) {
+    if (interaction.isStringSelectMenu()) {
 
-      if (
-        interaction.customId !==
-        'ticket_menu'
-      ) return;
+      if (interaction.customId !== 'ticket_menu') return;
 
       const tipo =
         interaction.values[0];
@@ -714,16 +527,11 @@ if (interaction.commandName === 'tickets') {
         interaction.user;
 
       if (!guild) {
-
         await interaction.reply({
-
           content:
             'Esta accion solo puede utilizarse dentro de un servidor.',
-
           ephemeral: true
-
         });
-
         return;
       }
 
@@ -733,38 +541,25 @@ if (interaction.commandName === 'tickets') {
 
       const ticketExistente =
         guild.channels.cache.find(
-
           (channel) =>
-
-            channel.type ===
-              ChannelType.GuildText &&
-
-            channel.parentId ===
-              TICKET_CATEGORY_ID &&
-
+            channel.type === ChannelType.GuildText &&
+            channel.parentId === TICKET_CATEGORY_ID &&
             channel.topic &&
-
             channel.topic.startsWith(
               'TICKET_USER:' +
               user.id +
               ' |'
             )
-
         );
 
       if (ticketExistente) {
-
         await interaction.reply({
-
           content:
             'Ya tienes un ticket abierto: <#' +
             ticketExistente.id +
             '>',
-
           ephemeral: true
-
         });
-
         return;
       }
 
@@ -778,14 +573,10 @@ if (interaction.commandName === 'tickets') {
         );
 
       if (!categoria) {
-
         await interaction.reply({
-
           content:
             'No se encontro la categoria de tickets.',
-
           ephemeral: true
-
         });
 
         console.error(
@@ -797,7 +588,7 @@ if (interaction.commandName === 'tickets') {
       }
 
       // ====================================
-      // NOMBRE
+      // NOMBRE DEL CANAL
       // ====================================
 
       const username =
@@ -807,15 +598,10 @@ if (interaction.commandName === 'tickets') {
             /[^a-z0-9-_]/g,
             ''
           )
-          .slice(
-            0,
-            20
-          );
+          .slice(0, 20);
 
       const channelName =
-        tipo +
-        '-' +
-        username;
+        tipo + '-' + username;
 
       // ====================================
       // CREAR CANAL
@@ -823,15 +609,9 @@ if (interaction.commandName === 'tickets') {
 
       const canal =
         await guild.channels.create({
-
-          name:
-            channelName,
-
-          type:
-            ChannelType.GuildText,
-
-          parent:
-            TICKET_CATEGORY_ID,
+          name: channelName,
+          type: ChannelType.GuildText,
+          parent: TICKET_CATEGORY_ID,
 
           topic:
             'TICKET_USER:' +
@@ -840,59 +620,34 @@ if (interaction.commandName === 'tickets') {
             tipo,
 
           permissionOverwrites: [
-
             {
-              id:
-                guild.id,
-
+              id: guild.id,
               deny: [
-
                 PermissionsBitField.Flags.ViewChannel
-
               ]
-
             },
 
             {
-              id:
-                user.id,
-
+              id: user.id,
               allow: [
-
                 PermissionsBitField.Flags.ViewChannel,
-
                 PermissionsBitField.Flags.SendMessages,
-
                 PermissionsBitField.Flags.ReadMessageHistory,
-
                 PermissionsBitField.Flags.AttachFiles,
-
                 PermissionsBitField.Flags.EmbedLinks
-
               ]
-
             },
 
             {
-              id:
-                client.user.id,
-
+              id: client.user.id,
               allow: [
-
                 PermissionsBitField.Flags.ViewChannel,
-
                 PermissionsBitField.Flags.SendMessages,
-
                 PermissionsBitField.Flags.ReadMessageHistory,
-
                 PermissionsBitField.Flags.ManageChannels
-
               ]
-
             }
-
           ]
-
         });
 
       // ====================================
@@ -901,17 +656,9 @@ if (interaction.commandName === 'tickets') {
 
       const ticketEmbed =
         new EmbedBuilder()
-
-          .setColor(
-            '#2b2d31'
-          )
-
-          .setTitle(
-            'Ticket creado'
-          )
-
+          .setColor('#2b2d31')
+          .setTitle('Ticket creado')
           .setDescription(
-
             'Hola <@' +
             user.id +
             '>, gracias por contactar con nosotros.\n\n' +
@@ -921,9 +668,7 @@ if (interaction.commandName === 'tickets') {
             '\n\n' +
 
             'Explica tu problema o solicitud y espera a que un miembro del equipo te atienda.'
-
           )
-
           .setTimestamp();
 
       // ====================================
@@ -932,31 +677,20 @@ if (interaction.commandName === 'tickets') {
 
       const cerrarBoton =
         new ButtonBuilder()
-
-          .setCustomId(
-            'cerrar_ticket'
-          )
-
-          .setLabel(
-            'Cerrar ticket'
-          )
-
-          .setEmoji(
-            '🔒'
-          )
-
-          .setStyle(
-            ButtonStyle.Danger
-          );
+          .setCustomId('cerrar_ticket')
+          .setLabel('Cerrar ticket')
+          .setEmoji('🔒')
+          .setStyle(ButtonStyle.Danger);
 
       const rowCerrar =
         new ActionRowBuilder()
-          .addComponents(
-            cerrarBoton
-          );
+          .addComponents(cerrarBoton);
+
+      // ====================================
+      // MENSAJE DEL TICKET
+      // ====================================
 
       await canal.send({
-
         content:
           'Bienvenido <@' +
           user.id +
@@ -969,27 +703,22 @@ if (interaction.commandName === 'tickets') {
         components: [
           rowCerrar
         ]
-
       });
 
       await interaction.reply({
-
         content:
           'Tu ticket fue creado correctamente: <#' +
           canal.id +
           '>',
 
         ephemeral: true
-
       });
 
       console.log(
-
         'TICKET CREADO: ' +
         canal.name +
         ' | USUARIO: ' +
         user.tag
-
       );
 
       return;
@@ -1006,52 +735,36 @@ if (interaction.commandName === 'tickets') {
       !interaction.replied &&
       !interaction.deferred
     ) {
-
       await interaction.reply({
-
         content:
           'Ocurrio un error al realizar esta accion.',
-
         ephemeral: true
-
       }).catch(() => {});
-
     }
-
   }
-
 });
 
 // ==========================================
 // ERROR DEL CLIENTE
 // ==========================================
 
-client.on(
-  'error',
-  (error) => {
-
-    console.error(
-      'ERROR DEL CLIENTE DE DISCORD:',
-      error
-    );
-
-  }
-);
+client.on('error', (error) => {
+  console.error(
+    'ERROR DEL CLIENTE DE DISCORD:',
+    error
+  );
+});
 
 // ==========================================
 // LOGIN
 // ==========================================
 
-if (
-  !process.env.DISCORD_TOKEN
-) {
-
+if (!process.env.DISCORD_TOKEN) {
   console.error(
     'NO SE ENCONTRO DISCORD_TOKEN EN RAILWAY.'
   );
 
   process.exit(1);
-
 }
 
 client.login(
