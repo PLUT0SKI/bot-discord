@@ -14,17 +14,17 @@ const {
 
 const fs = require('fs');
 
-// =====================================================
+// ==========================================
 // CLIENTE
-// =====================================================
+// ==========================================
 
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildMembers,
+    GatewayIntentBits.GuildMessageReactions,
     GatewayIntentBits.GuildMessages,
-    GatewayIntentBits.MessageContent,
-    GatewayIntentBits.GuildMessageReactions
+    GatewayIntentBits.MessageContent
   ],
 
   partials: [
@@ -34,35 +34,21 @@ const client = new Client({
   ]
 });
 
-// =====================================================
+// ==========================================
 // CONFIGURACIÓN
-// =====================================================
+// ==========================================
 
 const TICKET_CATEGORY_ID = '1357832792699834548';
 const WELCOME_CHANNEL_ID = '1357832795547893861';
 
 const REACTION_FILE = './reactionRoles.json';
-const LOGS_FILE = './logs.json';
+const LOGS_FILE = './logsConfig.json';
 
-// =====================================================
-// ARCHIVOS
-// =====================================================
+// ==========================================
+// ARCHIVO DE LOGS
+// ==========================================
 
-let reactionRoles = {};
 let logsConfig = {};
-
-if (fs.existsSync(REACTION_FILE)) {
-  try {
-    reactionRoles = JSON.parse(
-      fs.readFileSync(REACTION_FILE, 'utf8')
-    );
-
-    console.log('CONFIGURACIONES DE REACCIONES CARGADAS.');
-  } catch (error) {
-    console.error('ERROR AL CARGAR reactionRoles.json:', error);
-    reactionRoles = {};
-  }
-}
 
 if (fs.existsSync(LOGS_FILE)) {
   try {
@@ -72,19 +58,12 @@ if (fs.existsSync(LOGS_FILE)) {
 
     console.log('CONFIGURACIÓN DE LOGS CARGADA.');
   } catch (error) {
-    console.error('ERROR AL CARGAR logs.json:', error);
-    logsConfig = {};
-  }
-}
-
-function guardarReactionRoles() {
-  try {
-    fs.writeFileSync(
-      REACTION_FILE,
-      JSON.stringify(reactionRoles, null, 2)
+    console.error(
+      'ERROR AL CARGAR logsConfig.json:',
+      error
     );
-  } catch (error) {
-    console.error('ERROR AL GUARDAR REACTION ROLES:', error);
+
+    logsConfig = {};
   }
 }
 
@@ -95,45 +74,74 @@ function guardarLogs() {
       JSON.stringify(logsConfig, null, 2)
     );
   } catch (error) {
-    console.error('ERROR AL GUARDAR LOGS:', error);
+    console.error(
+      'ERROR AL GUARDAR CONFIGURACIÓN DE LOGS:',
+      error
+    );
   }
 }
 
-// =====================================================
-// ANTI-SPAM
-// =====================================================
+// ==========================================
+// REACTION ROLES
+// ==========================================
 
-const spamData = new Map();
+let reactionRoles = {};
 
-const SPAM_MESSAGE_LIMIT = 6;
-const SPAM_TIME = 7000;
+if (fs.existsSync(REACTION_FILE)) {
+  try {
+    reactionRoles = JSON.parse(
+      fs.readFileSync(REACTION_FILE, 'utf8')
+    );
 
-const REPEATED_MESSAGE_LIMIT = 3;
+    console.log(
+      'CONFIGURACIONES DE REACCIONES CARGADAS.'
+    );
 
-const LINK_LIMIT = 3;
-const LINK_TIME = 10000;
+  } catch (error) {
 
-const TIMEOUT_DURATION = 60 * 1000;
+    console.error(
+      'ERROR AL CARGAR reactionRoles.json:',
+      error
+    );
 
-// =====================================================
-// OBTENER CANAL DE LOGS
-// =====================================================
-
-function obtenerCanalLogs(guild) {
-  const channelId = logsConfig[guild.id];
-
-  if (!channelId) return null;
-
-  return guild.channels.cache.get(channelId) || null;
+    reactionRoles = {};
+  }
 }
 
-// =====================================================
+function guardarReactionRoles() {
+  try {
+
+    fs.writeFileSync(
+      REACTION_FILE,
+      JSON.stringify(reactionRoles, null, 2)
+    );
+
+  } catch (error) {
+
+    console.error(
+      'ERROR AL GUARDAR REACTION ROLES:',
+      error
+    );
+  }
+}
+
+// ==========================================
 // ENVIAR LOG
-// =====================================================
+// ==========================================
 
 async function enviarLog(guild, embed) {
+
   try {
-    const canal = obtenerCanalLogs(guild);
+
+    if (!guild) return;
+
+    const channelId =
+      logsConfig[guild.id];
+
+    if (!channelId) return;
+
+    const canal =
+      guild.channels.cache.get(channelId);
 
     if (!canal) return;
 
@@ -142,57 +150,114 @@ async function enviarLog(guild, embed) {
     });
 
   } catch (error) {
-    console.error('ERROR AL ENVIAR LOG:', error);
+
+    console.error(
+      'ERROR AL ENVIAR LOG:',
+      error
+    );
   }
 }
 
-// =====================================================
-// INFORMACIÓN DEL USUARIO
-// =====================================================
+// ==========================================
+// CREAR EMBED DE LOG
+// ==========================================
 
-function informacionUsuario(user) {
-  return (
-    '**Usuario:** ' +
-    user.tag +
-    '\n' +
-    '**ID:** `' +
-    user.id +
-    '`'
-  );
+function crearLog({
+  titulo,
+  descripcion,
+  color = '#2b2d31',
+  usuario = null,
+  moderador = null,
+  canal = null,
+  campos = []
+}) {
+
+  const embed =
+    new EmbedBuilder()
+      .setColor(color)
+      .setTitle(titulo)
+      .setDescription(descripcion || 'Sin información.')
+      .setTimestamp();
+
+  if (usuario) {
+
+    embed.addFields({
+      name: '👤 Usuario',
+      value:
+        `<@${usuario.id}>\n` +
+        `\`${usuario.tag || usuario.username}\`\n` +
+        `ID: \`${usuario.id}\``
+    });
+
+  }
+
+  if (moderador) {
+
+    embed.addFields({
+      name: '🛡️ Moderador',
+      value:
+        `<@${moderador.id}>\n` +
+        `\`${moderador.tag || moderador.username}\`\n` +
+        `ID: \`${moderador.id}\``
+    });
+
+  }
+
+  if (canal) {
+
+    embed.addFields({
+      name: '📍 Canal',
+      value: `<#${canal.id}>`
+    });
+
+  }
+
+  if (campos.length > 0) {
+
+    embed.addFields(campos);
+
+  }
+
+  return embed;
 }
 
-// =====================================================
+// ==========================================
 // BOT ENCENDIDO
-// =====================================================
+// ==========================================
 
 client.once('ready', () => {
-  console.log(
-    'BOT ENCENDIDO COMO ' + client.user.tag
-  );
 
   console.log(
-    'SERVIDORES: ' + client.guilds.cache.size
+    'BOT ENCENDIDO COMO ' +
+    client.user.tag
   );
+
 });
 
-// =====================================================
+// ==========================================
 // BIENVENIDA
-// =====================================================
+// ==========================================
 
-client.on('guildMemberAdd', async (member) => {
-  try {
+client.on(
+  'guildMemberAdd',
+  async (member) => {
 
-    const canal =
-      member.guild.channels.cache.get(
-        WELCOME_CHANNEL_ID
-      );
+    try {
 
-    if (!canal) {
-      console.error(
-        'CANAL DE BIENVENIDA NO ENCONTRADO: ' +
-        WELCOME_CHANNEL_ID
-      );
-    } else {
+      const canal =
+        member.guild.channels.cache.get(
+          WELCOME_CHANNEL_ID
+        );
+
+      if (!canal) {
+
+        console.error(
+          'CANAL DE BIENVENIDA NO ENCONTRADO: ' +
+          WELCOME_CHANNEL_ID
+        );
+
+        return;
+      }
 
       const embed =
         new EmbedBuilder()
@@ -208,781 +273,43 @@ client.on('guildMemberAdd', async (member) => {
             member.user.displayAvatarURL({
               size: 256
             })
-          )
-          .setTimestamp();
+          );
 
       await canal.send({
         content:
           'Hola <@' +
           member.id +
           '>!',
-
         embeds: [embed]
       });
-    }
-
-    // LOG ENTRADA
-
-    const logEmbed =
-      new EmbedBuilder()
-        .setColor('#00ff88')
-        .setTitle('👤 Usuario entró')
-        .setDescription(
-          informacionUsuario(member.user)
-        )
-        .addFields(
-          {
-            name: 'Cuenta creada',
-            value:
-              '<t:' +
-              Math.floor(
-                member.user.createdTimestamp / 1000
-              ) +
-              ':F>'
-          }
-        )
-        .setThumbnail(
-          member.user.displayAvatarURL({
-            size: 256
-          })
-        )
-        .setTimestamp();
-
-    await enviarLog(
-      member.guild,
-      logEmbed
-    );
-
-  } catch (error) {
-    console.error(
-      'ERROR EN BIENVENIDA:',
-      error
-    );
-  }
-});
-
-// =====================================================
-// USUARIO SALE
-// =====================================================
-
-client.on('guildMemberRemove', async (member) => {
-  try {
-
-    const embed =
-      new EmbedBuilder()
-        .setColor('#ff4444')
-        .setTitle('👋 Usuario salió')
-        .setDescription(
-          informacionUsuario(member.user)
-        )
-        .setTimestamp();
-
-    await enviarLog(
-      member.guild,
-      embed
-    );
-
-  } catch (error) {
-    console.error(
-      'ERROR AL REGISTRAR SALIDA:',
-      error
-    );
-  }
-});
-
-// =====================================================
-// MESSAGE CREATE
-// =====================================================
-
-client.on('messageCreate', async (message) => {
-
-  try {
-
-    if (!message.guild) return;
-    if (message.author.bot) return;
-
-    const member = message.member;
-
-    if (!member) return;
-
-    // =================================================
-    // DETECTAR LINKS
-    // =================================================
-
-    const links =
-      message.content.match(
-        /https?:\/\/[^\s]+|www\.[^\s]+/gi
-      ) || [];
-
-    // =================================================
-    // DATOS DEL USUARIO
-    // =================================================
-
-    let data =
-      spamData.get(message.author.id);
-
-    if (!data) {
-
-      data = {
-        messages: [],
-        links: [],
-        lastMessage: '',
-        repeated: 0,
-        punished: false
-      };
-
-      spamData.set(
-        message.author.id,
-        data
-      );
-    }
-
-    const ahora = Date.now();
-
-    // =================================================
-    // LIMPIAR MENSAJES ANTIGUOS
-    // =================================================
-
-    data.messages =
-      data.messages.filter(
-        timestamp =>
-          ahora - timestamp < SPAM_TIME
-      );
-
-    data.links =
-      data.links.filter(
-        timestamp =>
-          ahora - timestamp < LINK_TIME
-      );
-
-    data.messages.push(ahora);
-
-    // =================================================
-    // MENSAJES REPETIDOS
-    // =================================================
-
-    if (
-      message.content.length > 0 &&
-      message.content === data.lastMessage
-    ) {
-
-      data.repeated++;
-
-    } else {
-
-      data.repeated = 1;
-    }
-
-    data.lastMessage =
-      message.content;
-
-    // =================================================
-    // DETECTAR SPAM
-    // =================================================
-
-    const demasiadoSpam =
-      data.messages.length >=
-      SPAM_MESSAGE_LIMIT;
-
-    // =================================================
-    // DETECTAR MUCHOS LINKS
-    // =================================================
-
-    if (links.length > 0) {
-
-      for (let i = 0; i < links.length; i++) {
-        data.links.push(ahora);
-      }
-    }
-
-    const demasiadosLinks =
-      data.links.length >=
-      LINK_LIMIT;
-
-    // =================================================
-    // DETECTAR REPETIDOS
-    // =================================================
-
-    const mensajesRepetidos =
-      data.repeated >=
-      REPEATED_MESSAGE_LIMIT;
-
-    // =================================================
-    // SANCIÓN
-    // =================================================
-
-    if (
-      (demasiadoSpam ||
-       demasiadosLinks ||
-       mensajesRepetidos) &&
-      !data.punished
-    ) {
-
-      data.punished = true;
-
-      let motivo = 'Spam';
-
-      if (demasiadosLinks) {
-        motivo = 'Envío excesivo de enlaces';
-      } else if (mensajesRepetidos) {
-        motivo = 'Mensajes repetidos';
-      }
-
-      // ===============================================
-      // BORRAR MENSAJE
-      // ===============================================
-
-      await message.delete()
-        .catch(() => {});
-
-      // ===============================================
-      // TIMEOUT
-      // ===============================================
-
-      if (
-        member.moderatable &&
-        member.permissions.has(
-          PermissionsBitField.Flags.SendMessages
-        ) ||
-        member.moderatable
-      ) {
-
-        await member.timeout(
-          TIMEOUT_DURATION,
-          motivo
-        ).catch(error => {
-          console.error(
-            'NO SE PUDO APLICAR TIMEOUT:',
-            error
-          );
-        });
-      }
-
-      // ===============================================
-      // LOG
-      // ===============================================
-
-      const embed =
-        new EmbedBuilder()
-          .setColor('#ff9900')
-          .setTitle('🚫 Sanción automática')
-          .setDescription(
-            informacionUsuario(
-              message.author
-            )
-          )
-          .addFields(
-            {
-              name: 'Motivo',
-              value: motivo
-            },
-            {
-              name: 'Canal',
-              value:
-                '<#' +
-                message.channel.id +
-                '>'
-            },
-            {
-              name: 'Duración',
-              value: '1 minuto'
-            },
-            {
-              name: 'Tipo',
-              value: 'Sistema anti-spam'
-            }
-          )
-          .setThumbnail(
-            message.author.displayAvatarURL({
-              size: 256
-            })
-          )
-          .setTimestamp();
 
       await enviarLog(
-        message.guild,
-        embed
-      );
+        member.guild,
 
-      // ===============================================
-      // AVISO
-      // ===============================================
-
-      const aviso =
-        await message.channel.send({
-          content:
-            '🚫 <@' +
-            message.author.id +
-            '> fue silenciado automáticamente por **' +
-            motivo +
-            '**.'
-        }).catch(() => null);
-
-      if (aviso) {
-
-        setTimeout(() => {
-          aviso.delete().catch(() => {});
-        }, 5000);
-      }
-
-      // Reiniciar datos
-
-      data.messages = [];
-      data.links = [];
-      data.repeated = 0;
-
-      setTimeout(() => {
-
-        const current =
-          spamData.get(
-            message.author.id
-          );
-
-        if (current) {
-          current.punished = false;
-        }
-
-      }, TIMEOUT_DURATION + 2000);
-    }
-
-  } catch (error) {
-
-    console.error(
-      'ERROR EN SISTEMA ANTI-SPAM:',
-      error
-    );
-  }
-});
-
-// =====================================================
-// MESSAGE DELETE
-// =====================================================
-
-client.on('messageDelete', async (message) => {
-
-  try {
-
-    if (!message.guild) return;
-    if (!message.author) return;
-    if (message.author.bot) return;
-
-    const contenido =
-      message.content
-        ? message.content.slice(0, 1000)
-        : 'Contenido no disponible';
-
-    const embed =
-      new EmbedBuilder()
-        .setColor('#ff3333')
-        .setTitle('🗑️ Mensaje eliminado')
-        .setDescription(
-          informacionUsuario(
-            message.author
-          )
-        )
-        .addFields(
-          {
-            name: 'Canal',
-            value:
-              '<#' +
-              message.channel.id +
-              '>'
-          },
-          {
-            name: 'Contenido',
-            value:
-              '```' +
-              contenido +
-              '```'
-          }
-        )
-        .setThumbnail(
-          message.author.displayAvatarURL({
-            size: 256
-          })
-        )
-        .setTimestamp();
-
-    await enviarLog(
-      message.guild,
-      embed
-    );
-
-  } catch (error) {
-
-    console.error(
-      'ERROR EN MESSAGE DELETE:',
-      error
-    );
-  }
-});
-
-// =====================================================
-// MESSAGE UPDATE
-// =====================================================
-
-client.on(
-  'messageUpdate',
-  async (oldMessage, newMessage) => {
-
-    try {
-
-      if (!newMessage.guild) return;
-
-      if (!oldMessage.author) return;
-      if (oldMessage.author.bot) return;
-
-      const anterior =
-        oldMessage.content || 'No disponible';
-
-      const nuevo =
-        newMessage.content || 'No disponible';
-
-      if (anterior === nuevo) return;
-
-      const embed =
-        new EmbedBuilder()
-          .setColor('#ffaa00')
-          .setTitle('✏️ Mensaje editado')
-          .setDescription(
-            informacionUsuario(
-              oldMessage.author
-            )
-          )
-          .addFields(
-            {
-              name: 'Canal',
-              value:
-                '<#' +
-                newMessage.channel.id +
-                '>'
-            },
-            {
-              name: 'Antes',
-              value:
-                '```' +
-                anterior.slice(0, 900) +
-                '```'
-            },
-            {
-              name: 'Después',
-              value:
-                '```' +
-                nuevo.slice(0, 900) +
-                '```'
-            }
-          )
-          .setTimestamp();
-
-      await enviarLog(
-        newMessage.guild,
-        embed
+        crearLog({
+          titulo: '📥 Usuario entró al servidor',
+          descripcion:
+            `Un usuario acaba de entrar al servidor.`,
+          color: '#57F287',
+          usuario: member.user
+        })
       );
 
     } catch (error) {
 
       console.error(
-        'ERROR EN MESSAGE UPDATE:',
+        'ERROR EN BIENVENIDA:',
         error
       );
+
     }
+
   }
 );
 
-// =====================================================
-// ROLES AGREGADOS / QUITADOS
-// =====================================================
-
-client.on(
-  'guildMemberUpdate',
-  async (oldMember, newMember) => {
-
-    try {
-
-      const rolesAntes =
-        oldMember.roles.cache;
-
-      const rolesDespues =
-        newMember.roles.cache;
-
-      const agregados =
-        rolesDespues.filter(
-          role =>
-            !rolesAntes.has(role.id)
-        );
-
-      const quitados =
-        rolesAntes.filter(
-          role =>
-            !rolesDespues.has(role.id)
-        );
-
-      // =================================================
-      // ROLES AGREGADOS
-      // =================================================
-
-      for (const role of agregados.values()) {
-
-        let moderador = 'No identificado';
-
-        try {
-
-          const logs =
-            await newMember.guild.fetchAuditLogs({
-              type: AuditLogEvent.MemberRoleUpdate,
-              limit: 5
-            });
-
-          const entrada =
-            logs.entries.find(
-              entry =>
-                entry.target &&
-                entry.target.id === newMember.id &&
-                Date.now() - entry.createdTimestamp < 5000
-            );
-
-          if (entrada) {
-
-            moderador =
-              '<@' +
-              entrada.executor.id +
-              '>';
-          }
-
-        } catch (error) {}
-
-        const embed =
-          new EmbedBuilder()
-            .setColor('#00cc66')
-            .setTitle('➕ Rol agregado')
-            .setDescription(
-              informacionUsuario(
-                newMember.user
-              )
-            )
-            .addFields(
-              {
-                name: 'Rol',
-                value:
-                  '<@&' +
-                  role.id +
-                  '>'
-              },
-              {
-                name: 'Realizado por',
-                value:
-                  moderador
-              }
-            )
-            .setTimestamp();
-
-        await enviarLog(
-          newMember.guild,
-          embed
-        );
-      }
-
-      // =================================================
-      // ROLES QUITADOS
-      // =================================================
-
-      for (const role of quitados.values()) {
-
-        let moderador = 'No identificado';
-
-        try {
-
-          const logs =
-            await newMember.guild.fetchAuditLogs({
-              type: AuditLogEvent.MemberRoleUpdate,
-              limit: 5
-            });
-
-          const entrada =
-            logs.entries.find(
-              entry =>
-                entry.target &&
-                entry.target.id === newMember.id &&
-                Date.now() - entry.createdTimestamp < 5000
-            );
-
-          if (entrada) {
-
-            moderador =
-              '<@' +
-              entrada.executor.id +
-              '>';
-          }
-
-        } catch (error) {}
-
-        const embed =
-          new EmbedBuilder()
-            .setColor('#ff4444')
-            .setTitle('➖ Rol quitado')
-            .setDescription(
-              informacionUsuario(
-                newMember.user
-              )
-            )
-            .addFields(
-              {
-                name: 'Rol',
-                value:
-                  '<@&' +
-                  role.id +
-                  '>'
-              },
-              {
-                name: 'Realizado por',
-                value:
-                  moderador
-              }
-            )
-            .setTimestamp();
-
-        await enviarLog(
-          newMember.guild,
-          embed
-        );
-      }
-
-    } catch (error) {
-
-      console.error(
-        'ERROR EN LOG DE ROLES:',
-        error
-      );
-    }
-  }
-);
-
-// =====================================================
-// LOGS DE MODERACIÓN
-// =====================================================
-
-client.on(
-  'guildAuditLogEntryCreate',
-  async (entry, guild) => {
-
-    try {
-
-      if (
-        !entry ||
-        !guild
-      ) return;
-
-      const executor =
-        entry.executor;
-
-      if (!executor) return;
-
-      let titulo = null;
-      let color = '#5865F2';
-      let motivo =
-        entry.reason || 'Sin motivo especificado';
-
-      switch (entry.action) {
-
-        case AuditLogEvent.MemberBanAdd:
-
-          titulo = '🔨 Usuario baneado';
-          color = '#ff0000';
-
-          break;
-
-        case AuditLogEvent.MemberBanRemove:
-
-          titulo = '🔓 Usuario desbaneado';
-          color = '#00cc66';
-
-          break;
-
-        case AuditLogEvent.MemberKick:
-
-          titulo = '👢 Usuario expulsado';
-          color = '#ff6600';
-
-          break;
-
-        case AuditLogEvent.MemberUpdate:
-
-          if (
-            entry.changes &&
-            entry.changes.some(
-              change =>
-                change.key === 'communication_disabled_until'
-            )
-          ) {
-
-            titulo = '🔇 Timeout aplicado';
-            color = '#ffaa00';
-          }
-
-          break;
-
-        default:
-          break;
-      }
-
-      if (!titulo) return;
-
-      let usuarioTexto =
-        'Usuario desconocido';
-
-      if (entry.target) {
-
-        usuarioTexto =
-          '<@' +
-          entry.target.id +
-          '>\n`' +
-          entry.target.id +
-          '`';
-      }
-
-      const embed =
-        new EmbedBuilder()
-          .setColor(color)
-          .setTitle(titulo)
-          .addFields(
-            {
-              name: 'Usuario afectado',
-              value:
-                usuarioTexto
-            },
-            {
-              name: 'Moderador',
-              value:
-                '<@' +
-                executor.id +
-                '>'
-            },
-            {
-              name: 'Motivo',
-              value:
-                motivo
-            }
-          )
-          .setTimestamp();
-
-      await enviarLog(
-        guild,
-        embed
-      );
-
-    } catch (error) {
-
-      console.error(
-        'ERROR EN LOG DE MODERACIÓN:',
-        error
-      );
-    }
-  }
-);
-
-// =====================================================
+// ==========================================
 // REACTION ROLE - AGREGAR
-// =====================================================
+// ==========================================
 
 client.on(
   'messageReactionAdd',
@@ -1006,9 +333,7 @@ client.on(
 
       const config =
         reactionRoles[
-          messageId +
-          ':' +
-          emojiKey
+          messageId + ':' + emojiKey
         ];
 
       if (!config) return;
@@ -1019,9 +344,7 @@ client.on(
       if (!guild) return;
 
       const member =
-        await guild.members.fetch(
-          user.id
-        );
+        await guild.members.fetch(user.id);
 
       const role =
         guild.roles.cache.get(
@@ -1063,13 +386,15 @@ client.on(
         'ERROR AL DAR ROL:',
         error
       );
+
     }
+
   }
 );
 
-// =====================================================
+// ==========================================
 // REACTION ROLE - QUITAR
-// =====================================================
+// ==========================================
 
 client.on(
   'messageReactionRemove',
@@ -1093,9 +418,7 @@ client.on(
 
       const config =
         reactionRoles[
-          messageId +
-          ':' +
-          emojiKey
+          messageId + ':' + emojiKey
         ];
 
       if (!config) return;
@@ -1106,9 +429,7 @@ client.on(
       if (!guild) return;
 
       const member =
-        await guild.members.fetch(
-          user.id
-        );
+        await guild.members.fetch(user.id);
 
       const role =
         guild.roles.cache.get(
@@ -1132,13 +453,834 @@ client.on(
         'ERROR AL QUITAR ROL:',
         error
       );
+
     }
+
   }
 );
 
-// =====================================================
+// ==========================================
+// ANTI-SPAM
+// ==========================================
+
+const spamMap = new Map();
+const repeatedMap = new Map();
+
+const SPAM_LIMIT = 6;
+const SPAM_TIME = 5000;
+
+const REPEAT_LIMIT = 4;
+
+const LINK_LIMIT = 4;
+const LINK_TIME = 8000;
+
+function obtenerLinks(texto) {
+
+  const regex =
+    /https?:\/\/[^\s]+|www\.[^\s]+/gi;
+
+  return texto.match(regex) || [];
+
+}
+
+// ==========================================
+// SILENCIAR USUARIO
+// ==========================================
+
+async function silenciarUsuario(
+  member,
+  motivo,
+  mensaje,
+  tipo
+) {
+
+  try {
+
+    if (!member) return;
+
+    if (!member.moderatable) {
+
+      console.log(
+        'NO PUDE SILENCIAR A ' +
+        member.user.tag
+      );
+
+      return;
+
+    }
+
+    await member.timeout(
+      10 * 60 * 1000,
+      motivo
+    );
+
+    const embed =
+      crearLog({
+
+        titulo:
+          tipo === 'links'
+            ? '🔗 Muchos links detectados'
+            : '🚫 Spam detectado',
+
+        descripcion:
+          `El sistema automático detectó una conducta considerada spam y aplicó un silencio de **10 minutos**.`,
+
+        color: '#ED4245',
+
+        usuario:
+          member.user,
+
+        canal:
+          mensaje.channel,
+
+        campos: [
+
+          {
+            name: '📌 Motivo',
+            value: motivo
+          },
+
+          {
+            name: '💬 Mensaje',
+            value:
+              mensaje.content
+                ? mensaje.content.slice(0, 1000)
+                : 'Sin contenido'
+          },
+
+          {
+            name: '⚙️ Acción',
+            value:
+              'Timeout de 10 minutos'
+          }
+
+        ]
+
+      });
+
+    await enviarLog(
+      member.guild,
+      embed
+    );
+
+  } catch (error) {
+
+    console.error(
+      'ERROR AL SILENCIAR:',
+      error
+    );
+
+  }
+
+}
+
+// ==========================================
+// MENSAJES - ANTI SPAM
+// ==========================================
+
+client.on(
+  'messageCreate',
+  async (message) => {
+
+    try {
+
+      if (!message.guild) return;
+
+      if (message.author.bot) return;
+
+      const member =
+        message.member;
+
+      if (!member) return;
+
+      const ahora =
+        Date.now();
+
+      // ====================================
+      // SPAM DE MENSAJES
+      // ====================================
+
+      const userMessages =
+        spamMap.get(message.author.id) || [];
+
+      const mensajesRecientes =
+        userMessages.filter(
+          time =>
+            ahora - time <
+            SPAM_TIME
+        );
+
+      mensajesRecientes.push(ahora);
+
+      spamMap.set(
+        message.author.id,
+        mensajesRecientes
+      );
+
+      if (
+        mensajesRecientes.length >=
+        SPAM_LIMIT
+      ) {
+
+        await message.delete()
+          .catch(() => {});
+
+        spamMap.delete(
+          message.author.id
+        );
+
+        await silenciarUsuario(
+          member,
+          'Spam de mensajes',
+          message,
+          'spam'
+        );
+
+        return;
+
+      }
+
+      // ====================================
+      // MENSAJES REPETIDOS
+      // ====================================
+
+      const contenido =
+        message.content
+          .trim()
+          .toLowerCase();
+
+      if (contenido.length > 0) {
+
+        const key =
+          message.author.id;
+
+        const datos =
+          repeatedMap.get(key) || {
+            content: '',
+            count: 0,
+            time: ahora
+          };
+
+        if (
+          datos.content ===
+          contenido &&
+          ahora - datos.time <
+          10000
+        ) {
+
+          datos.count++;
+
+        } else {
+
+          datos.content =
+            contenido;
+
+          datos.count = 1;
+
+          datos.time =
+            ahora;
+
+        }
+
+        repeatedMap.set(
+          key,
+          datos
+        );
+
+        if (
+          datos.count >=
+          REPEAT_LIMIT
+        ) {
+
+          await message.delete()
+            .catch(() => {});
+
+          repeatedMap.delete(
+            key
+          );
+
+          await silenciarUsuario(
+            member,
+            'Mensajes repetidos',
+            message,
+            'spam'
+          );
+
+          return;
+
+        }
+
+      }
+
+      // ====================================
+      // MUCHOS LINKS
+      // ====================================
+
+      const links =
+        obtenerLinks(
+          message.content
+        );
+
+      if (links.length > 0) {
+
+        const linkData =
+          spamMap.get(
+            'links_' +
+            message.author.id
+          ) || [];
+
+        const linksRecientes =
+          linkData.filter(
+            time =>
+              ahora - time <
+              LINK_TIME
+          );
+
+        for (
+          let i = 0;
+          i < links.length;
+          i++
+        ) {
+
+          linksRecientes.push(
+            ahora
+          );
+
+        }
+
+        spamMap.set(
+          'links_' +
+          message.author.id,
+          linksRecientes
+        );
+
+        if (
+          linksRecientes.length >=
+          LINK_LIMIT
+        ) {
+
+          await message.delete()
+            .catch(() => {});
+
+          spamMap.delete(
+            'links_' +
+            message.author.id
+          );
+
+          await silenciarUsuario(
+            member,
+            'Envío excesivo de enlaces',
+            message,
+            'links'
+          );
+
+          return;
+
+        }
+
+      }
+
+    } catch (error) {
+
+      console.error(
+        'ERROR EN ANTI-SPAM:',
+        error
+      );
+
+    }
+
+  }
+);
+
+// ==========================================
+// MENSAJE ELIMINADO
+// ==========================================
+
+client.on(
+  'messageDelete',
+  async (message) => {
+
+    try {
+
+      if (!message.guild) return;
+
+      if (message.author?.bot) return;
+
+      const autor =
+        message.author;
+
+      const embed =
+        crearLog({
+
+          titulo:
+            '🗑️ Mensaje eliminado',
+
+          descripcion:
+            'Se eliminó un mensaje del servidor.',
+
+          color:
+            '#ED4245',
+
+          usuario:
+            autor,
+
+          canal:
+            message.channel,
+
+          campos: [
+
+            {
+              name: '💬 Contenido',
+              value:
+                message.content
+                  ? message.content.slice(0, 1000)
+                  : 'Sin contenido disponible.'
+            },
+
+            {
+              name: '🆔 ID del mensaje',
+              value:
+                `\`${message.id}\``
+            }
+
+          ]
+
+        });
+
+      await enviarLog(
+        message.guild,
+        embed
+      );
+
+    } catch (error) {
+
+      console.error(
+        'ERROR EN MESSAGE DELETE:',
+        error
+      );
+
+    }
+
+  }
+);
+
+// ==========================================
+// MENSAJE EDITADO
+// ==========================================
+
+client.on(
+  'messageUpdate',
+  async (oldMessage, newMessage) => {
+
+    try {
+
+      if (!newMessage.guild) return;
+
+      if (newMessage.author?.bot) return;
+
+      const anterior =
+        oldMessage.content || '';
+
+      const nuevo =
+        newMessage.content || '';
+
+      if (anterior === nuevo) return;
+
+      const embed =
+        crearLog({
+
+          titulo:
+            '✏️ Mensaje editado',
+
+          descripcion:
+            'Un mensaje fue editado.',
+
+          color:
+            '#FEE75C',
+
+          usuario:
+            newMessage.author,
+
+          canal:
+            newMessage.channel,
+
+          campos: [
+
+            {
+              name: '📝 Antes',
+              value:
+                anterior
+                  ? anterior.slice(0, 1000)
+                  : 'Sin contenido'
+            },
+
+            {
+              name: '📝 Después',
+              value:
+                nuevo
+                  ? nuevo.slice(0, 1000)
+                  : 'Sin contenido'
+            },
+
+            {
+              name: '🔗 Mensaje',
+              value:
+                `[Ver mensaje](${newMessage.url})`
+            }
+
+          ]
+
+        });
+
+      await enviarLog(
+        newMessage.guild,
+        embed
+      );
+
+    } catch (error) {
+
+      console.error(
+        'ERROR EN MESSAGE UPDATE:',
+        error
+      );
+
+    }
+
+  }
+);
+
+// ==========================================
+// ROLES AGREGADOS / QUITADOS
+// ==========================================
+
+client.on(
+  'guildMemberUpdate',
+  async (oldMember, newMember) => {
+
+    try {
+
+      const rolesAgregados =
+        newMember.roles.cache.filter(
+          role =>
+            !oldMember.roles.cache.has(
+              role.id
+            )
+        );
+
+      const rolesQuitados =
+        oldMember.roles.cache.filter(
+          role =>
+            !newMember.roles.cache.has(
+              role.id
+            )
+        );
+
+      // ====================================
+      // ROLES AGREGADOS
+      // ====================================
+
+      for (
+        const [, role] of rolesAgregados
+      ) {
+
+        if (role.id === newMember.guild.id)
+          continue;
+
+        await enviarLog(
+
+          newMember.guild,
+
+          crearLog({
+
+            titulo:
+              '➕ Rol agregado',
+
+            descripcion:
+              `Se agregó un rol a un usuario.`,
+
+            color:
+              '#57F287',
+
+            usuario:
+              newMember.user,
+
+            campos: [
+
+              {
+                name: '🎭 Rol',
+                value:
+                  `<@&${role.id}>\n\`${role.name}\``
+              }
+
+            ]
+
+          })
+
+        );
+
+      }
+
+      // ====================================
+      // ROLES QUITADOS
+      // ====================================
+
+      for (
+        const [, role] of rolesQuitados
+      ) {
+
+        if (role.id === newMember.guild.id)
+          continue;
+
+        await enviarLog(
+
+          newMember.guild,
+
+          crearLog({
+
+            titulo:
+              '➖ Rol quitado',
+
+            descripcion:
+              `Se quitó un rol a un usuario.`,
+
+            color:
+              '#ED4245',
+
+            usuario:
+              newMember.user,
+
+            campos: [
+
+              {
+                name: '🎭 Rol',
+                value:
+                  `<@&${role.id}>\n\`${role.name}\``
+              }
+
+            ]
+
+          })
+
+        );
+
+      }
+
+    } catch (error) {
+
+      console.error(
+        'ERROR EN ROLES:',
+        error
+      );
+
+    }
+
+  }
+);
+
+// ==========================================
+// MODERACIÓN MANUAL - TIMEOUT
+// ==========================================
+
+client.on(
+  'guildMemberUpdate',
+  async (oldMember, newMember) => {
+
+    try {
+
+      const oldTimeout =
+        oldMember.communicationDisabledUntilTimestamp;
+
+      const newTimeout =
+        newMember.communicationDisabledUntilTimestamp;
+
+      if (
+        oldTimeout ===
+        newTimeout
+      ) {
+        return;
+      }
+
+      if (
+        !newTimeout
+      ) {
+        return;
+      }
+
+      let moderador = null;
+
+      try {
+
+        const audit =
+          await newMember.guild.fetchAuditLogs({
+            type:
+              AuditLogEvent.MemberUpdate,
+            limit: 5
+          });
+
+        const entrada =
+          audit.entries.find(
+            entry =>
+              entry.target?.id ===
+              newMember.id &&
+              Date.now() -
+                entry.createdTimestamp <
+                10000
+          );
+
+        if (entrada) {
+          moderador = entrada.executor;
+        }
+
+      } catch (error) {
+        console.error(
+          'NO SE PUDO OBTENER AUDIT LOG:',
+          error
+        );
+      }
+
+      const embed =
+        crearLog({
+
+          titulo:
+            '🔨 Usuario sancionado',
+
+          descripcion:
+            'Se aplicó un timeout a un usuario.',
+
+          color:
+            '#ED4245',
+
+          usuario:
+            newMember.user,
+
+          moderador:
+            moderador,
+
+          campos: [
+
+            {
+              name: '⏱️ Duración',
+              value:
+                `<t:${Math.floor(
+                  newTimeout / 1000
+                )}:R>`
+            }
+
+          ]
+
+        });
+
+      await enviarLog(
+        newMember.guild,
+        embed
+      );
+
+    } catch (error) {
+
+      console.error(
+        'ERROR EN LOG DE TIMEOUT:',
+        error
+      );
+
+    }
+
+  }
+);
+
+// ==========================================
+// BANEOS
+// ==========================================
+
+client.on(
+  'guildBanAdd',
+  async (ban) => {
+
+    try {
+
+      let moderador = null;
+
+      try {
+
+        const audit =
+          await ban.guild.fetchAuditLogs({
+            type:
+              AuditLogEvent.MemberBanAdd,
+            limit: 5
+          });
+
+        const entrada =
+          audit.entries.find(
+            entry =>
+              entry.target?.id ===
+              ban.user.id &&
+              Date.now() -
+                entry.createdTimestamp <
+                10000
+          );
+
+        if (entrada) {
+          moderador =
+            entrada.executor;
+        }
+
+      } catch (error) {
+        console.error(
+          'ERROR OBTENIENDO AUDIT LOG BAN:',
+          error
+        );
+      }
+
+      await enviarLog(
+
+        ban.guild,
+
+        crearLog({
+
+          titulo:
+            '🔨 Usuario baneado',
+
+          descripcion:
+            'Un usuario fue baneado del servidor.',
+
+          color:
+            '#ED4245',
+
+          usuario:
+            ban.user,
+
+          moderador:
+            moderador,
+
+          campos: [
+
+            {
+              name: '📄 Motivo',
+              value:
+                ban.reason ||
+                'No especificado'
+            }
+
+          ]
+
+        })
+
+      );
+
+    } catch (error) {
+
+      console.error(
+        'ERROR EN LOG DE BAN:',
+        error
+      );
+
+    }
+
+  }
+);
+
+// ==========================================
 // INTERACCIONES
-// =====================================================
+// ==========================================
 
 client.on(
   'interactionCreate',
@@ -1146,22 +1288,37 @@ client.on(
 
     try {
 
-      // =================================================
+      // ======================================
       // COMANDOS SLASH
-      // =================================================
+      // ======================================
 
       if (
         interaction.isChatInputCommand()
       ) {
 
-        // =================================================
+        // ====================================
         // /SETLOGS
-        // =================================================
+        // ====================================
 
         if (
           interaction.commandName ===
           'setlogs'
         ) {
+
+          if (
+            !interaction.member.permissions.has(
+              PermissionsBitField.Flags.ManageGuild
+            )
+          ) {
+
+            await interaction.reply({
+              content:
+                '❌ Necesitas el permiso **Administrar servidor**.',
+              ephemeral: true
+            });
+
+            return;
+          }
 
           const canal =
             interaction.options.getChannel(
@@ -1169,6 +1326,7 @@ client.on(
             );
 
           if (
+            !canal ||
             canal.type !==
             ChannelType.GuildText
           ) {
@@ -1188,47 +1346,57 @@ client.on(
 
           guardarLogs();
 
-          const embed =
-            new EmbedBuilder()
-              .setColor('#00cc66')
-              .setTitle('🛡️ Sistema de logs configurado')
-              .setDescription(
-                'Este será el canal donde se enviarán los registros del sistema.'
-              )
-              .addFields(
-                {
-                  name: 'Canal',
-                  value:
-                    '<#' +
-                    canal.id +
-                    '>'
-                }
-              )
-              .setTimestamp();
-
           await interaction.reply({
-            embeds: [embed],
-            ephemeral: true
+
+            content:
+              '✅ Canal de logs configurado correctamente.\n\n' +
+              `📋 Los logs se enviarán en ${canal}.`,
+
+            ephemeral:
+              true
+
           });
 
-          await canal.send({
-            embeds: [
-              new EmbedBuilder()
-                .setColor('#00cc66')
-                .setTitle('🛡️ Logs activados')
-                .setDescription(
-                  'El sistema de logs ha sido configurado correctamente.'
-                )
-                .setTimestamp()
-            ]
-          });
+          await enviarLog(
+
+            interaction.guild,
+
+            crearLog({
+
+              titulo:
+                '⚙️ Sistema de logs configurado',
+
+              descripcion:
+                'Se configuró el canal donde se enviarán los registros.',
+
+              color:
+                '#5865F2',
+
+              moderador:
+                interaction.user,
+
+              campos: [
+
+                {
+                  name:
+                    '📋 Canal de logs',
+
+                  value:
+                    `${canal}`
+                }
+
+              ]
+
+            })
+
+          );
 
           return;
         }
 
-        // =================================================
+        // ====================================
         // /ADDREACTION
-        // =================================================
+        // ====================================
 
         if (
           interaction.commandName ===
@@ -1360,11 +1528,13 @@ client.on(
 
             emoji:
               emojiMostrar
+
           };
 
           guardarReactionRoles();
 
           await interaction.reply({
+
             content:
               '✅ **Reacción configurada correctamente.**\n\n' +
               '👤 **Rol:** <@&' +
@@ -1376,15 +1546,17 @@ client.on(
               '💬 **Mensaje:** ' +
               mensaje.url,
 
-            ephemeral: true
+            ephemeral:
+              true
+
           });
 
           return;
         }
 
-        // =================================================
+        // ====================================
         // /TICKETS
-        // =================================================
+        // ====================================
 
         if (
           interaction.commandName ===
@@ -1396,6 +1568,7 @@ client.on(
               .setColor('#2b2d31')
               .setTitle('TICKETS')
               .setDescription(
+
                 '**🛒 Comprar**\n' +
                 'Abre un ticket privado para realizar tu compra. Nuestro equipo te ayudará durante todo el proceso.\n\n' +
 
@@ -1406,6 +1579,7 @@ client.on(
                 '¿Tienes una propuesta de alianza o colaboración? Cuéntanos todos los detalles mediante un ticket.\n\n' +
 
                 '> ⚠️ Recuerda que solo puedes tener __**un ticket abierto a la vez**__.'
+
               );
 
           const menu =
@@ -1419,21 +1593,30 @@ client.on(
               .addOptions([
 
                 {
-                  label: 'Comprar',
-                  value: 'Comprar',
-                  emoji: '🛒'
+                  label:
+                    'Comprar',
+                  value:
+                    'Comprar',
+                  emoji:
+                    '🛒'
                 },
 
                 {
-                  label: 'Soporte',
-                  value: 'Soporte',
-                  emoji: '🛠️'
+                  label:
+                    'Soporte',
+                  value:
+                    'Soporte',
+                  emoji:
+                    '🛠️'
                 },
 
                 {
-                  label: 'Alianzas',
-                  value: 'Alianza',
-                  emoji: '🤝'
+                  label:
+                    'Alianzas',
+                  value:
+                    'Alianza',
+                  emoji:
+                    '🤝'
                 }
 
               ]);
@@ -1445,29 +1628,30 @@ client.on(
               );
 
           await interaction.channel.send({
-            embeds: [embed],
-            components: [row]
+            embeds:
+              [embed],
+            components:
+              [row]
           });
 
           await interaction.reply({
             content:
               '✅ Panel de tickets enviado.',
-            ephemeral: true
+            ephemeral:
+              true
           });
 
           return;
         }
       }
 
-      // =================================================
+      // ======================================
       // BOTONES
-      // =================================================
+      // ======================================
 
-      if (interaction.isButton()) {
-
-        // =================================================
-        // CERRAR TICKET
-        // =================================================
+      if (
+        interaction.isButton()
+      ) {
 
         if (
           interaction.customId ===
@@ -1514,20 +1698,14 @@ client.on(
           await interaction.reply({
             content:
               '⚠️ ¿Estas seguro de que quieres cerrar este ticket?',
-
             components:
               [rowConfirmacion],
-
             ephemeral:
               true
           });
 
           return;
         }
-
-        // =================================================
-        // CANCELAR
-        // =================================================
 
         if (
           interaction.customId ===
@@ -1543,10 +1721,6 @@ client.on(
 
           return;
         }
-
-        // =================================================
-        // CONFIRMAR
-        // =================================================
 
         if (
           interaction.customId ===
@@ -1575,9 +1749,9 @@ client.on(
         }
       }
 
-      // =================================================
+      // ======================================
       // CREAR TICKET
-      // =================================================
+      // ======================================
 
       if (
         interaction.isStringSelectMenu()
@@ -1604,19 +1778,17 @@ client.on(
           await interaction.reply({
             content:
               'Esta accion solo puede utilizarse dentro de un servidor.',
-            ephemeral: true
+            ephemeral:
+              true
           });
 
           return;
         }
 
-        // =================================================
-        // TICKET EXISTENTE
-        // =================================================
-
         const ticketExistente =
           guild.channels.cache.find(
             channel =>
+
               channel.type ===
               ChannelType.GuildText &&
 
@@ -1639,17 +1811,12 @@ client.on(
               'Ya tienes un ticket abierto: <#' +
               ticketExistente.id +
               '>',
-
             ephemeral:
               true
           });
 
           return;
         }
-
-        // =================================================
-        // CATEGORIA
-        // =================================================
 
         const categoria =
           guild.channels.cache.get(
@@ -1668,10 +1835,6 @@ client.on(
           return;
         }
 
-        // =================================================
-        // NOMBRE
-        // =================================================
-
         const username =
           user.username
             .toLowerCase()
@@ -1688,10 +1851,6 @@ client.on(
           tipo +
           '-' +
           username;
-
-        // =================================================
-        // CREAR CANAL
-        // =================================================
 
         const canal =
           await guild.channels.create({
@@ -1748,11 +1907,8 @@ client.on(
               }
 
             ]
-          });
 
-        // =================================================
-        // EMBED
-        // =================================================
+          });
 
         const ticketEmbed =
           new EmbedBuilder()
@@ -1763,6 +1919,7 @@ client.on(
               'Ticket creado'
             )
             .setDescription(
+
               'Hola <@' +
               user.id +
               '>, gracias por contactar con nosotros.\n\n' +
@@ -1772,12 +1929,9 @@ client.on(
               '\n\n' +
 
               'Explica tu problema o solicitud y espera a que un miembro del equipo te atienda.'
+
             )
             .setTimestamp();
-
-        // =================================================
-        // BOTÓN CERRAR
-        // =================================================
 
         const cerrarBoton =
           new ButtonBuilder()
@@ -1800,10 +1954,6 @@ client.on(
               cerrarBoton
             );
 
-        // =================================================
-        // MENSAJE
-        // =================================================
-
         await canal.send({
 
           content:
@@ -1816,6 +1966,7 @@ client.on(
 
           components:
             [rowCerrar]
+
         });
 
         await interaction.reply({
@@ -1827,37 +1978,49 @@ client.on(
 
           ephemeral:
             true
+
         });
 
-        // =================================================
-        // LOG TICKET
-        // =================================================
-
-        const logEmbed =
-          new EmbedBuilder()
-            .setColor('#5865F2')
-            .setTitle('🎫 Ticket creado')
-            .setDescription(
-              informacionUsuario(user)
-            )
-            .addFields(
-              {
-                name: 'Tipo',
-                value: tipo
-              },
-              {
-                name: 'Canal',
-                value:
-                  '<#' +
-                  canal.id +
-                  '>'
-              }
-            )
-            .setTimestamp();
-
         await enviarLog(
+
           guild,
-          logEmbed
+
+          crearLog({
+
+            titulo:
+              '🎫 Ticket creado',
+
+            descripcion:
+              'Se creó un nuevo ticket.',
+
+            color:
+              '#5865F2',
+
+            usuario:
+              user,
+
+            campos: [
+
+              {
+                name:
+                  '📋 Tipo',
+
+                value:
+                  tipo
+              },
+
+              {
+                name:
+                  '📍 Canal',
+
+                value:
+                  `${canal}`
+              }
+
+            ]
+
+          })
+
         );
 
         return;
@@ -1884,14 +2047,17 @@ client.on(
             true
 
         }).catch(() => {});
+
       }
+
     }
+
   }
 );
 
-// =====================================================
-// ERROR CLIENTE
-// =====================================================
+// ==========================================
+// ERROR DEL CLIENTE
+// ==========================================
 
 client.on(
   'error',
@@ -1905,9 +2071,9 @@ client.on(
   }
 );
 
-// =====================================================
+// ==========================================
 // LOGIN
-// =====================================================
+// ==========================================
 
 if (
   !process.env.DISCORD_TOKEN
