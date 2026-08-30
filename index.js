@@ -1,10 +1,10 @@
-const { 
-  Client, 
-  GatewayIntentBits, 
-  EmbedBuilder, 
-  ActionRowBuilder, 
-  StringSelectMenuBuilder, 
-  PermissionsBitField 
+const {
+  Client,
+  GatewayIntentBits,
+  EmbedBuilder,
+  ActionRowBuilder,
+  StringSelectMenuBuilder,
+  PermissionsBitField
 } = require('discord.js');
 
 const client = new Client({
@@ -30,9 +30,12 @@ client.on('guildMemberAdd', async member => {
   const embed = new EmbedBuilder()
     .setColor('#2b2d31')
     .setTitle('¡Bienvenido/a!')
-    .setDescription(`Hola ${member}, es un placer tenerte aquí.\n\nPásate por los canales y disfruta 🔥`)
+    .setDescription(
+      `Hola ${member}, es un placer tenerte aquí.\n\n` +
+      `Pásate por los canales y disfruta 🔥`
+    )
     .setThumbnail(member.user.displayAvatarURL({ dynamic: true }))
-    .setImage('https://i.imgur.com/tuimagen.png'); // tu banner
+    .setImage('https://i.imgur.com/tuimagen.png');
 
   canal.send({
     content: `👋 ¡Hola ${member}!`,
@@ -82,7 +85,8 @@ client.on('interactionCreate', async interaction => {
           }
         ]);
 
-      const row = new ActionRowBuilder().addComponents(menu);
+      const row = new ActionRowBuilder()
+        .addComponents(menu);
 
       await interaction.reply({
         embeds: [embed],
@@ -99,32 +103,64 @@ client.on('interactionCreate', async interaction => {
 
     if (interaction.customId === 'ticket_menu') {
 
-      const tipo = interaction.values[0];
-
-      const canal = await interaction.guild.channels.create({
-        name: `${tipo}-${interaction.user.username}`,
-        type: 0,
-        permissionOverwrites: [
-          {
-            id: interaction.guild.id,
-            deny: [PermissionsBitField.Flags.ViewChannel]
-          },
-          {
-            id: interaction.user.id,
-            allow: [PermissionsBitField.Flags.ViewChannel]
-          }
-        ]
-      });
-
-      canal.send(`🎫 Ticket creado para ${interaction.user}`);
-
-      interaction.reply({
-        content: '✅ Tu ticket fue creado',
+      // Respondemos inmediatamente para que Discord no marque
+      // la interacción como "no respondió a tiempo".
+      await interaction.deferReply({
         ephemeral: true
       });
+
+      const tipo = interaction.values[0];
+
+      try {
+
+        const canal = await interaction.guild.channels.create({
+          name: `${tipo}-${interaction.user.username}`,
+          type: 0,
+
+          permissionOverwrites: [
+            {
+              id: interaction.guild.id,
+              deny: [
+                PermissionsBitField.Flags.ViewChannel
+              ]
+            },
+
+            {
+              id: interaction.user.id,
+              allow: [
+                PermissionsBitField.Flags.ViewChannel,
+                PermissionsBitField.Flags.SendMessages,
+                PermissionsBitField.Flags.ReadMessageHistory
+              ]
+            }
+          ]
+        });
+
+        await canal.send(
+          `🎫 Ticket creado para ${interaction.user}`
+        );
+
+        await interaction.editReply({
+          content: `✅ Tu ticket fue creado: ${canal}`
+        });
+
+      } catch (error) {
+
+        console.error('❌ Error al crear el ticket:', error);
+
+        await interaction.editReply({
+          content:
+            '❌ No pude crear el ticket.\n\n' +
+            'Revisa que el bot tenga el permiso **Administrar canales**.'
+        });
+      }
     }
   }
 
 });
 
+
+// =======================
+// 🔑 LOGIN
+// =======================
 client.login(process.env.DISCORD_TOKEN);
