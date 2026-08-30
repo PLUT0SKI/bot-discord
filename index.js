@@ -48,12 +48,19 @@ const REACTION_FILE = './reactionRoles.json';
 const LOGS_FILE = './logsConfig.json';
 
 // ==========================================
-// PRECIOS DE CAMISAS
+// PRECIOS
 // ==========================================
 
+// Precio BASE de una camisa
 const PRECIO_ROBUX = 200;
 const PRECIO_TRANSFERENCIA = 100;
 const PRECIO_DEPOSITO = 100;
+
+// Pantalón/Short = mismo precio que camisa
+// Conjunto completo = camisa + pantalón/short
+const MULTIPLICADOR_CAMISA = 1;
+const MULTIPLICADOR_PANTALON = 1;
+const MULTIPLICADOR_CONJUNTO = 2;
 
 // ==========================================
 // REACTION ROLES
@@ -384,11 +391,6 @@ async function enviarLogLink(
       logsConfig[guild.id];
 
     if (!canalLogsId) {
-      console.log(
-        'NO HAY CANAL DE LOGS CONFIGURADO PARA: ' +
-        guild.name
-      );
-
       return;
     }
 
@@ -398,10 +400,6 @@ async function enviarLogLink(
       );
 
     if (!canalLogs) {
-      console.error(
-        'EL CANAL DE LOGS CONFIGURADO NO EXISTE.'
-      );
-
       return;
     }
 
@@ -980,9 +978,6 @@ client.on(
                   dato.message?.id
                 );
 
-                console.log(
-                  'NO SE PUDO ELIMINAR UN MENSAJE DE SPAM.'
-                );
               }
             }
 
@@ -1024,12 +1019,6 @@ client.on(
             );
 
           } else {
-
-            console.log(
-              'NO PUDE SILENCIAR A ' +
-              member.user.tag +
-              ' POR JERARQUÍA DE ROLES.'
-            );
 
             datos.silenciado =
               false;
@@ -1115,15 +1104,7 @@ client.on(
           WELCOME_CHANNEL_ID
         );
 
-      if (!canal) {
-
-        console.error(
-          'CANAL DE BIENVENIDA NO ENCONTRADO: ' +
-          WELCOME_CHANNEL_ID
-        );
-
-        return;
-      }
+      if (!canal) return;
 
       const embed =
         new EmbedBuilder()
@@ -1183,15 +1164,7 @@ client.on(
           GOODBYE_CHANNEL_ID
         );
 
-      if (!canal) {
-
-        console.error(
-          'CANAL DE DESPEDIDA NO ENCONTRADO: ' +
-          GOODBYE_CHANNEL_ID
-        );
-
-        return;
-      }
+      if (!canal) return;
 
       const embed =
         new EmbedBuilder()
@@ -1286,15 +1259,7 @@ client.on(
           config.roleId
         );
 
-      if (!role) {
-
-        console.error(
-          'ROL NO ENCONTRADO: ' +
-          config.roleId
-        );
-
-        return;
-      }
+      if (!role) return;
 
       const botMember =
         guild.members.me;
@@ -1305,12 +1270,6 @@ client.on(
         role.position >=
         botMember.roles.highest.position
       ) {
-
-        console.error(
-          'EL BOT NO PUEDE DAR EL ROL: ' +
-          role.name
-        );
-
         return;
       }
 
@@ -1603,11 +1562,6 @@ client.on(
 
               } catch (error) {
 
-                console.error(
-                  'ERROR EN BULK DELETE:',
-                  error
-                );
-
                 for (
                   const mensaje
                   of mensajesRecientes.values()
@@ -1726,46 +1680,20 @@ client.on(
 
           }
 
-          try {
-
-            await interaction.editReply({
-              content:
-                '✅ **Canal vaciado correctamente.**\n\n' +
-                '🗑️ Mensajes eliminados: **' +
-                totalEliminados +
-                '**' +
-                (
-                  errores > 0
-                    ? '\n⚠️ No se pudieron eliminar: **' +
-                      errores +
-                      '**'
-                    : ''
-                )
-            });
-
-          } catch (error) {
-
-            console.error(
-              'ERROR AL ACTUALIZAR RESPUESTA DE /CLEAR:',
-              error
-            );
-
-          }
-
-          console.log(
-            'CLEAR EJECUTADO | ' +
-            'SERVIDOR: ' +
-            interaction.guild.name +
-            ' | ' +
-            'CANAL: ' +
-            canal.name +
-            ' | ' +
-            'ELIMINADOS: ' +
-            totalEliminados +
-            ' | ' +
-            'ERRORES: ' +
-            errores
-          );
+          await interaction.editReply({
+            content:
+              '✅ **Canal vaciado correctamente.**\n\n' +
+              '🗑️ Mensajes eliminados: **' +
+              totalEliminados +
+              '**' +
+              (
+                errores > 0
+                  ? '\n⚠️ No se pudieron eliminar: **' +
+                    errores +
+                    '**'
+                  : ''
+              )
+          });
 
           return;
         }
@@ -1836,13 +1764,6 @@ client.on(
               true
           });
 
-          console.log(
-            'LOGS CONFIGURADOS | ' +
-            interaction.guild.name +
-            ' | CANAL: ' +
-            canal.id
-          );
-
           return;
         }
 
@@ -1873,17 +1794,7 @@ client.on(
           const canal =
             interaction.channel;
 
-          if (!canal) {
-
-            await interaction.reply({
-              content:
-                '❌ No se pudo encontrar el canal.',
-              ephemeral:
-                true
-            });
-
-            return;
-          }
+          if (!canal) return;
 
           let mensaje;
 
@@ -1898,8 +1809,7 @@ client.on(
 
             await interaction.reply({
               content:
-                '❌ No encontré ese mensaje en este canal.\n\n' +
-                'Asegúrate de usar correctamente el ID del mensaje.',
+                '❌ No encontré ese mensaje en este canal.',
               ephemeral:
                 true
             });
@@ -1949,11 +1859,6 @@ client.on(
 
           } catch (error) {
 
-            console.error(
-              'ERROR AL AGREGAR EMOJI:',
-              error
-            );
-
             await interaction.reply({
               content:
                 '❌ No pude agregar esa reacción.',
@@ -2002,16 +1907,6 @@ client.on(
             ephemeral:
               true
           });
-
-          console.log(
-            'REACTION ROLE CONFIGURADO | ' +
-            'MENSAJE: ' +
-            mensajeId +
-            ' | ROL: ' +
-            rol.name +
-            ' | EMOJI: ' +
-            emojiMostrar
-          );
 
           return;
         }
@@ -2127,14 +2022,12 @@ client.on(
                 'Selecciona el método de pago que quieras utilizar.\n\n' +
 
                 '🪙 **Robux**\n' +
-
                 '🏦 **Transferencia**\n' +
-
-                '💵 **Depósito**\n' +
+                '💵 **Depósito**'
               )
               .setFooter({
                 text:
-                  'Selecciona una opción para continuar'
+                  'El precio se mostrará al completar tu pedido'
               })
               .setTimestamp();
 
@@ -2328,7 +2221,7 @@ client.on(
       ) {
 
         // ====================================
-        // MENÚ DE PAGOS
+        // MÉTODO DE PAGO
         // ====================================
 
         if (
@@ -2339,43 +2232,15 @@ client.on(
           const metodo =
             interaction.values[0];
 
-          let nombreMetodo;
-          let precio;
-
           if (
-            metodo ===
-            'robux'
+            ![
+              'robux',
+              'transferencia',
+              'deposito'
+            ].includes(
+              metodo
+            )
           ) {
-
-            nombreMetodo =
-              'Robux';
-
-            precio =
-              PRECIO_ROBUX;
-
-          } else if (
-            metodo ===
-            'transferencia'
-          ) {
-
-            nombreMetodo =
-              'Transferencia';
-
-            precio =
-              PRECIO_TRANSFERENCIA;
-
-          } else if (
-            metodo ===
-            'deposito'
-          ) {
-
-            nombreMetodo =
-              'Depósito';
-
-            precio =
-              PRECIO_DEPOSITO;
-
-          } else {
 
             await interaction.reply({
               content:
@@ -2387,23 +2252,192 @@ client.on(
             return;
           }
 
+          // ==================================
+          // MENU QUE QUIERES COMPRAR
+          // ==================================
+
+          const embed =
+            new EmbedBuilder()
+              .setColor(
+                '#2b2d31'
+              )
+              .setTitle(
+                '¿QUÉ QUIERES COMPRAR?'
+              )
+              .setDescription(
+                'Selecciona el producto que deseas comprar.\n\n' +
+                '👕 **Camisa**\n' +
+                '🩳 **Pantalón/Short**\n' +
+                '👕🩳 **Conjunto completo**'
+              )
+              .setFooter({
+                text:
+                  'El precio se mostrará al finalizar tu pedido'
+              })
+              .setTimestamp();
+
+          const menu =
+            new StringSelectMenuBuilder()
+              .setCustomId(
+                'producto_menu_' +
+                metodo
+              )
+              .setPlaceholder(
+                '¿Qué quieres comprar?'
+              )
+              .addOptions([
+                {
+                  label:
+                    'Camisa',
+                  value:
+                    'camisa',
+                  emoji:
+                    '👕'
+                },
+                {
+                  label:
+                    'Pantalón/Short',
+                  value:
+                    'pantalon',
+                  emoji:
+                    '🩳'
+                },
+                {
+                  label:
+                    'Conjunto completo',
+                  value:
+                    'conjunto',
+                  emoji:
+                    '👕'
+                }
+              ]);
+
+          const row =
+            new ActionRowBuilder()
+              .addComponents(
+                menu
+              );
+
+          await interaction.reply({
+            embeds: [
+              embed
+            ],
+            components: [
+              row
+            ],
+            ephemeral:
+              true
+          });
+
+          return;
+        }
+
+        // ====================================
+        // PRODUCTO
+        // ====================================
+
+        if (
+          interaction.customId.startsWith(
+            'producto_menu_'
+          )
+        ) {
+
+          const metodo =
+            interaction.customId.replace(
+              'producto_menu_',
+              ''
+            );
+
+          const producto =
+            interaction.values[0];
+
+          if (
+            ![
+              'robux',
+              'transferencia',
+              'deposito'
+            ].includes(
+              metodo
+            )
+          ) {
+
+            await interaction.reply({
+              content:
+                '❌ Método de pago inválido.',
+              ephemeral:
+                true
+            });
+
+            return;
+          }
+
+          if (
+            ![
+              'camisa',
+              'pantalon',
+              'conjunto'
+            ].includes(
+              producto
+            )
+          ) {
+
+            await interaction.reply({
+              content:
+                '❌ Producto inválido.',
+              ephemeral:
+                true
+            });
+
+            return;
+          }
+
+          // ==================================
+          // MODAL DE CANTIDAD
+          // ==================================
+
+          let nombreProducto;
+
+          if (
+            producto ===
+            'camisa'
+          ) {
+
+            nombreProducto =
+              'Camisa';
+
+          } else if (
+            producto ===
+            'pantalon'
+          ) {
+
+            nombreProducto =
+              'Pantalón/Short';
+
+          } else {
+
+            nombreProducto =
+              'Conjunto completo';
+          }
+
           const modal =
             new ModalBuilder()
               .setCustomId(
-                'pagos_cantidad_' +
-                metodo
+                'pedido_cantidad_' +
+                metodo +
+                '_' +
+                producto
               )
               .setTitle(
-                'Cantidad de camisas'
+                'Cantidad'
               );
 
           const cantidadInput =
             new TextInputBuilder()
               .setCustomId(
-                'cantidad_camisas'
+                'cantidad_producto'
               )
               .setLabel(
-                '¿Cuántas camisas quieres?'
+                '¿Cuántos quieres comprar?'
               )
               .setPlaceholder(
                 'Ejemplo: 5'
@@ -2515,11 +2549,6 @@ client.on(
             ephemeral:
               true
           });
-
-          console.error(
-            'CATEGORIA NO ENCONTRADA: ' +
-            TICKET_CATEGORY_ID
-          );
 
           return;
         }
@@ -2676,7 +2705,7 @@ client.on(
       }
 
       // ======================================
-      // MODAL DE CANTIDAD DE CAMISAS
+      // MODAL DE CANTIDAD
       // ======================================
 
       if (
@@ -2685,27 +2714,40 @@ client.on(
 
         if (
           !interaction.customId.startsWith(
-            'pagos_cantidad_'
+            'pedido_cantidad_'
           )
         ) {
           return;
         }
 
-        const metodo =
+        const datosPedido =
           interaction.customId.replace(
-            'pagos_cantidad_',
+            'pedido_cantidad_',
             ''
           );
 
+        const partes =
+          datosPedido.split('_');
+
+        const metodo =
+          partes[0];
+
+        const producto =
+          partes[1];
+
         const cantidadTexto =
           interaction.fields.getTextInputValue(
-            'cantidad_camisas'
+            'cantidad_producto'
           );
 
         const cantidad =
           Number(
             cantidadTexto
           );
+
+        // ==================================
+        // VALIDAR CANTIDAD
+        // ==================================
 
         if (
           !Number.isInteger(
@@ -2716,9 +2758,9 @@ client.on(
 
           await interaction.reply({
             content:
-              '❌ Introduce una cantidad válida de camisas. Por ejemplo: **5**',
+              '❌ Introduce una cantidad válida. Por ejemplo: **5**',
             ephemeral:
-              true
+            true
           });
 
           return;
@@ -2730,7 +2772,7 @@ client.on(
 
           await interaction.reply({
             content:
-              '❌ La cantidad máxima por pedido es de **1000 camisas**.',
+              '❌ La cantidad máxima por pedido es de **1000**.',
             ephemeral:
               true
           });
@@ -2738,8 +2780,12 @@ client.on(
           return;
         }
 
+        // ==================================
+        // DATOS DEL PRODUCTO
+        // ==================================
+
         let nombreMetodo;
-        let precio;
+        let precioBase;
         let moneda;
 
         if (
@@ -2750,7 +2796,7 @@ client.on(
           nombreMetodo =
             'Robux';
 
-          precio =
+          precioBase =
             PRECIO_ROBUX;
 
           moneda =
@@ -2764,7 +2810,7 @@ client.on(
           nombreMetodo =
             'Transferencia';
 
-          precio =
+          precioBase =
             PRECIO_TRANSFERENCIA;
 
           moneda =
@@ -2778,7 +2824,7 @@ client.on(
           nombreMetodo =
             'Depósito';
 
-          precio =
+          precioBase =
             PRECIO_DEPOSITO;
 
           moneda =
@@ -2796,9 +2842,69 @@ client.on(
           return;
         }
 
+        let nombreProducto;
+        let multiplicador;
+
+        if (
+          producto ===
+          'camisa'
+        ) {
+
+          nombreProducto =
+            'Camisa';
+
+          multiplicador =
+            MULTIPLICADOR_CAMISA;
+
+        } else if (
+          producto ===
+          'pantalon'
+        ) {
+
+          nombreProducto =
+            'Pantalón/Short';
+
+          multiplicador =
+            MULTIPLICADOR_PANTALON;
+
+        } else if (
+          producto ===
+          'conjunto'
+        ) {
+
+          nombreProducto =
+            'Conjunto completo';
+
+          multiplicador =
+            MULTIPLICADOR_CONJUNTO;
+
+        } else {
+
+          await interaction.reply({
+            content:
+              '❌ Producto no válido.',
+            ephemeral:
+              true
+          });
+
+          return;
+        }
+
+        // ==================================
+        // PRECIO FINAL
+        // ==================================
+
+        const precioPorUnidad =
+          precioBase *
+          multiplicador;
+
         const total =
           cantidad *
-          precio;
+          precioPorUnidad;
+
+        // ==================================
+        // RESUMEN FINAL
+        // ==================================
 
         const embed =
           new EmbedBuilder()
@@ -2809,7 +2915,7 @@ client.on(
               '🧾 RESUMEN DE TU PEDIDO'
             )
             .setDescription(
-              'Estos son los detalles de tu pedido:'
+              'Aquí están los detalles completos de tu pedido:'
             )
             .addFields(
               {
@@ -2824,7 +2930,17 @@ client.on(
               },
               {
                 name:
-                  '👕 Camisas',
+                  '🛍️ Producto',
+                value:
+                  '**' +
+                  nombreProducto +
+                  '**',
+                inline:
+                  true
+              },
+              {
+                name:
+                  '📦 Cantidad',
                 value:
                   '**' +
                   cantidad +
@@ -2834,10 +2950,10 @@ client.on(
               },
               {
                 name:
-                  '💰 Precio por camisa',
+                  '💰 Precio por unidad',
                 value:
                   '**' +
-                  precio +
+                  precioPorUnidad +
                   ' ' +
                   moneda +
                   '**',
@@ -2877,8 +2993,14 @@ client.on(
           interaction.user.tag +
           ' | METODO: ' +
           nombreMetodo +
-          ' | CAMISAS: ' +
+          ' | PRODUCTO: ' +
+          nombreProducto +
+          ' | CANTIDAD: ' +
           cantidad +
+          ' | PRECIO: ' +
+          precioPorUnidad +
+          ' ' +
+          moneda +
           ' | TOTAL: ' +
           total +
           ' ' +
