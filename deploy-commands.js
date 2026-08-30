@@ -4,10 +4,14 @@ const {
   SlashCommandBuilder
 } = require('discord.js');
 
-const DISCORD_TOKEN = process.env.DISCORD_TOKEN;
+const DISCORD_TOKEN =
+  process.env.DISCORD_TOKEN;
 
-const CLIENT_ID = '1543644668967780462';
-const GUILD_ID = '1216948563834175488';
+const CLIENT_ID =
+  '1543644668967780462';
+
+const GUILD_ID =
+  '1216948563834175488';
 
 const commands = [
 
@@ -17,7 +21,20 @@ const commands = [
 
   new SlashCommandBuilder()
     .setName('tickets')
-    .setDescription('Muestra el panel de tickets')
+    .setDescription(
+      'Muestra el panel de tickets'
+    )
+    .toJSON(),
+
+  // =======================
+  // /PAGOS
+  // =======================
+
+  new SlashCommandBuilder()
+    .setName('pagos')
+    .setDescription(
+      'Muestra el panel de métodos de pago'
+    )
     .toJSON(),
 
   // =======================
@@ -26,23 +43,31 @@ const commands = [
 
   new SlashCommandBuilder()
     .setName('addreaction')
-    .setDescription('Configura una reacción para dar un rol')
+    .setDescription(
+      'Configura una reacción para dar un rol'
+    )
     .addStringOption(option =>
       option
         .setName('mensaje')
-        .setDescription('ID del mensaje al que quieres agregar la reacción')
+        .setDescription(
+          'ID del mensaje al que quieres agregar la reacción'
+        )
         .setRequired(true)
     )
     .addStringOption(option =>
       option
         .setName('emoji')
-        .setDescription('Emoji que deben reaccionar')
+        .setDescription(
+          'Emoji que deben reaccionar'
+        )
         .setRequired(true)
     )
     .addRoleOption(option =>
       option
         .setName('rol')
-        .setDescription('Rol que recibirá el usuario')
+        .setDescription(
+          'Rol que recibirá el usuario'
+        )
         .setRequired(true)
     )
     .toJSON(),
@@ -53,11 +78,15 @@ const commands = [
 
   new SlashCommandBuilder()
     .setName('setlogs')
-    .setDescription('Configura el canal donde se enviarán los logs')
+    .setDescription(
+      'Configura el canal donde se enviarán los logs'
+    )
     .addChannelOption(option =>
       option
         .setName('canal')
-        .setDescription('Canal donde se enviarán los logs')
+        .setDescription(
+          'Canal donde se enviarán los logs'
+        )
         .setRequired(true)
     )
     .toJSON(),
@@ -68,31 +97,44 @@ const commands = [
 
   new SlashCommandBuilder()
     .setName('clear')
-    .setDescription('Elimina todos los mensajes del canal')
+    .setDescription(
+      'Elimina todos los mensajes del canal'
+    )
     .toJSON()
 
 ];
 
-const rest = new REST({
-  version: '10'
-}).setToken(DISCORD_TOKEN);
+const rest =
+  new REST({
+    version: '10'
+  }).setToken(
+    DISCORD_TOKEN
+  );
 
 (async () => {
 
   try {
 
-    console.log('🗑️ Eliminando comandos globales...');
+    console.log(
+      '🗑️ Eliminando comandos globales...'
+    );
 
     await rest.put(
-      Routes.applicationCommands(CLIENT_ID),
+      Routes.applicationCommands(
+        CLIENT_ID
+      ),
       {
         body: []
       }
     );
 
-    console.log('✅ Comandos globales eliminados.');
+    console.log(
+      '✅ Comandos globales eliminados.'
+    );
 
-    console.log('🔄 Registrando comandos del servidor...');
+    console.log(
+      '🔄 Registrando comandos del servidor...'
+    );
 
     await rest.put(
       Routes.applicationGuildCommands(
@@ -104,11 +146,29 @@ const rest = new REST({
       }
     );
 
-    console.log('✅ COMANDOS REGISTRADOS CORRECTAMENTE.');
-    console.log('✅ /tickets');
-    console.log('✅ /addreaction');
-    console.log('✅ /setlogs');
-    console.log('✅ /clear');
+    console.log(
+      '✅ COMANDOS REGISTRADOS CORRECTAMENTE.'
+    );
+
+    console.log(
+      '✅ /tickets'
+    );
+
+    console.log(
+      '✅ /pagos'
+    );
+
+    console.log(
+      '✅ /addreaction'
+    );
+
+    console.log(
+      '✅ /setlogs'
+    );
+
+    console.log(
+      '✅ /clear'
+    );
 
   } catch (error) {
 
@@ -116,7 +176,9 @@ const rest = new REST({
       '❌ ERROR AL REGISTRAR COMANDOS:'
     );
 
-    console.error(error);
+    console.error(
+      error
+    );
 
   }
 
