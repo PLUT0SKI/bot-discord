@@ -52,12 +52,20 @@ let reactionRoles = {};
 
 if (fs.existsSync(REACTION_FILE)) {
   try {
+
     reactionRoles = JSON.parse(
-      fs.readFileSync(REACTION_FILE, 'utf8')
+      fs.readFileSync(
+        REACTION_FILE,
+        'utf8'
+      )
     );
 
-    console.log('CONFIGURACIONES DE REACCIONES CARGADAS.');
+    console.log(
+      'CONFIGURACIONES DE REACCIONES CARGADAS.'
+    );
+
   } catch (error) {
+
     console.error(
       'ERROR AL CARGAR reactionRoles.json:',
       error
@@ -68,17 +76,27 @@ if (fs.existsSync(REACTION_FILE)) {
 }
 
 function guardarReactionRoles() {
+
   try {
+
     fs.writeFileSync(
       REACTION_FILE,
-      JSON.stringify(reactionRoles, null, 2)
+      JSON.stringify(
+        reactionRoles,
+        null,
+        2
+      )
     );
+
   } catch (error) {
+
     console.error(
       'ERROR AL GUARDAR REACTION ROLES:',
       error
     );
+
   }
+
 }
 
 // ==========================================
@@ -88,34 +106,55 @@ function guardarReactionRoles() {
 let logsConfig = {};
 
 if (fs.existsSync(LOGS_FILE)) {
+
   try {
+
     logsConfig = JSON.parse(
-      fs.readFileSync(LOGS_FILE, 'utf8')
+      fs.readFileSync(
+        LOGS_FILE,
+        'utf8'
+      )
     );
 
-    console.log('CONFIGURACIÓN DE LOGS CARGADA.');
+    console.log(
+      'CONFIGURACIÓN DE LOGS CARGADA.'
+    );
+
   } catch (error) {
+
     console.error(
       'ERROR AL CARGAR logsConfig.json:',
       error
     );
 
     logsConfig = {};
+
   }
+
 }
 
 function guardarLogsConfig() {
+
   try {
+
     fs.writeFileSync(
       LOGS_FILE,
-      JSON.stringify(logsConfig, null, 2)
+      JSON.stringify(
+        logsConfig,
+        null,
+        2
+      )
     );
+
   } catch (error) {
+
     console.error(
       'ERROR AL GUARDAR CONFIGURACIÓN DE LOGS:',
       error
     );
+
   }
+
 }
 
 // ==========================================
@@ -129,7 +168,7 @@ const SPAM_TIME = 5000;
 const MUTE_TIME = 60000;
 
 // ==========================================
-// ENVIAR LOG DE SPAM
+// LOG DE SPAM
 // ==========================================
 
 async function enviarLogSpam(
@@ -141,7 +180,8 @@ async function enviarLogSpam(
 
   try {
 
-    const guild = member.guild;
+    const guild =
+      member.guild;
 
     const canalLogsId =
       logsConfig[guild.id];
@@ -272,7 +312,9 @@ async function enviarLogSpam(
         .setTimestamp();
 
     await canalLogs.send({
-      embeds: [embed]
+      embeds: [
+        embed
+      ]
     });
 
   } catch (error) {
@@ -285,71 +327,350 @@ async function enviarLogSpam(
   }
 
 }
+
+// ==========================================
+// DETECTOR DE SPAM
+// ==========================================
+
+client.on(
+  'messageCreate',
+  async (message) => {
+
+    try {
+
+      if (!message.guild) return;
+
+      if (message.author.bot) return;
+
+      const member =
+        message.member;
+
+      if (!member) return;
+
+      // ====================================
+      // NO DETECTAR ADMINISTRADORES
+      // ====================================
+
+      if (
+        member.permissions.has(
+          PermissionsBitField.Flags.Administrator
+        )
+      ) {
+
+        return;
+
+      }
+
+      const ahora =
+        Date.now();
+
+      let datos =
+        spamUsers.get(
+          message.author.id
+        );
+
+      if (!datos) {
+
+        datos = {
+
+          mensajes: [],
+
+          silenciado: false
+
+        };
+
+        spamUsers.set(
+          message.author.id,
+          datos
+        );
+
+      }
+
+      // ====================================
+      // ELIMINAR MENSAJES ANTIGUOS
+      // ====================================
+
+      datos.mensajes =
+        datos.mensajes.filter(
+          dato =>
+            ahora -
+            dato.timestamp <=
+            SPAM_TIME
+        );
+
+      // ====================================
+      // GUARDAR MENSAJE ACTUAL
+      // ====================================
+
+      datos.mensajes.push({
+
+        timestamp:
+          ahora,
+
+        message:
+          message
+
+      });
+
+      // ====================================
+      // COMPROBAR SPAM
+      // ====================================
+
+      if (
+        datos.mensajes.length >=
+          SPAM_LIMIT &&
+        !datos.silenciado
+      ) {
+
+        datos.silenciado =
+          true;
+
+        const cantidad =
+          datos.mensajes.length;
+
+        // Guardar los mensajes
+        // que provocaron el spam
+        const mensajesSpam =
+          [...datos.mensajes];
+
+        datos.mensajes = [];
+
+        try {
+
+          // ==================================
+          // SILENCIAR USUARIO
+          // ==================================
+
+          if (
+            member.moderatable
+          ) {
+
+            await member.timeout(
+              MUTE_TIME,
+              'Spam detectado automáticamente'
+            );
+
+            // ==================================
+            // BORRAR MENSAJES DEL SPAM
+            // ==================================
+
+            for (
+              const dato
+              of mensajesSpam
+            ) {
+
+              try {
+
+                if (
+                  dato.message &&
+                  !dato.message.deleted
+                ) {
+
+                  await dato.message.delete();
+
+                }
+
+              } catch (error) {
+
+                console.log(
+                  'NO SE PUDO ELIMINAR UN MENSAJE DE SPAM.'
+                );
+
+              }
+
+            }
+
+            // ==================================
+            // ENVIAR LOG
+            // ==================================
+
+            await enviarLogSpam(
+
+              member,
+
+              cantidad,
+
+              MUTE_TIME,
+
+              message.channel
+
+            );
+
+            console.log(
+
+              'SPAM DETECTADO | ' +
+
+              member.user.tag +
+
+              ' | ' +
+
+              cantidad +
+
+              ' MENSAJES ELIMINADOS | ' +
+
+              'SILENCIADO 60 SEGUNDOS'
+
+            );
+
+            // ==================================
+            // REACTIVAR DETECTOR
+            // ==================================
+
+            setTimeout(
+              () => {
+
+                const usuario =
+                  spamUsers.get(
+                    member.id
+                  );
+
+                if (usuario) {
+
+                  usuario.silenciado =
+                    false;
+
+                  usuario.mensajes =
+                    [];
+
+                }
+
+              },
+              MUTE_TIME
+            );
+
+          } else {
+
+            console.log(
+
+              'NO PUDE SILENCIAR A ' +
+
+              member.user.tag +
+
+              ' POR JERARQUÍA DE ROLES.'
+
+            );
+
+            datos.silenciado =
+              false;
+
+          }
+
+        } catch (error) {
+
+          console.error(
+            'ERROR AL SILENCIAR USUARIO:',
+            error
+          );
+
+          datos.silenciado =
+            false;
+
+        }
+
+      }
+
+    } catch (error) {
+
+      console.error(
+        'ERROR EN DETECTOR DE SPAM:',
+        error
+      );
+
+    }
+
+  }
+);
+
 // ==========================================
 // BOT ENCENDIDO
 // ==========================================
 
-client.once('ready', () => {
-  console.log(
-    'BOT ENCENDIDO COMO ' +
-    client.user.tag
-  );
-});
+client.once(
+  'ready',
+  () => {
+
+    console.log(
+      'BOT ENCENDIDO COMO ' +
+      client.user.tag
+    );
+
+  }
+);
 
 // ==========================================
 // BIENVENIDA
 // ==========================================
 
-client.on('guildMemberAdd', async (member) => {
-  try {
+client.on(
+  'guildMemberAdd',
+  async (member) => {
 
-    const canal =
-      member.guild.channels.cache.get(
-        WELCOME_CHANNEL_ID
-      );
+    try {
 
-    if (!canal) {
-      console.error(
-        'CANAL DE BIENVENIDA NO ENCONTRADO: ' +
-        WELCOME_CHANNEL_ID
-      );
-      return;
-    }
-
-    const embed =
-      new EmbedBuilder()
-        .setColor('#2b2d31')
-        .setTitle('Bienvenido/a')
-        .setDescription(
-          'Hola <@' +
-          member.id +
-          '>, es un placer tenerte aqui.\n\n' +
-          'Pasate por los canales y disfruta.'
-        )
-        .setThumbnail(
-          member.user.displayAvatarURL({
-            size: 256
-          })
+      const canal =
+        member.guild.channels.cache.get(
+          WELCOME_CHANNEL_ID
         );
 
-    await canal.send({
-      content:
-        'Hola <@' +
-        member.id +
-        '>!',
+      if (!canal) {
 
-      embeds: [embed]
-    });
+        console.error(
+          'CANAL DE BIENVENIDA NO ENCONTRADO: ' +
+          WELCOME_CHANNEL_ID
+        );
 
-  } catch (error) {
+        return;
 
-    console.error(
-      'ERROR EN BIENVENIDA:',
-      error
-    );
+      }
+
+      const embed =
+        new EmbedBuilder()
+
+          .setColor(
+            '#2b2d31'
+          )
+
+          .setTitle(
+            'Bienvenido/a'
+          )
+
+          .setDescription(
+            'Hola <@' +
+            member.id +
+            '>, es un placer tenerte aqui.\n\n' +
+            'Pasate por los canales y disfruta.'
+          )
+
+          .setThumbnail(
+            member.user.displayAvatarURL({
+              size: 256
+            })
+          );
+
+      await canal.send({
+
+        content:
+          'Hola <@' +
+          member.id +
+          '>!',
+
+        embeds: [
+          embed
+        ]
+
+      });
+
+    } catch (error) {
+
+      console.error(
+        'ERROR EN BIENVENIDA:',
+        error
+      );
+
+    }
 
   }
-});
+);
 
 // ==========================================
 // REACTION ROLE - AGREGAR
@@ -364,7 +685,9 @@ client.on(
       if (user.bot) return;
 
       if (reaction.partial) {
+
         await reaction.fetch();
+
       }
 
       const messageId =
@@ -402,11 +725,14 @@ client.on(
         );
 
       if (!role) {
+
         console.error(
           'ROL NO ENCONTRADO: ' +
           config.roleId
         );
+
         return;
+
       }
 
       const botMember =
@@ -418,14 +744,19 @@ client.on(
         role.position >=
         botMember.roles.highest.position
       ) {
+
         console.error(
           'EL BOT NO PUEDE DAR EL ROL: ' +
           role.name
         );
+
         return;
+
       }
 
-      await member.roles.add(role);
+      await member.roles.add(
+        role
+      );
 
       console.log(
         'ROL ENTREGADO: ' +
@@ -442,6 +773,7 @@ client.on(
       );
 
     }
+
   }
 );
 
@@ -458,7 +790,9 @@ client.on(
       if (user.bot) return;
 
       if (reaction.partial) {
+
         await reaction.fetch();
+
       }
 
       const messageId =
@@ -497,7 +831,9 @@ client.on(
 
       if (!role) return;
 
-      await member.roles.remove(role);
+      await member.roles.remove(
+        role
+      );
 
       console.log(
         'ROL QUITADO: ' +
@@ -514,6 +850,7 @@ client.on(
       );
 
     }
+
   }
 );
 
@@ -550,52 +887,86 @@ client.on(
             );
 
           if (
+            !canal ||
             canal.type !==
             ChannelType.GuildText
           ) {
 
             await interaction.reply({
+
               content:
                 '❌ Selecciona un canal de texto.',
-              ephemeral: true
+
+              ephemeral:
+                true
+
             });
 
             return;
+
           }
 
           logsConfig[
             interaction.guild.id
-          ] = canal.id;
+          ] =
+            canal.id;
 
           guardarLogsConfig();
 
           const embed =
             new EmbedBuilder()
-              .setColor('#00ff88')
-              .setTitle('⚙️ Sistema de logs configurado')
+
+              .setColor(
+                '#00ff88'
+              )
+
+              .setTitle(
+                '⚙️ Sistema de logs configurado'
+              )
+
               .setDescription(
                 'El canal de logs fue configurado correctamente.'
               )
+
               .addFields({
-                name: '📋 Canal',
+
+                name:
+                  '📋 Canal',
+
                 value:
-                  '<#' + canal.id + '>'
+                  '<#' +
+                  canal.id +
+                  '>'
+
               })
+
               .setTimestamp();
 
           await interaction.reply({
-            embeds: [embed],
-            ephemeral: true
+
+            embeds: [
+              embed
+            ],
+
+            ephemeral:
+              true
+
           });
 
           console.log(
+
             'LOGS CONFIGURADOS | ' +
+
             interaction.guild.name +
+
             ' | CANAL: ' +
+
             canal.id
+
           );
 
           return;
+
         }
 
         // ====================================
@@ -628,12 +999,17 @@ client.on(
           if (!canal) {
 
             await interaction.reply({
+
               content:
                 '❌ No se pudo encontrar el canal.',
-              ephemeral: true
+
+              ephemeral:
+                true
+
             });
 
             return;
+
           }
 
           let mensaje;
@@ -648,13 +1024,18 @@ client.on(
           } catch (error) {
 
             await interaction.reply({
+
               content:
                 '❌ No encontré ese mensaje en este canal.\n\n' +
                 'Asegúrate de usar correctamente el ID del mensaje.',
-              ephemeral: true
+
+              ephemeral:
+                true
+
             });
 
             return;
+
           }
 
           const customEmoji =
@@ -689,6 +1070,7 @@ client.on(
 
             emojiMostrar =
               emojiInput;
+
           }
 
           try {
@@ -705,12 +1087,17 @@ client.on(
             );
 
             await interaction.reply({
+
               content:
                 '❌ No pude agregar esa reacción.',
-              ephemeral: true
+
+              ephemeral:
+                true
+
             });
 
             return;
+
           }
 
           reactionRoles[
@@ -733,36 +1120,50 @@ client.on(
 
             emoji:
               emojiMostrar
+
           };
 
           guardarReactionRoles();
 
           await interaction.reply({
+
             content:
+
               '✅ **Reacción configurada correctamente.**\n\n' +
+
               '👤 **Rol:** <@&' +
               rol.id +
               '>\n' +
+
               '😀 **Emoji:** ' +
               emojiMostrar +
               '\n' +
+
               '💬 **Mensaje:** ' +
               mensaje.url,
 
-            ephemeral: true
+            ephemeral:
+              true
+
           });
 
           console.log(
+
             'REACTION ROLE CONFIGURADO | ' +
+
             'MENSAJE: ' +
             mensajeId +
+
             ' | ROL: ' +
             rol.name +
+
             ' | EMOJI: ' +
             emojiMostrar
+
           );
 
           return;
+
         }
 
         // ====================================
@@ -776,9 +1177,17 @@ client.on(
 
           const embed =
             new EmbedBuilder()
-              .setColor('#2b2d31')
-              .setTitle('TICKETS')
+
+              .setColor(
+                '#2b2d31'
+              )
+
+              .setTitle(
+                'TICKETS'
+              )
+
               .setDescription(
+
                 '**🛒 Comprar**\n' +
                 'Abre un ticket privado para realizar tu compra. Nuestro equipo te ayudará durante todo el proceso.\n\n' +
 
@@ -789,43 +1198,59 @@ client.on(
                 '¿Tienes una propuesta de alianza o colaboración? Cuéntanos todos los detalles mediante un ticket.\n\n' +
 
                 '> ⚠️ Recuerda que solo puedes tener __**un ticket abierto a la vez**__.'
+
               );
 
           const menu =
             new StringSelectMenuBuilder()
+
               .setCustomId(
                 'ticket_menu'
               )
+
               .setPlaceholder(
                 'Selecciona una opcion'
               )
+
               .addOptions([
 
                 {
+
                   label:
                     'Comprar',
+
                   value:
                     'Comprar',
+
                   emoji:
                     '🛒'
+
                 },
 
                 {
+
                   label:
                     'Soporte',
+
                   value:
                     'Soporte',
+
                   emoji:
                     '🛠️'
+
                 },
 
                 {
+
                   label:
                     'Alianzas',
+
                   value:
                     'Alianza',
+
                   emoji:
                     '🤝'
+
                 }
 
               ]);
@@ -837,18 +1262,31 @@ client.on(
               );
 
           await interaction.channel.send({
-            embeds: [embed],
-            components: [row]
+
+            embeds: [
+              embed
+            ],
+
+            components: [
+              row
+            ]
+
           });
 
           await interaction.reply({
+
             content:
               '✅ Panel de tickets enviado.',
-            ephemeral: true
+
+            ephemeral:
+              true
+
           });
 
           return;
+
         }
+
       }
 
       // ======================================
@@ -870,30 +1308,38 @@ client.on(
 
           const confirmar =
             new ButtonBuilder()
+
               .setCustomId(
                 'confirmar_cierre'
               )
+
               .setLabel(
                 'Si, cerrar'
               )
+
               .setEmoji(
                 '✅'
               )
+
               .setStyle(
                 ButtonStyle.Success
               );
 
           const cancelar =
             new ButtonBuilder()
+
               .setCustomId(
                 'cancelar_cierre'
               )
+
               .setLabel(
                 'No, cancelar'
               )
+
               .setEmoji(
                 '❌'
               )
+
               .setStyle(
                 ButtonStyle.Danger
               );
@@ -906,15 +1352,22 @@ client.on(
               );
 
           await interaction.reply({
+
             content:
               '⚠️ ¿Estas seguro de que quieres cerrar este ticket?',
+
             components:
-              [rowConfirmacion],
+              [
+                rowConfirmacion
+              ],
+
             ephemeral:
               true
+
           });
 
           return;
+
         }
 
         // ====================================
@@ -927,13 +1380,17 @@ client.on(
         ) {
 
           await interaction.update({
+
             content:
               '❌ Cierre cancelado.',
+
             components:
               []
+
           });
 
           return;
+
         }
 
         // ====================================
@@ -946,10 +1403,13 @@ client.on(
         ) {
 
           await interaction.update({
+
             content:
               '🔒 Cerrando ticket...',
+
             components:
               []
+
           });
 
           setTimeout(
@@ -957,14 +1417,18 @@ client.on(
 
               await interaction.channel
                 .delete()
-                .catch(() => {});
+                .catch(
+                  () => {}
+                );
 
             },
             2000
           );
 
           return;
+
         }
+
       }
 
       // ======================================
@@ -979,7 +1443,9 @@ client.on(
           interaction.customId !==
           'ticket_menu'
         ) {
+
           return;
+
         }
 
         const tipo =
@@ -994,13 +1460,17 @@ client.on(
         if (!guild) {
 
           await interaction.reply({
+
             content:
               'Esta accion solo puede utilizarse dentro de un servidor.',
+
             ephemeral:
               true
+
           });
 
           return;
+
         }
 
         const ticketExistente =
@@ -1025,6 +1495,7 @@ client.on(
         if (ticketExistente) {
 
           await interaction.reply({
+
             content:
               'Ya tienes un ticket abierto: <#' +
               ticketExistente.id +
@@ -1032,9 +1503,11 @@ client.on(
 
             ephemeral:
               true
+
           });
 
           return;
+
         }
 
         const categoria =
@@ -1045,18 +1518,24 @@ client.on(
         if (!categoria) {
 
           await interaction.reply({
+
             content:
               'No se encontro la categoria de tickets.',
+
             ephemeral:
               true
+
           });
 
           console.error(
+
             'CATEGORIA NO ENCONTRADA: ' +
             TICKET_CATEGORY_ID
+
           );
 
           return;
+
         }
 
         const username =
@@ -1097,51 +1576,73 @@ client.on(
             permissionOverwrites: [
 
               {
+
                 id:
                   guild.id,
 
                 deny: [
                   PermissionsBitField.Flags.ViewChannel
                 ]
+
               },
 
               {
+
                 id:
                   user.id,
 
                 allow: [
+
                   PermissionsBitField.Flags.ViewChannel,
+
                   PermissionsBitField.Flags.SendMessages,
+
                   PermissionsBitField.Flags.ReadMessageHistory,
+
                   PermissionsBitField.Flags.AttachFiles,
+
                   PermissionsBitField.Flags.EmbedLinks
+
                 ]
+
               },
 
               {
+
                 id:
                   client.user.id,
 
                 allow: [
+
                   PermissionsBitField.Flags.ViewChannel,
+
                   PermissionsBitField.Flags.SendMessages,
+
                   PermissionsBitField.Flags.ReadMessageHistory,
+
                   PermissionsBitField.Flags.ManageChannels
+
                 ]
+
               }
 
             ]
+
           });
 
         const ticketEmbed =
           new EmbedBuilder()
+
             .setColor(
               '#2b2d31'
             )
+
             .setTitle(
               'Ticket creado'
             )
+
             .setDescription(
+
               'Hola <@' +
               user.id +
               '>, gracias por contactar con nosotros.\n\n' +
@@ -1151,20 +1652,26 @@ client.on(
               '\n\n' +
 
               'Explica tu problema o solicitud y espera a que un miembro del equipo te atienda.'
+
             )
+
             .setTimestamp();
 
         const cerrarBoton =
           new ButtonBuilder()
+
             .setCustomId(
               'cerrar_ticket'
             )
+
             .setLabel(
               'Cerrar ticket'
             )
+
             .setEmoji(
               '🔒'
             )
+
             .setStyle(
               ButtonStyle.Danger
             );
@@ -1182,11 +1689,14 @@ client.on(
             user.id +
             '>',
 
-          embeds:
-            [ticketEmbed],
+          embeds: [
+            ticketEmbed
+          ],
 
-          components:
-            [rowCerrar]
+          components: [
+            rowCerrar
+          ]
+
         });
 
         await interaction.reply({
@@ -1198,16 +1708,20 @@ client.on(
 
           ephemeral:
             true
+
         });
 
         console.log(
+
           'TICKET CREADO: ' +
           canal.name +
           ' | USUARIO: ' +
           user.tag
+
         );
 
         return;
+
       }
 
     } catch (error) {
@@ -1230,10 +1744,14 @@ client.on(
           ephemeral:
             true
 
-        }).catch(() => {});
+        }).catch(
+          () => {}
+        );
 
       }
+
     }
+
   }
 );
 
@@ -1266,6 +1784,7 @@ if (
   );
 
   process.exit(1);
+
 }
 
 client.login(
