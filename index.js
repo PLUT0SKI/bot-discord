@@ -124,6 +124,66 @@ client.on('interactionCreate', async (interaction) => {
     }
 
     // =======================
+    // BOTONES
+    // =======================
+
+    if (interaction.isButton()) {
+
+      // BOTON CERRAR
+      if (interaction.customId === 'cerrar_ticket') {
+
+        const confirmar = new ButtonBuilder()
+          .setCustomId('confirmar_cierre')
+          .setLabel('Si, cerrar')
+          .setEmoji('✅')
+          .setStyle(ButtonStyle.Danger);
+
+        const cancelar = new ButtonBuilder()
+          .setCustomId('cancelar_cierre')
+          .setLabel('Cancelar')
+          .setEmoji('❌')
+          .setStyle(ButtonStyle.Secondary);
+
+        const rowConfirmacion = new ActionRowBuilder()
+          .addComponents(confirmar, cancelar);
+
+        await interaction.reply({
+          content: '⚠️ ¿Estas seguro de que quieres cerrar este ticket?',
+          components: [rowConfirmacion],
+          ephemeral: true
+        });
+
+        return;
+      }
+
+      // CANCELAR CIERRE
+      if (interaction.customId === 'cancelar_cierre') {
+
+        await interaction.update({
+          content: '❌ Cierre cancelado.',
+          components: []
+        });
+
+        return;
+      }
+
+      // CONFIRMAR CIERRE
+      if (interaction.customId === 'confirmar_cierre') {
+
+        await interaction.update({
+          content: '🔒 Cerrando ticket...',
+          components: []
+        });
+
+        setTimeout(async () => {
+          await interaction.channel.delete().catch(() => {});
+        }, 2000);
+
+        return;
+      }
+    }
+
+    // =======================
     // CREAR TICKET
     // =======================
 
@@ -239,48 +299,68 @@ client.on('interactionCreate', async (interaction) => {
         ]
       });
 
-// =======================
-// MENSAJE DEL TICKET
-// =======================
+      // =======================
+      // MENSAJE DEL TICKET
+      // =======================
 
-const ticketEmbed = new EmbedBuilder()
-  .setColor('#2b2d31')
-  .setTitle('Ticket creado')
-  .setDescription(
-    'Hola <@' + user.id + '>, gracias por contactar con nosotros.\n\n' +
-    '**Tipo:** ' + tipo + '\n\n' +
-    'Explica tu problema o solicitud y espera a que un miembro del equipo te atienda.'
-  )
-  .setTimestamp();
+      const ticketEmbed = new EmbedBuilder()
+        .setColor('#2b2d31')
+        .setTitle('Ticket creado')
+        .setDescription(
+          'Hola <@' + user.id + '>, gracias por contactar con nosotros.\n\n' +
+          '**Tipo:** ' + tipo + '\n\n' +
+          'Explica tu problema o solicitud y espera a que un miembro del equipo te atienda.'
+        )
+        .setTimestamp();
 
-// BOTON CERRAR TICKET
-const cerrarBoton = new ButtonBuilder()
-  .setCustomId('cerrar_ticket')
-  .setLabel('Cerrar ticket')
-  .setEmoji('🔒')
-  .setStyle(ButtonStyle.Danger);
+      // BOTON CERRAR
+      const cerrarBoton = new ButtonBuilder()
+        .setCustomId('cerrar_ticket')
+        .setLabel('Cerrar ticket')
+        .setEmoji('🔒')
+        .setStyle(ButtonStyle.Danger);
 
-const rowCerrar = new ActionRowBuilder()
-  .addComponents(cerrarBoton);
+      const rowCerrar = new ActionRowBuilder()
+        .addComponents(cerrarBoton);
 
-await canal.send({
-  content: 'Bienvenido <@' + user.id + '>',
-  embeds: [ticketEmbed],
-  components: [rowCerrar]
+      await canal.send({
+        content: 'Bienvenido <@' + user.id + '>',
+        embeds: [ticketEmbed],
+        components: [rowCerrar]
+      });
+
+      await interaction.reply({
+        content:
+          'Tu ticket fue creado correctamente: <#' + canal.id + '>',
+        ephemeral: true
+      });
+
+      console.log(
+        'TICKET CREADO: ' +
+        canal.name +
+        ' | USUARIO: ' +
+        user.tag
+      );
+
+      return;
+    }
+
+  } catch (error) {
+
+    console.error(
+      'ERROR EN INTERACTIONCREATE:',
+      error
+    );
+
+    if (!interaction.replied && !interaction.deferred) {
+      await interaction.reply({
+        content:
+          'Ocurrio un error al realizar esta accion.',
+        ephemeral: true
+      }).catch(() => {});
+    }
+  }
 });
-
-await interaction.reply({
-  content:
-    'Tu ticket fue creado correctamente: <#' + canal.id + '>',
-  ephemeral: true
-});
-
-console.log(
-  'TICKET CREADO: ' +
-  canal.name +
-  ' | USUARIO: ' +
-  user.tag
-);
 
 // =======================
 // ERRORES DEL CLIENTE
