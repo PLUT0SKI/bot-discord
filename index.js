@@ -18,6 +18,7 @@ const client = new Client({
 });
 
 const TICKET_CATEGORY_ID = '1357832792699834548';
+const WELCOME_CHANNEL_ID = '1357832795547893861';
 
 client.once('ready', () => {
   console.log('BOT ENCENDIDO COMO ' + client.user.tag);
@@ -29,11 +30,9 @@ client.once('ready', () => {
 
 client.on('guildMemberAdd', async (member) => {
   try {
-    const canal = member.guild.channels.cache.find(
-      (channel) =>
-        channel.name === 'bienvenida' &&
-        channel.isTextBased()
-    );
+    const canal = member.guild.channels.cache.get(
+  WELCOME_CHANNEL_ID
+);
 
     if (!canal) return;
 
