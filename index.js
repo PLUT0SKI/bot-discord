@@ -2908,77 +2908,52 @@ client.on(
 
 const embed =
   new EmbedBuilder()
-    .setColor(
-      '#2b2d31'
-    )
-    .setTitle(
-      '🧾 RESUMEN DE TU PEDIDO'
-    )
+    .setColor('#2b2d31')
+    .setTitle('🧾 RESUMEN DE TU PEDIDO')
     .setDescription(
       'Aquí están los detalles completos de tu pedido:'
     )
     .addFields(
       {
-        name:
-          '💳 Método de pago',
-        value:
-          '`' +
-          nombreMetodo +
-          '`',
-        inline:
-          true
+        name: '💳 Método de pago',
+        value: '`' + nombreMetodo + '`',
+        inline: true
       },
       {
-        name:
-          '🛍️ Producto',
-        value:
-          '`' +
-          nombreProducto +
-          '`',
-        inline:
-          true
+        name: '🛍️ Producto',
+        value: '`' + nombreProducto + '`',
+        inline: true
       },
       {
-        name:
-          '📦 Cantidad',
-        value:
-          '`' +
-          cantidad +
-          '`',
-        inline:
-          true
+        name: '📦 Cantidad',
+        value: '`' + cantidad + '`',
+        inline: true
       },
       {
-        name:
-          '💰 Precio por unidad',
+        name: '💰 Precio por unidad',
         value:
           '**' +
           precioPorUnidad +
           ' ' +
           moneda +
           '**',
-        inline:
-          true
+        inline: true
       },
       {
-        name:
-          '💵 TOTAL',
+        name: '💵 TOTAL',
         value:
           '**' +
           total +
           ' ' +
           moneda +
           '**',
-        inline:
-          false
+        inline: false
       },
       {
-        name:
-          '\u200B',
+        name: '\u200B',
         value:
           '🛒 Para comprar abre un <#1357832842561978505>',
-        inline:
-          false
+        inline: false
       }
     )
     .setTimestamp();
@@ -2987,9 +2962,74 @@ await interaction.reply({
   embeds: [
     embed
   ],
-  ephemeral:
-    true
+  ephemeral: true
 });
+
+return;
+
+      }
+      
+    } catch (error) {
+
+      console.error(
+        'ERROR EN INTERACTIONCREATE:',
+        error
+      );
+
+      if (!interaction.replied && !interaction.deferred) {
+        try {
+          await interaction.reply({
+            content:
+              '❌ Ocurrió un error al procesar esta interacción.',
+            ephemeral: true
+          });
+        } catch (replyError) {
+          console.error(
+            'ERROR AL ENVIAR MENSAJE DE ERROR:',
+            replyError
+          );
+        }
+      }
+
+    }
+
+  }
+);
+
+// ==========================================
+// ERROR DEL CLIENTE
+// ==========================================
+
+client.on(
+  'error',
+  (error) => {
+
+    console.error(
+      'ERROR DEL CLIENTE DE DISCORD:',
+      error
+    );
+
+  }
+);
+
+// ==========================================
+// LOGIN
+// ==========================================
+
+if (
+  !process.env.DISCORD_TOKEN
+) {
+
+  console.error(
+    'NO SE ENCONTRO DISCORD_TOKEN EN RAILWAY.'
+  );
+
+  process.exit(1);
+}
+
+client.login(
+  process.env.DISCORD_TOKEN
+);
 
 // ==========================================
 // ERROR DEL CLIENTE
