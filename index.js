@@ -2268,7 +2268,7 @@ client.on(
                 'Selecciona el producto que deseas comprar.\n\n' +
                 '👕 **Camisa**\n' +
                 '🩳 **Pantalón/Short**\n' +
-                '👕🩳 **Conjunto completo**'
+                '👔 **Conjunto completo**'
               )
               .setFooter({
                 text:
@@ -2308,7 +2308,7 @@ client.on(
                   value:
                     'conjunto',
                   emoji:
-                    '👕'
+                    '👔'
                 }
               ]);
 
@@ -2758,7 +2758,7 @@ client.on(
 
           await interaction.reply({
             content:
-              '❌ Introduce una cantidad válida. Por ejemplo: **5**',
+              '**❌ Introduce una cantidad válida. Por ejemplo: __5__**',
             ephemeral:
             true
           });
@@ -2772,7 +2772,7 @@ client.on(
 
           await interaction.reply({
             content:
-              '❌ La cantidad máxima por pedido es de **1000**.',
+              '**❌ La cantidad máxima por pedido es de __1000__**.',
             ephemeral:
               true
           });
@@ -2922,9 +2922,9 @@ client.on(
                 name:
                   '💳 Método de pago',
                 value:
-                  '**' +
+                  '`''**' +
                   nombreMetodo +
-                  '**',
+                  '`',
                 inline:
                   true
               },
@@ -2932,9 +2932,9 @@ client.on(
                 name:
                   '🛍️ Producto',
                 value:
-                  '**' +
+                  '`' +
                   nombreProducto +
-                  '**',
+                  '`',
                 inline:
                   true
               },
@@ -2942,9 +2942,9 @@ client.on(
                 name:
                   '📦 Cantidad',
                 value:
-                  '**' +
+                  '`' +
                   cantidad +
-                  '**',
+                  '`',
                 inline:
                   true
               },
@@ -2975,7 +2975,7 @@ client.on(
             )
             .setFooter({
               text:
-                'Gracias por tu compra'
+                'Para comprar abre un <#1357832842561978505>'
             })
             .setTimestamp();
 
