@@ -11,6 +11,8 @@ const {
   Partials
 } = require('discord.js');
 
+const fs = require('fs');
+
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
@@ -30,10 +32,43 @@ const TICKET_CATEGORY_ID = '1357832792699834548';
 const WELCOME_CHANNEL_ID = '1357832795547893861';
 
 // ==========================================
-// CONFIGURACIÓN DE REACCIONES
+// REACTION ROLES
 // ==========================================
 
-const reactionRoles = new Map();
+const REACTION_FILE = './reactionRoles.json';
+
+let reactionRoles = {};
+
+if (fs.existsSync(REACTION_FILE)) {
+  try {
+    reactionRoles = JSON.parse(
+      fs.readFileSync(REACTION_FILE, 'utf8')
+    );
+
+    console.log('CONFIGURACIONES DE REACCIONES CARGADAS.');
+  } catch (error) {
+    console.error(
+      'ERROR AL CARGAR reactionRoles.json:',
+      error
+    );
+
+    reactionRoles = {};
+  }
+}
+
+function guardarReactionRoles() {
+  try {
+    fs.writeFileSync(
+      REACTION_FILE,
+      JSON.stringify(reactionRoles, null, 2)
+    );
+  } catch (error) {
+    console.error(
+      'ERROR AL GUARDAR REACTION ROLES:',
+      error
+    );
+  }
+}
 
 // ==========================================
 // BOT ENCENDIDO
@@ -104,10 +139,8 @@ client.on('guildMemberAdd', async (member) => {
 });
 
 // ==========================================
-// REACCIONES
+// REACTION ROLE - AGREGAR
 // ==========================================
-
-// CUANDO ALGUIEN REACCIONA
 
 client.on('messageReactionAdd', async (reaction, user) => {
 
@@ -121,13 +154,24 @@ client.on('messageReactionAdd', async (reaction, user) => {
 
     const messageId = reaction.message.id;
 
-    const emoji = reaction.emoji.id
-      ? '<:' + reaction.emoji.name + ':' + reaction.emoji.id + '>'
-      : reaction.emoji.name;
+    let emojiKey;
 
-    const config = reactionRoles.get(
-      messageId + ':' + emoji
-    );
+    if (reaction.emoji.id) {
+
+      emojiKey =
+        'custom:' +
+        reaction.emoji.id;
+
+    } else {
+
+      emojiKey =
+        'unicode:' +
+        reaction.emoji.name;
+
+    }
+
+    const config =
+      reactionRoles[messageId + ':' + emojiKey];
 
     if (!config) return;
 
@@ -148,6 +192,19 @@ client.on('messageReactionAdd', async (reaction, user) => {
       console.error(
         'ROL NO ENCONTRADO: ' +
         config.roleId
+      );
+
+      return;
+    }
+
+    if (
+      role.position >=
+      guild.members.me.roles.highest.position
+    ) {
+
+      console.error(
+        'EL BOT NO PUEDE DAR EL ROL: ' +
+        role.name
       );
 
       return;
@@ -174,7 +231,7 @@ client.on('messageReactionAdd', async (reaction, user) => {
 });
 
 // ==========================================
-// CUANDO QUITAN LA REACCIÓN
+// REACTION ROLE - QUITAR
 // ==========================================
 
 client.on('messageReactionRemove', async (reaction, user) => {
@@ -189,13 +246,24 @@ client.on('messageReactionRemove', async (reaction, user) => {
 
     const messageId = reaction.message.id;
 
-    const emoji = reaction.emoji.id
-      ? '<:' + reaction.emoji.name + ':' + reaction.emoji.id + '>'
-      : reaction.emoji.name;
+    let emojiKey;
 
-    const config = reactionRoles.get(
-      messageId + ':' + emoji
-    );
+    if (reaction.emoji.id) {
+
+      emojiKey =
+        'custom:' +
+        reaction.emoji.id;
+
+    } else {
+
+      emojiKey =
+        'unicode:' +
+        reaction.emoji.name;
+
+    }
+
+    const config =
+      reactionRoles[messageId + ':' + emojiKey];
 
     if (!config) return;
 
@@ -251,7 +319,10 @@ client.on('interactionCreate', async (interaction) => {
       // /ADDREACTION
       // ====================================
 
-      if (interaction.commandName === 'addreaction') {
+      if (
+        interaction.commandName ===
+        'addreaction'
+      ) {
 
         const mensajeId =
           interaction.options.getString(
@@ -268,7 +339,8 @@ client.on('interactionCreate', async (interaction) => {
             'rol'
           );
 
-        const canal = interaction.channel;
+        const canal =
+          interaction.channel;
 
         if (!canal) {
 
@@ -285,9 +357,10 @@ client.on('interactionCreate', async (interaction) => {
 
         try {
 
-          mensaje = await canal.messages.fetch(
-            mensajeId
-          );
+          mensaje =
+            await canal.messages.fetch(
+              mensajeId
+            );
 
         } catch {
 
@@ -295,7 +368,7 @@ client.on('interactionCreate', async (interaction) => {
 
             content:
               '❌ No encontré ese mensaje en este canal.\n\n' +
-              'Asegúrate de usar el ID correcto del mensaje.',
+              'Asegúrate de usar correctamente el ID del mensaje.',
 
             ephemeral: true
 
@@ -308,20 +381,38 @@ client.on('interactionCreate', async (interaction) => {
         // PROCESAR EMOJI
         // =================================
 
-        let emoji;
-
         const customEmoji =
           emojiInput.match(
             /^<a?:([a-zA-Z0-9_]+):(\d+)>$/
           );
 
+        let reactionEmoji;
+        let emojiKey;
+        let emojiMostrar;
+
         if (customEmoji) {
 
-          emoji = customEmoji[2];
+          reactionEmoji =
+            customEmoji[2];
+
+          emojiKey =
+            'custom:' +
+            customEmoji[2];
+
+          emojiMostrar =
+            emojiInput;
 
         } else {
 
-          emoji = emojiInput;
+          reactionEmoji =
+            emojiInput;
+
+          emojiKey =
+            'unicode:' +
+            emojiInput;
+
+          emojiMostrar =
+            emojiInput;
 
         }
 
@@ -331,9 +422,16 @@ client.on('interactionCreate', async (interaction) => {
 
         try {
 
-          await mensaje.react(emoji);
+          await mensaje.react(
+            reactionEmoji
+          );
 
         } catch (error) {
+
+          console.error(
+            'ERROR AL AGREGAR EMOJI:',
+            error
+          );
 
           await interaction.reply({
 
@@ -345,11 +443,6 @@ client.on('interactionCreate', async (interaction) => {
 
           });
 
-          console.error(
-            'ERROR AL AGREGAR EMOJI:',
-            error
-          );
-
           return;
         }
 
@@ -357,29 +450,40 @@ client.on('interactionCreate', async (interaction) => {
         // GUARDAR CONFIGURACIÓN
         // =================================
 
-        const emojiKey =
-          customEmoji
-            ? '<:' +
-              customEmoji[1] +
-              ':' +
-              customEmoji[2] +
-              '>'
-            : emoji;
+        reactionRoles[
+          mensajeId + ':' + emojiKey
+        ] = {
 
-        reactionRoles.set(
-          mensajeId + ':' + emojiKey,
-          {
-            roleId: rol.id
-          }
-        );
+          roleId:
+            rol.id,
+
+          guildId:
+            interaction.guild.id,
+
+          channelId:
+            canal.id,
+
+          messageId:
+            mensajeId,
+
+          emoji:
+            emojiMostrar
+
+        };
+
+        guardarReactionRoles();
+
+        // =================================
+        // RESPUESTA
+        // =================================
 
         await interaction.reply({
 
           content:
-            '✅ Reacción configurada correctamente.\n\n' +
-            '👤 Rol: <@&' + rol.id + '>\n' +
-            '💬 Mensaje: ' + mensaje.url + '\n' +
-            '😀 Emoji: ' + emojiInput,
+            '✅ **Reacción configurada correctamente.**\n\n' +
+            '👤 **Rol:** <@&' + rol.id + '>\n' +
+            '😀 **Emoji:** ' + emojiMostrar + '\n' +
+            '💬 **Mensaje:** ' + mensaje.url,
 
           ephemeral: true
 
@@ -392,7 +496,7 @@ client.on('interactionCreate', async (interaction) => {
           ' | ROL: ' +
           rol.name +
           ' | EMOJI: ' +
-          emojiInput
+          emojiMostrar
         );
 
         return;
@@ -402,25 +506,29 @@ client.on('interactionCreate', async (interaction) => {
       // /TICKETS
       // ====================================
 
-      if (interaction.commandName === 'tickets') {
+      if (
+        interaction.commandName ===
+        'tickets'
+      ) {
 
-        const embed = new EmbedBuilder()
-          .setColor('#2b2d31')
-          .setTitle('TICKETS')
-          .setDescription(
+        const embed =
+          new EmbedBuilder()
+            .setColor('#2b2d31')
+            .setTitle('TICKETS')
+            .setDescription(
 
-            '**🛒 Comprar**\n' +
-            'Abre un ticket privado para realizar tu compra. Nuestro equipo te ayudará durante todo el proceso.\n\n' +
+              '**🛒 Comprar**\n' +
+              'Abre un ticket privado para realizar tu compra. Nuestro equipo te ayudará durante todo el proceso.\n\n' +
 
-            '**🛠️ Dudas / Soporte**\n' +
-            '¿Tienes alguna duda, problema o necesitas ayuda? Abre un ticket y estaremos encantados de ayudarte.\n\n' +
+              '**🛠️ Dudas / Soporte**\n' +
+              '¿Tienes alguna duda, problema o necesitas ayuda? Abre un ticket y estaremos encantados de ayudarte.\n\n' +
 
-            '**🤝 Alianzas**\n' +
-            '¿Tienes una propuesta de alianza o colaboración? Cuéntanos todos los detalles mediante un ticket.\n\n' +
+              '**🤝 Alianzas**\n' +
+              '¿Tienes una propuesta de alianza o colaboración? Cuéntanos todos los detalles mediante un ticket.\n\n' +
 
-            '> ⚠️ Recuerda que solo puedes tener __**un ticket abierto a la vez**__.'
+              '> ⚠️ Recuerda que solo puedes tener __**un ticket abierto a la vez**__.'
 
-          );
+            );
 
         const menu =
           new StringSelectMenuBuilder()
@@ -458,8 +566,13 @@ client.on('interactionCreate', async (interaction) => {
 
         await interaction.reply({
 
-          embeds: [embed],
-          components: [row]
+          embeds: [
+            embed
+          ],
+
+          components: [
+            row
+          ]
 
         });
 
@@ -491,7 +604,9 @@ client.on('interactionCreate', async (interaction) => {
             .setLabel(
               'Si, cerrar'
             )
-            .setEmoji('✅')
+            .setEmoji(
+              '✅'
+            )
             .setStyle(
               ButtonStyle.Success
             );
@@ -504,7 +619,9 @@ client.on('interactionCreate', async (interaction) => {
             .setLabel(
               'No, cerrar'
             )
-            .setEmoji('❌')
+            .setEmoji(
+              '❌'
+            )
             .setStyle(
               ButtonStyle.Danger
             );
@@ -533,7 +650,7 @@ client.on('interactionCreate', async (interaction) => {
       }
 
       // ====================================
-      // CANCELAR
+      // CANCELAR CIERRE
       // ====================================
 
       if (
@@ -700,7 +817,10 @@ client.on('interactionCreate', async (interaction) => {
             /[^a-z0-9-_]/g,
             ''
           )
-          .slice(0, 20);
+          .slice(
+            0,
+            20
+          );
 
       const channelName =
         tipo +
@@ -714,7 +834,8 @@ client.on('interactionCreate', async (interaction) => {
       const canal =
         await guild.channels.create({
 
-          name: channelName,
+          name:
+            channelName,
 
           type:
             ChannelType.GuildText,
@@ -731,15 +852,20 @@ client.on('interactionCreate', async (interaction) => {
           permissionOverwrites: [
 
             {
-              id: guild.id,
+              id:
+                guild.id,
 
               deny: [
+
                 PermissionsBitField.Flags.ViewChannel
+
               ]
+
             },
 
             {
-              id: user.id,
+              id:
+                user.id,
 
               allow: [
 
@@ -758,7 +884,8 @@ client.on('interactionCreate', async (interaction) => {
             },
 
             {
-              id: client.user.id,
+              id:
+                client.user.id,
 
               allow: [
 
