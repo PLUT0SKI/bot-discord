@@ -1,4 +1,3 @@
-```js
 const {
   REST,
   Routes,
@@ -110,12 +109,31 @@ const commands = [
 
 ];
 
+
+// ==========================================
+// REST DISCORD
+// ==========================================
+
+if (!DISCORD_TOKEN) {
+
+  console.error(
+    '❌ NO SE ENCONTRO DISCORD_TOKEN.'
+  );
+
+  process.exit(1);
+}
+
 const rest =
   new REST({
     version: '10'
   }).setToken(
     DISCORD_TOKEN
   );
+
+
+// ==========================================
+// REGISTRAR COMANDOS
+// ==========================================
 
 (async () => {
 
@@ -138,8 +156,28 @@ const rest =
       '✅ Comandos globales eliminados.'
     );
 
+
     console.log(
-      '🔄 Registrando comandos del servidor...'
+      '🗑️ Eliminando comandos anteriores del servidor...'
+    );
+
+    await rest.put(
+      Routes.applicationGuildCommands(
+        CLIENT_ID,
+        GUILD_ID
+      ),
+      {
+        body: []
+      }
+    );
+
+    console.log(
+      '✅ Comandos anteriores eliminados.'
+    );
+
+
+    console.log(
+      '🔄 Registrando comandos nuevos...'
     );
 
     await rest.put(
@@ -152,8 +190,21 @@ const rest =
       }
     );
 
+
     console.log(
-      '✅ COMANDOS REGISTRADOS CORRECTAMENTE.'
+      ''
+    );
+
+    console.log(
+      '======================================'
+    );
+
+    console.log(
+      '✅ COMANDOS REGISTRADOS CORRECTAMENTE'
+    );
+
+    console.log(
+      '======================================'
     );
 
     console.log(
@@ -176,7 +227,15 @@ const rest =
       '✅ /clear'
     );
 
+    console.log(
+      '======================================'
+    );
+
   } catch (error) {
+
+    console.error(
+      ''
+    );
 
     console.error(
       '❌ ERROR AL REGISTRAR COMANDOS:'
@@ -189,4 +248,3 @@ const rest =
   }
 
 })();
-```
