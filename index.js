@@ -128,231 +128,163 @@ const SPAM_LIMIT = 5;
 const SPAM_TIME = 5000;
 const MUTE_TIME = 60000;
 
-async function enviarLogSpam(member, cantidad, duracion) {
+// ==========================================
+// ENVIAR LOG DE SPAM
+// ==========================================
+
+async function enviarLogSpam(
+  member,
+  cantidad,
+  duracion,
+  canal
+) {
+
   try {
+
     const guild = member.guild;
 
-    const canalLogsId = logsConfig[guild.id];
+    const canalLogsId =
+      logsConfig[guild.id];
 
     if (!canalLogsId) {
+
       console.log(
         'NO HAY CANAL DE LOGS CONFIGURADO PARA: ' +
         guild.name
       );
+
       return;
     }
 
     const canalLogs =
-      guild.channels.cache.get(canalLogsId);
+      guild.channels.cache.get(
+        canalLogsId
+      );
 
     if (!canalLogs) {
+
       console.error(
         'EL CANAL DE LOGS CONFIGURADO NO EXISTE.'
       );
+
       return;
     }
 
-    const embed = new EmbedBuilder()
-      .setColor('#ff0000')
-      .setTitle('🚨 Spam detectado')
-      .setDescription(
-        'Un usuario fue silenciado automáticamente por enviar demasiados mensajes en poco tiempo.'
-      )
-      .addFields(
-        {
-          name: '👤 Usuario',
-          value:
-            '<@' + member.id + '> `' +
-            member.user.tag +
-            '`',
-          inline: false
-        },
-        {
-          name: '🆔 ID',
-          value:
-            '`' + member.id + '`',
-          inline: true
-        },
-        {
-          name: '📨 Mensajes',
-          value:
-            '`' + cantidad + '`',
-          inline: true
-        },
-        {
-          name: '⏱️ Silenciado',
-          value:
-            '`' + Math.floor(duracion / 1000) + ' segundos`',
-          inline: true
-        },
-        {
-          name: '📍 Canal',
-          value:
-            '<#' + member.guild.id + '>',
-          inline: true
-        },
-        {
-          name: '📅 Fecha',
-          value:
-            '<t:' +
-            Math.floor(Date.now() / 1000) +
-            ':F>',
-          inline: false
-        }
-      )
-      .setThumbnail(
-        member.user.displayAvatarURL({
-          size: 256
+    const embed =
+      new EmbedBuilder()
+
+        .setColor('#ff0000')
+
+        .setTitle(
+          '🚨 Spam detectado'
+        )
+
+        .setDescription(
+          'Un usuario fue silenciado automáticamente por enviar demasiados mensajes en poco tiempo.'
+        )
+
+        .addFields(
+
+          {
+            name: '👤 Usuario',
+
+            value:
+              '<@' +
+              member.id +
+              '> `' +
+              member.user.tag +
+              '`',
+
+            inline: false
+          },
+
+          {
+            name: '🆔 ID',
+
+            value:
+              '`' +
+              member.id +
+              '`',
+
+            inline: true
+          },
+
+          {
+            name: '📨 Mensajes',
+
+            value:
+              '`' +
+              cantidad +
+              '`',
+
+            inline: true
+          },
+
+          {
+            name: '⏱️ Silenciado',
+
+            value:
+              '`' +
+              Math.floor(
+                duracion / 1000
+              ) +
+              ' segundos`',
+
+            inline: true
+          },
+
+          {
+            name: '📍 Canal',
+
+            value:
+              canal
+                ? `<#${canal.id}>`
+                : 'No disponible',
+
+            inline: true
+          },
+
+          {
+            name: '📅 Fecha',
+
+            value:
+              '<t:' +
+              Math.floor(
+                Date.now() / 1000
+              ) +
+              ':F>',
+
+            inline: false
+          }
+
+        )
+
+        .setThumbnail(
+          member.user.displayAvatarURL({
+            size: 256
+          })
+        )
+
+        .setFooter({
+          text: 'Sistema de seguridad'
         })
-      )
-      .setFooter({
-        text: 'Sistema de seguridad'
-      })
-      .setTimestamp();
+
+        .setTimestamp();
 
     await canalLogs.send({
       embeds: [embed]
     });
 
   } catch (error) {
+
     console.error(
       'ERROR AL ENVIAR LOG DE SPAM:',
       error
     );
+
   }
+
 }
-
-// ==========================================
-// DETECTOR DE SPAM
-// ==========================================
-
-client.on('messageCreate', async (message) => {
-  try {
-    if (!message.guild) return;
-    if (message.author.bot) return;
-
-    const member =
-      message.member;
-
-    if (!member) return;
-
-    // No detectar administradores
-    if (
-      member.permissions.has(
-        PermissionsBitField.Flags.Administrator
-      )
-    ) {
-      return;
-    }
-
-    const ahora = Date.now();
-
-    let datos =
-      spamUsers.get(message.author.id);
-
-    if (!datos) {
-      datos = {
-        mensajes: [],
-        silenciado: false
-      };
-
-      spamUsers.set(
-        message.author.id,
-        datos
-      );
-    }
-
-    // Eliminar mensajes antiguos
-    datos.mensajes =
-      datos.mensajes.filter(
-        (tiempo) =>
-          ahora - tiempo <= SPAM_TIME
-      );
-
-    datos.mensajes.push(ahora);
-
-    // Comprobar spam
-    if (
-      datos.mensajes.length >= SPAM_LIMIT &&
-      !datos.silenciado
-    ) {
-
-      datos.silenciado = true;
-
-      const cantidad =
-        datos.mensajes.length;
-
-      datos.mensajes = [];
-
-      try {
-
-        if (
-          member.moderatable
-        ) {
-
-          await member.timeout(
-            MUTE_TIME,
-            'Spam detectado automáticamente'
-          );
-
-          await enviarLogSpam(
-            member,
-            cantidad,
-            MUTE_TIME
-          );
-
-          console.log(
-            'SPAM DETECTADO | ' +
-            member.user.tag +
-            ' | SILENCIADO 60 SEGUNDOS'
-          );
-
-          setTimeout(() => {
-
-            const usuario =
-              spamUsers.get(
-                member.id
-              );
-
-            if (usuario) {
-              usuario.silenciado = false;
-              usuario.mensajes = [];
-            }
-
-          }, MUTE_TIME);
-
-        } else {
-
-          console.log(
-            'NO PUDE SILENCIAR A ' +
-            member.user.tag +
-            ' POR JERARQUÍA DE ROLES.'
-          );
-
-          datos.silenciado = false;
-        }
-
-      } catch (error) {
-
-        console.error(
-          'ERROR AL SILENCIAR USUARIO:',
-          error
-        );
-
-        datos.silenciado = false;
-      }
-    }
-
-  } catch (error) {
-
-    console.error(
-      'ERROR EN DETECTOR DE SPAM:',
-      error
-    );
-
-  }
-});
-
 // ==========================================
 // BOT ENCENDIDO
 // ==========================================
