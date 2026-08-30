@@ -2971,12 +2971,11 @@ client.on(
                   '**',
                 inline:
                   false
-              }
-            )
-            .setFooter({
+              },
+              {
               text:
                 'Para comprar abre un <#1357832842561978505>'
-            })
+            }
             .setTimestamp();
 
         await interaction.reply({
