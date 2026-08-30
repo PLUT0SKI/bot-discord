@@ -86,7 +86,7 @@ client.on('interactionCreate', async (interaction) => {
 
       const embed = new EmbedBuilder()
         .setColor('#2b2d31')
-        .setTitle('Centro de Atencion')
+        .setTitle('TICKETS')
         .setDescription(
           '**🛒 Comprar**\n' +
           'Abre un ticket privado para realizar tu compra. Nuestro equipo te ayudará durante todo el proceso.\n\n' +
