@@ -123,7 +123,6 @@ const canal = await interaction.guild.channels.create({
     }
   ]
 });
-
       canal.send(`🎫 Ticket creado para ${interaction.user}`);
 
       interaction.reply({
