@@ -60,7 +60,7 @@ const PRECIO_DEPOSITO = 100;
 // Conjunto completo = camisa + pantalón/short
 const MULTIPLICADOR_CAMISA = 1;
 const MULTIPLICADOR_PANTALON = 1;
-const MULTIPLICADOR_CONJUNTO = 1.5;
+const MULTIPLICADOR_CONJUNTO = 1.7;
 
 // ==========================================
 // REACTION ROLES
