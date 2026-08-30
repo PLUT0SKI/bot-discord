@@ -2922,7 +2922,7 @@ client.on(
                 name:
                   '💳 Método de pago',
                 value:
-                  '`''**' +
+                  '`' +
                   nombreMetodo +
                   '`',
                 inline:
