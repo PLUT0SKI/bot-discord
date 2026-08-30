@@ -95,17 +95,17 @@ client.on('interactionCreate', async (interaction) => {
         .addOptions([
           {
             label: 'Comprar',
-            value: 'comprar',
+            value: 'Comprar',
             emoji: '🛍️'
           },
           {
             label: 'Soporte',
-            value: 'soporte',
+            value: 'Soporte',
             emoji: '➕'
           },
           {
             label: 'Alianzas',
-            value: 'alianza',
+            value: 'Alianza',
             emoji: '🤝'
           }
         ]);
