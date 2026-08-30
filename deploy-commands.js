@@ -2,6 +2,12 @@ const { REST, Routes, SlashCommandBuilder } = require('discord.js');
 
 const DISCORD_TOKEN = process.env.DISCORD_TOKEN;
 
+// ID DE TU SERVIDOR
+const GUILD_ID = '1216948563834175488';
+
+// ID DE TU BOT / APLICACIÓN
+const CLIENT_ID = '15436446689677780462';
+
 const commands = [
 
   // =======================
@@ -72,15 +78,25 @@ const rest = new REST({ version: '10' })
 (async () => {
   try {
 
+    console.log('Registrando comandos...');
+
     await rest.put(
-      Routes.applicationCommands('15436446689677780462'),
-      { body: commands }
+      Routes.applicationGuildCommands(
+        CLIENT_ID,
+        GUILD_ID
+      ),
+      {
+        body: commands
+      }
     );
 
-    console.log('Comandos registrados 🔥');
+    console.log('✅ Comandos registrados correctamente.');
+    console.log('✅ /tickets');
+    console.log('✅ /embed');
 
   } catch (error) {
 
+    console.error('❌ ERROR AL REGISTRAR COMANDOS:');
     console.error(error);
 
   }
