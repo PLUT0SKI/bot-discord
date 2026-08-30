@@ -5,9 +5,8 @@ const {
   EmbedBuilder,
   ActionRowBuilder,
   StringSelectMenuBuilder,
-  ButtonBuilder,
-  ButtonStyle,
-  PermissionsBitField
+  PermissionsBitField,
+  ChannelType
 } = require('discord.js');
 
 const client = new Client({
@@ -17,58 +16,84 @@ const client = new Client({
   ]
 });
 
-client.once('ready', () => {
-  console.log('Bot encendido 🔥');
-});
+// =======================
+// ⚙️ CONFIGURACIÓN
+// =======================
 
+const TICKET_CATEGORY_ID = '1357832792699834548';
+
+// =======================
+// 🤖 BOT ENCENDIDO
+// =======================
+
+client.once('ready', () => {
+  console.log(`✅ Bot encendido como ${client.user.tag}`);
+});
 
 // =======================
 // 🎉 BIENVENIDA
 // =======================
 
 client.on('guildMemberAdd', async member => {
+  try {
+    const canal = member.guild.channels.cache.find(
+      c => c.name === 'bienvenida' && c.isTextBased()
+    );
 
-  const canal = member.guild.channels.cache.find(c => c.name === 'bienvenida');
-  if (!canal) return;
+    if (!canal) return;
 
-  const embed = new EmbedBuilder()
-    .setColor('#2b2d31')
-    .setTitle('¡Bienvenido/a!')
-.setDescription(
-  'Hola ' + member + ', es un placer tenerte aquí.\n\nPásate por los canales y disfruta 🔥'
-)
-    .setThumbnail(member.user.displayAvatarURL({ dynamic: true }))
-    .setImage('https://i.imgur.com/tuimagen.png');
+    const embed = new EmbedBuilder()
+      .setColor('#2b2d31')
+      .setTitle('¡Bienvenido/a!')
+      .setDescription(
+        `Hola ${member}, es un placer tenerte aquí.\n\n` +
+        `Pásate por los canales y disfruta 🔥`
+      )
+      .setThumbnail(
+        member.user.displayAvatarURL({
+          dynamic: true,
+          size: 256
+        })
+      );
 
-  canal.send({
-content: '👋 ¡Hola ' + member + '!',
-    embeds: [embed]
-  });
+    await canal.send({
+      content: `👋 ¡Hola ${member}!`,
+      embeds: [embed]
+    });
 
+  } catch (error) {
+    console.error('❌ Error en bienvenida:', error);
+  }
 });
 
-
 // =======================
-// 🎟️ PANEL DE TICKETS
+// 🎟️ INTERACCIONES
 // =======================
 
 client.on('interactionCreate', async interaction => {
+  try {
 
-  // =======================
-  // COMANDO /TICKETS
-  // =======================
+    // =======================
+    // 🎟️ COMANDO /TICKETS
+    // =======================
 
-  if (interaction.isChatInputCommand()) {
+    if (interaction.isChatInputCommand()) {
 
-    if (interaction.commandName === 'tickets') {
+      if (interaction.commandName !== 'tickets') return;
 
       const embed = new EmbedBuilder()
         .setColor('#2b2d31')
         .setTitle('Centro de Atención')
         .setDescription(
-          '**Comprar**\n🛍️ Ticket para compras\n\n' +
-          '**Dudas/Soporte**\n➕ Problemas o dudas\n\n' +
-          '**Alianzas**\n🤝 Colaboraciones\n\n' +
+          '**Comprar**\n' +
+          '🛍️ Ticket para compras\n\n' +
+
+          '**Dudas/Soporte**\n' +
+          '➕ Problemas o dudas\n\n' +
+
+          '**Alianzas**\n' +
+          '🤝 Colaboraciones\n\n' +
+
           '⚠️ Solo un ticket a la vez'
         );
 
@@ -100,110 +125,169 @@ client.on('interactionCreate', async interaction => {
         embeds: [embed],
         components: [row]
       });
+
+      return;
     }
-  }
 
+    // =======================
+    // 📂 CREAR TICKET
+    // =======================
 
-  // =======================
-  // 📂 CREAR TICKET
-  // =======================
+    if (interaction.isStringSelectMenu()) {
 
-  if (interaction.isStringSelectMenu()) {
-
-    if (interaction.customId === 'ticket_menu') {
+      if (interaction.customId !== 'ticket_menu') return;
 
       const tipo = interaction.values[0];
+      const guild = interaction.guild;
+      const user = interaction.user;
 
-      // Nombre bonito de la opción
-      const nombres = {
-        comprar: 'Comprar',
-        soporte: 'Soporte',
-        alianza: 'Alianzas'
-      };
+      if (!guild) {
+        await interaction.reply({
+          content: '❌ Esta acción solo puede utilizarse dentro de un servidor.',
+          ephemeral: true
+        });
+        return;
+      }
 
-      const nombreTipo = nombres[tipo] || tipo;
+      // =======================
+      // 🔎 COMPROBAR SI YA TIENE TICKET
+      // =======================
 
-      const canal = await interaction.guild.channels.create({
-        name: `${tipo}-${interaction.user.username}`,
-        type: 0,
-        parent: '1357832792699834548',
+      const ticketExistente = guild.channels.cache.find(channel =>
+        channel.type === ChannelType.GuildText &&
+        channel.topic?.includes(`TICKET_USER:${user.id}`)
+      );
+
+      if (ticketExistente) {
+        await interaction.reply({
+          content: `⚠️ Ya tienes un ticket abierto: ${ticketExistente}`,
+          ephemeral: true
+        });
+        return;
+      }
+
+      // =======================
+      // 📂 COMPROBAR CATEGORÍA
+      // =======================
+
+      const categoria = guild.channels.cache.get(TICKET_CATEGORY_ID);
+
+      if (!categoria) {
+        await interaction.reply({
+          content: '❌ No se encontró la categoría de tickets.',
+          ephemeral: true
+        });
+
+        console.error(
+          `❌ Categoría no encontrada: ${TICKET_CATEGORY_ID}`
+        );
+
+        return;
+      }
+
+      // =======================
+      // 🧹 LIMPIAR NOMBRE
+      // =======================
+
+      const username = user.username
+        .toLowerCase()
+        .replace(/[^a-z0-9-_]/g, '')
+        .slice(0, 20);
+
+      const channelName = `ticket-${tipo}-${username}`;
+
+      // =======================
+      // 📂 CREAR CANAL
+      // =======================
+
+      const canal = await guild.channels.create({
+        name: channelName,
+        type: ChannelType.GuildText,
+        parent: TICKET_CATEGORY_ID,
+
+        topic: `TICKET_USER:${user.id} | TIPO:${tipo}`,
 
         permissionOverwrites: [
           {
-            id: interaction.guild.id,
-            deny: [PermissionsBitField.Flags.ViewChannel]
+            id: guild.id,
+            deny: [
+              PermissionsBitField.Flags.ViewChannel
+            ]
           },
           {
-            id: interaction.user.id,
+            id: user.id,
             allow: [
               PermissionsBitField.Flags.ViewChannel,
-              PermissionsBitField.Flags.SendMessages
+              PermissionsBitField.Flags.SendMessages,
+              PermissionsBitField.Flags.ReadMessageHistory,
+              PermissionsBitField.Flags.AttachFiles,
+              PermissionsBitField.Flags.EmbedLinks
+            ]
+          },
+          {
+            id: client.user.id,
+            allow: [
+              PermissionsBitField.Flags.ViewChannel,
+              PermissionsBitField.Flags.SendMessages,
+              PermissionsBitField.Flags.ReadMessageHistory,
+              PermissionsBitField.Flags.ManageChannels
             ]
           }
         ]
       });
 
-
       // =======================
-      // 🎫 EMBED DEL TICKET
+      // 🎫 MENSAJE DEL TICKET
       // =======================
 
       const ticketEmbed = new EmbedBuilder()
         .setColor('#2b2d31')
-        .setTitle('Ticket Abierto')
+        .setTitle('🎫 Ticket creado')
         .setDescription(
-          `${interaction.user} ha creado un nuevo ticket de **${nombreTipo}**`
+          `Hola ${user}, gracias por contactar con nosotros.\n\n` +
+          `**Tipo:** ${tipo}\n\n` +
+          `Explica tu problema o solicitud y espera a que un miembro del equipo te atienda.\n\n` +
+          `⚠️ No abras otro ticket mientras este permanezca abierto.`
         )
-        .setThumbnail(interaction.user.displayAvatarURL({ dynamic: true }));
-
-
-      // =======================
-      // 🔴 BOTÓN CERRAR
-      // =======================
-
-      const cerrarButton = new ButtonBuilder()
-        .setCustomId('cerrar_ticket')
-        .setLabel('Cerrar Ticket')
-        .setEmoji('🔒')
-        .setStyle(ButtonStyle.Danger);
-
-      const buttonRow = new ActionRowBuilder()
-        .addComponents(cerrarButton);
-
+        .setTimestamp();
 
       await canal.send({
-        embeds: [ticketEmbed],
-        components: [buttonRow]
+        content: `👋 Bienvenido ${user}`,
+        embeds: [ticketEmbed]
       });
 
-
       await interaction.reply({
-        content: `✅ Tu ticket fue creado: ${canal}`,
-        ephemeral: true
-      });
-    }
-  }
-
-
-  // =======================
-  // 🔒 CERRAR TICKET
-  // =======================
-
-  if (interaction.isButton()) {
-
-    if (interaction.customId === 'cerrar_ticket') {
-
-      await interaction.reply({
-        content: '🔒 Cerrando ticket...',
+        content: `✅ Tu ticket fue creado correctamente: ${canal}`,
         ephemeral: true
       });
 
-      setTimeout(async () => {
-        await interaction.channel.delete().catch(() => {});
-      }, 1500);
+      console.log(
+        `🎫 Ticket creado: ${canal.name} | Usuario: ${user.tag}`
+      );
+    }
+
+  } catch (error) {
+    console.error('❌ Error en interactionCreate:', error);
+
+    if (!interaction.replied && !interaction.deferred) {
+      await interaction.reply({
+        content: '❌ Ocurrió un error al realizar esta acción.',
+        ephemeral: true
+      }).catch(() => {});
     }
   }
-
 });
+
+// =======================
+// ❌ ERRORES
+// =======================
+
+client.on('error', error => {
+  console.error('❌ Error del cliente Discord:', error);
+});
+
+// =======================
+// 🔑 LOGIN RAILWAY
+// =======================
 
 client.login(process.env.DISCORD_TOKEN);
