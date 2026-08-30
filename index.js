@@ -77,10 +77,53 @@ client.on('interactionCreate', async (interaction) => {
   try {
 
     // =======================
-    // COMANDO /TICKETS
+    // COMANDOS SLASH
     // =======================
 
     if (interaction.isChatInputCommand()) {
+
+      // =======================
+      // /EMBED
+      // =======================
+
+      if (interaction.commandName === 'embed') {
+
+        const titulo = interaction.options.getString('titulo');
+        const descripcion = interaction.options.getString('descripcion');
+        const color = interaction.options.getString('color') || '#2b2d31';
+        const imagen = interaction.options.getString('imagen');
+        const thumbnail = interaction.options.getString('thumbnail');
+        const footer = interaction.options.getString('footer');
+
+        const embed = new EmbedBuilder()
+          .setTitle(titulo)
+          .setDescription(descripcion)
+          .setColor(color);
+
+        if (imagen) {
+          embed.setImage(imagen);
+        }
+
+        if (thumbnail) {
+          embed.setThumbnail(thumbnail);
+        }
+
+        if (footer) {
+          embed.setFooter({
+            text: footer
+          });
+        }
+
+        await interaction.reply({
+          embeds: [embed]
+        });
+
+        return;
+      }
+
+      // =======================
+      // /TICKETS
+      // =======================
 
       if (interaction.commandName !== 'tickets') return;
 
@@ -138,7 +181,6 @@ client.on('interactionCreate', async (interaction) => {
 
     if (interaction.isButton()) {
 
-      // BOTON CERRAR
       if (interaction.customId === 'cerrar_ticket') {
 
         const confirmar = new ButtonBuilder()
@@ -149,7 +191,7 @@ client.on('interactionCreate', async (interaction) => {
 
         const cancelar = new ButtonBuilder()
           .setCustomId('cancelar_cierre')
-          .setLabel('Cancelar')
+          .setLabel('No, cerrar')
           .setEmoji('❌')
           .setStyle(ButtonStyle.Danger);
 
@@ -165,7 +207,6 @@ client.on('interactionCreate', async (interaction) => {
         return;
       }
 
-      // CANCELAR CIERRE
       if (interaction.customId === 'cancelar_cierre') {
 
         await interaction.update({
@@ -176,7 +217,6 @@ client.on('interactionCreate', async (interaction) => {
         return;
       }
 
-      // CONFIRMAR CIERRE
       if (interaction.customId === 'confirmar_cierre') {
 
         await interaction.update({
@@ -216,21 +256,21 @@ client.on('interactionCreate', async (interaction) => {
       // COMPROBAR TICKET EXISTENTE
       // =======================
 
-const ticketExistente = guild.channels.cache.find(
-  (channel) =>
-    channel.type === ChannelType.GuildText &&
-    channel.parentId === TICKET_CATEGORY_ID &&
-    channel.topic &&
-    channel.topic.startsWith('TICKET_USER:' + user.id + ' |')
-);
+      const ticketExistente = guild.channels.cache.find(
+        (channel) =>
+          channel.type === ChannelType.GuildText &&
+          channel.parentId === TICKET_CATEGORY_ID &&
+          channel.topic &&
+          channel.topic.startsWith('TICKET_USER:' + user.id + ' |')
+      );
 
-if (ticketExistente) {
-  await interaction.reply({
-    content: 'Ya tienes un ticket abierto: <#' + ticketExistente.id + '>',
-    ephemeral: true
-  });
-  return;
-}
+      if (ticketExistente) {
+        await interaction.reply({
+          content: 'Ya tienes un ticket abierto: <#' + ticketExistente.id + '>',
+          ephemeral: true
+        });
+        return;
+      }
 
       // =======================
       // COMPROBAR CATEGORIA
@@ -323,7 +363,6 @@ if (ticketExistente) {
         )
         .setTimestamp();
 
-      // BOTON CERRAR
       const cerrarBoton = new ButtonBuilder()
         .setCustomId('cerrar_ticket')
         .setLabel('Cerrar ticket')
