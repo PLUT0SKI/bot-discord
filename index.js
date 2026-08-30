@@ -1612,6 +1612,321 @@ client.on(
       ) {
 
         // ====================================
+        // /CLEAR
+        // ====================================
+
+        if (
+          interaction.commandName ===
+          'clear'
+        ) {
+
+          // Comprobar permiso del usuario
+
+          if (
+            !interaction.memberPermissions.has(
+              PermissionsBitField.Flags.ManageMessages
+            )
+          ) {
+
+            await interaction.reply({
+
+              content:
+                '❌ Necesitas el permiso **Gestionar mensajes** para utilizar este comando.',
+
+              ephemeral:
+                true
+
+            });
+
+            return;
+
+          }
+
+          // Comprobar permiso del bot
+
+          const botMember =
+            interaction.guild.members.me;
+
+          if (
+            !botMember ||
+            !interaction.channel
+              .permissionsFor(botMember)
+              .has(
+                PermissionsBitField.Flags.ManageMessages
+              )
+          ) {
+
+            await interaction.reply({
+
+              content:
+                '❌ No tengo permiso para **Gestionar mensajes** en este canal.',
+
+              ephemeral:
+                true
+
+            });
+
+            return;
+
+          }
+
+          await interaction.reply({
+
+            content:
+              '🧹 Eliminando **todos los mensajes** de este canal...',
+
+            ephemeral:
+              true
+
+          });
+
+          try {
+
+            let totalEliminados = 0;
+
+            while (true) {
+
+              const mensajes =
+                await interaction.channel.messages.fetch({
+                  limit: 100
+                });
+
+              if (
+                mensajes.size === 0
+              ) {
+
+                break;
+
+              }
+
+              const mensajesRecientes = [];
+              const mensajesAntiguos = [];
+
+              const AHORA =
+                Date.now();
+
+              const LIMITE_14_DIAS =
+                14 * 24 * 60 * 60 * 1000;
+
+              for (
+                const mensaje
+                of mensajes.values()
+              ) {
+
+                mensajesEliminadosPorBot.add(
+                  mensaje.id
+                );
+
+                if (
+                  AHORA -
+                  mensaje.createdTimestamp <
+                  LIMITE_14_DIAS
+                ) {
+
+                  mensajesRecientes.push(
+                    mensaje
+                  );
+
+                } else {
+
+                  mensajesAntiguos.push(
+                    mensaje
+                  );
+
+                }
+
+              }
+
+              // ==================================
+              // MENSAJES RECIENTES
+              // ==================================
+
+              if (
+                mensajesRecientes.length > 0
+              ) {
+
+                try {
+
+                  const eliminados =
+                    await interaction.channel.bulkDelete(
+                      mensajesRecientes,
+                      true
+                    );
+
+                  totalEliminados +=
+                    eliminados.size;
+
+                  // Si alguno no fue eliminado,
+                  // quitarlo del Set para que no
+                  // se quede bloqueando el proceso.
+
+                  for (
+                    const mensaje
+                    of mensajesRecientes
+                  ) {
+
+                    if (
+                      !eliminados.has(
+                        mensaje.id
+                      )
+                    ) {
+
+                      mensajesEliminadosPorBot.delete(
+                        mensaje.id
+                      );
+
+                    }
+
+                  }
+
+                } catch (error) {
+
+                  console.error(
+                    'ERROR EN ELIMINADO MASIVO:',
+                    error
+                  );
+
+                  // Si bulkDelete falla,
+                  // intentamos eliminar individualmente.
+
+                  for (
+                    const mensaje
+                    of mensajesRecientes
+                  ) {
+
+                    try {
+
+                      await mensaje.delete();
+
+                      totalEliminados++;
+
+                    } catch (error) {
+
+                      mensajesEliminadosPorBot.delete(
+                        mensaje.id
+                      );
+
+                    }
+
+                  }
+
+                }
+
+              }
+
+              // ==================================
+              // MENSAJES ANTIGUOS
+              // ==================================
+
+              for (
+                const mensaje
+                of mensajesAntiguos
+              ) {
+
+                try {
+
+                  await mensaje.delete();
+
+                  totalEliminados++;
+
+                } catch (error) {
+
+                  mensajesEliminadosPorBot.delete(
+                    mensaje.id
+                  );
+
+                  console.log(
+                    'NO SE PUDO ELIMINAR EL MENSAJE ANTIGUO: ' +
+                    mensaje.id
+                  );
+
+                }
+
+              }
+
+              // ==================================
+              // ESPERA PEQUEÑA
+              // ==================================
+
+              await new Promise(
+                resolve =>
+                  setTimeout(
+                    resolve,
+                    500
+                  )
+              );
+
+            }
+
+            // ==================================
+            // LIMPIAR IDS
+            // ==================================
+
+            setTimeout(
+              () => {
+
+                for (
+                  const id
+                  of mensajesEliminadosPorBot
+                ) {
+
+                  mensajesEliminadosPorBot.delete(
+                    id
+                  );
+
+                }
+
+              },
+              60000
+            );
+
+            await interaction.editReply({
+
+              content:
+                '✅ Se eliminaron **' +
+                totalEliminados +
+                ' mensajes** de este canal.'
+
+            });
+
+            console.log(
+
+              '🧹 CLEAR EJECUTADO | ' +
+
+              'USUARIO: ' +
+              interaction.user.tag +
+
+              ' | CANAL: ' +
+              interaction.channel.name +
+
+              ' | MENSAJES ELIMINADOS: ' +
+              totalEliminados
+
+            );
+
+          } catch (error) {
+
+            console.error(
+              'ERROR AL EJECUTAR /CLEAR:',
+              error
+            );
+
+            await interaction.editReply({
+
+              content:
+                '❌ Ocurrió un error mientras eliminaba los mensajes.'
+
+            }).catch(
+              () => {}
+            );
+
+          }
+
+          return;
+
+        }
+
+        // ====================================
         // /SETLOGS
         // ====================================
 
@@ -1703,170 +2018,6 @@ client.on(
             canal.id
 
           );
-
-          return;
-
-        }
-
-        // ====================================
-        // /CLEAR
-        // ====================================
-
-        if (
-          interaction.commandName ===
-          'clear'
-        ) {
-
-          if (
-            !interaction.member.permissions.has(
-              PermissionsBitField.Flags.ManageMessages
-            )
-          ) {
-
-            await interaction.reply({
-
-              content:
-                '❌ No tienes permisos para eliminar mensajes.',
-
-              ephemeral:
-                true
-
-            });
-
-            return;
-
-          }
-
-          const canal =
-            interaction.channel;
-
-          if (!canal) {
-
-            await interaction.reply({
-
-              content:
-                '❌ No se pudo encontrar el canal.',
-
-              ephemeral:
-                true
-
-            });
-
-            return;
-
-          }
-
-          if (
-            !canal.isTextBased()
-          ) {
-
-            await interaction.reply({
-
-              content:
-                '❌ Este comando solo puede utilizarse en canales de texto.',
-
-              ephemeral:
-                true
-
-            });
-
-            return;
-
-          }
-
-          await interaction.deferReply({
-            ephemeral: true
-          });
-
-          let totalEliminados = 0;
-
-          try {
-
-            while (true) {
-
-              const mensajes =
-                await canal.messages.fetch({
-                  limit: 100
-                });
-
-              if (
-                mensajes.size === 0
-              ) {
-
-                break;
-
-              }
-
-              const mensajesRecientes =
-                mensajes.filter(
-                  mensaje =>
-                    Date.now() -
-                    mensaje.createdTimestamp <
-                    1209600000
-                );
-
-              if (
-                mensajesRecientes.size === 0
-              ) {
-
-                break;
-
-              }
-
-              const eliminados =
-                await canal.bulkDelete(
-                  mensajesRecientes,
-                  true
-                );
-
-              totalEliminados +=
-                eliminados.size;
-
-              if (
-                mensajes.size < 100
-              ) {
-
-                break;
-
-              }
-
-            }
-
-            await interaction.editReply({
-
-              content:
-                '🧹 Se eliminaron **' +
-                totalEliminados +
-                ' mensajes** de este canal.'
-
-            });
-
-            console.log(
-
-              'CLEAR EJECUTADO | ' +
-              interaction.user.tag +
-              ' | CANAL: ' +
-              canal.name +
-              ' | MENSAJES: ' +
-              totalEliminados
-
-            );
-
-          } catch (error) {
-
-            console.error(
-              'ERROR AL EJECUTAR /CLEAR:',
-              error
-            );
-
-            await interaction.editReply({
-
-              content:
-                '❌ Ocurrió un error al eliminar los mensajes.'
-
-            });
-
-          }
 
           return;
 
@@ -2523,7 +2674,9 @@ client.on(
 
                   PermissionsBitField.Flags.ReadMessageHistory,
 
-                  PermissionsBitField.Flags.ManageChannels
+                  PermissionsBitField.Flags.ManageChannels,
+
+                  PermissionsBitField.Flags.ManageMessages
 
                 ]
 
