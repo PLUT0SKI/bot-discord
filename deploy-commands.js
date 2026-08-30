@@ -1,7 +1,9 @@
+```js
 const {
   REST,
   Routes,
-  SlashCommandBuilder
+  SlashCommandBuilder,
+  ChannelType
 } = require('discord.js');
 
 const DISCORD_TOKEN =
@@ -86,6 +88,10 @@ const commands = [
         .setName('canal')
         .setDescription(
           'Canal donde se enviarán los logs'
+        )
+        .addChannelTypes(
+          ChannelType.GuildText,
+          ChannelType.GuildAnnouncement
         )
         .setRequired(true)
     )
@@ -183,3 +189,4 @@ const rest =
   }
 
 })();
+```
