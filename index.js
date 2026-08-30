@@ -502,85 +502,75 @@ client.on('interactionCreate', async (interaction) => {
         return;
       }
 
-      // ====================================
-      // /TICKETS
-      // ====================================
+// ====================================
+// /TICKETS
+// ====================================
 
-      if (
-        interaction.commandName ===
-        'tickets'
-      ) {
+if (interaction.commandName === 'tickets') {
 
-        const embed =
-          new EmbedBuilder()
-            .setColor('#2b2d31')
-            .setTitle('TICKETS')
-            .setDescription(
+  const embed =
+    new EmbedBuilder()
+      .setColor('#2b2d31')
+      .setTitle('TICKETS')
+      .setDescription(
 
-              '**🛒 Comprar**\n' +
-              'Abre un ticket privado para realizar tu compra. Nuestro equipo te ayudará durante todo el proceso.\n\n' +
+        '**🛒 Comprar**\n' +
+        'Abre un ticket privado para realizar tu compra. Nuestro equipo te ayudará durante todo el proceso.\n\n' +
 
-              '**🛠️ Dudas / Soporte**\n' +
-              '¿Tienes alguna duda, problema o necesitas ayuda? Abre un ticket y estaremos encantados de ayudarte.\n\n' +
+        '**🛠️ Dudas / Soporte**\n' +
+        '¿Tienes alguna duda, problema o necesitas ayuda? Abre un ticket y estaremos encantados de ayudarte.\n\n' +
 
-              '**🤝 Alianzas**\n' +
-              '¿Tienes una propuesta de alianza o colaboración? Cuéntanos todos los detalles mediante un ticket.\n\n' +
+        '**🤝 Alianzas**\n' +
+        '¿Tienes una propuesta de alianza o colaboración? Cuéntanos todos los detalles mediante un ticket.\n\n' +
 
-              '> ⚠️ Recuerda que solo puedes tener __**un ticket abierto a la vez**__.'
+        '> ⚠️ Recuerda que solo puedes tener __**un ticket abierto a la vez**__.'
 
-            );
+      );
 
-        const menu =
-          new StringSelectMenuBuilder()
-            .setCustomId(
-              'ticket_menu'
-            )
-            .setPlaceholder(
-              'Selecciona una opcion'
-            )
-            .addOptions([
+  const menu =
+    new StringSelectMenuBuilder()
+      .setCustomId('ticket_menu')
+      .setPlaceholder('Selecciona una opcion')
+      .addOptions([
 
-              {
-                label: 'Comprar',
-                value: 'Comprar',
-                emoji: '🛒'
-              },
+        {
+          label: 'Comprar',
+          value: 'Comprar',
+          emoji: '🛒'
+        },
 
-              {
-                label: 'Soporte',
-                value: 'Soporte',
-                emoji: '🛠️'
-              },
+        {
+          label: 'Soporte',
+          value: 'Soporte',
+          emoji: '🛠️'
+        },
 
-              {
-                label: 'Alianzas',
-                value: 'Alianza',
-                emoji: '🤝'
-              }
+        {
+          label: 'Alianzas',
+          value: 'Alianza',
+          emoji: '🤝'
+        }
 
-            ]);
+      ]);
 
-        const row =
-          new ActionRowBuilder()
-            .addComponents(menu);
+  const row =
+    new ActionRowBuilder()
+      .addComponents(menu);
 
-        await interaction.reply({
+  // ENVIA EL PANEL COMO MENSAJE NORMAL DEL BOT
+  await interaction.channel.send({
+    embeds: [embed],
+    components: [row]
+  });
 
-          embeds: [
-            embed
-          ],
+  // RESPUESTA INVISIBLE AL COMANDO
+  await interaction.reply({
+    content: '✅ Panel de tickets enviado.',
+    ephemeral: true
+  });
 
-          components: [
-            row
-          ]
-
-        });
-
-        return;
-      }
-
-    }
-
+  return;
+}
     // ======================================
     // BOTONES
     // ======================================
