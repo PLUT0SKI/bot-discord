@@ -30,17 +30,24 @@ client.once('ready', () => {
 
 client.on('guildMemberAdd', async (member) => {
   try {
-    const canal = member.guild.channels.cache.get(
-  WELCOME_CHANNEL_ID
-);
 
-    if (!canal) return;
+    const canal = member.guild.channels.cache.get(
+      WELCOME_CHANNEL_ID
+    );
+
+    if (!canal) {
+      console.error(
+        'CANAL DE BIENVENIDA NO ENCONTRADO: ' +
+        WELCOME_CHANNEL_ID
+      );
+      return;
+    }
 
     const embed = new EmbedBuilder()
       .setColor('#2b2d31')
       .setTitle('Bienvenido/a')
       .setDescription(
-        'Hola <@' + user.id + '>, es un placer tenerte aqui.\n\n' +
+        'Hola <@' + member.id + '>, es un placer tenerte aqui.\n\n' +
         'Pasate por los canales y disfruta.'
       )
       .setThumbnail(
@@ -50,12 +57,15 @@ client.on('guildMemberAdd', async (member) => {
       );
 
     await canal.send({
-      content: 'Hola <@' + user.id + '>!',
+      content: 'Hola <@' + member.id + '>!',
       embeds: [embed]
     });
 
   } catch (error) {
-    console.error('ERROR EN BIENVENIDA:', error);
+    console.error(
+      'ERROR EN BIENVENIDA:',
+      error
+    );
   }
 });
 
