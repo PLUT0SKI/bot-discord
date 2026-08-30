@@ -88,16 +88,16 @@ client.on('interactionCreate', async (interaction) => {
         .setColor('#2b2d31')
         .setTitle('Centro de Atencion')
         .setDescription(
-          '**Comprar**\n' +
-          'Ticket para compras.\n\n' +
+          '**🛒 Comprar**\n' +
+          'Abre un ticket privado para realizar tu compra. Nuestro equipo te ayudará durante todo el proceso.\n\n' +
 
-          '**Dudas/Soporte**\n' +
-          'Problemas o dudas.\n\n' +
+          '**🛠️ Dudas / Soporte**\n' +
+          '¿Tienes alguna duda, problema o necesitas ayuda? Abre un ticket y estaremos encantados de ayudarte.\n\n' +
 
-          '**Alianzas**\n' +
-          'Colaboraciones.\n\n' +
+          '**🤝 Alianzas**\n' +
+          '¿Tienes una propuesta de alianza o colaboración? Cuéntanos todos los detalles mediante un ticket.\n\n' +
 
-          'Solo puedes tener un ticket abierto a la vez.'
+          '> ⚠️ Recuerda que solo puedes tener **un ticket abierto a la vez**.'
         );
 
       const menu = new StringSelectMenuBuilder()
