@@ -2,11 +2,8 @@ const { REST, Routes, SlashCommandBuilder } = require('discord.js');
 
 const DISCORD_TOKEN = process.env.DISCORD_TOKEN;
 
-// ID DE TU SERVIDOR
-const GUILD_ID = '1216948563834175488';
-
-// ID DE TU BOT / APLICACIÓN
 const CLIENT_ID = '15436446689677780462';
+const GUILD_ID = '1216948563834175488';
 
 const commands = [
 
@@ -78,7 +75,7 @@ const rest = new REST({ version: '10' })
 (async () => {
   try {
 
-    console.log('Registrando comandos...');
+    console.log('🔄 Registrando comandos...');
 
     await rest.put(
       Routes.applicationGuildCommands(
