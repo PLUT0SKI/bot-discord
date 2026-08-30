@@ -51,13 +51,10 @@ const LOGS_FILE = './logsConfig.json';
 // PRECIOS
 // ==========================================
 
-// Precio BASE de una camisa
 const PRECIO_ROBUX = 200;
 const PRECIO_TRANSFERENCIA = 100;
 const PRECIO_DEPOSITO = 100;
 
-// Pantalón/Short = mismo precio que camisa
-// Conjunto completo = camisa + pantalón/short
 const MULTIPLICADOR_CAMISA = 1;
 const MULTIPLICADOR_PANTALON = 1;
 const MULTIPLICADOR_CONJUNTO = 1.7;
@@ -79,6 +76,7 @@ if (fs.existsSync(REACTION_FILE)) {
     );
 
   } catch (error) {
+
     console.error(
       'ERROR AL CARGAR reactionRoles.json:',
       error
@@ -89,7 +87,9 @@ if (fs.existsSync(REACTION_FILE)) {
 }
 
 function guardarReactionRoles() {
+
   try {
+
     fs.writeFileSync(
       REACTION_FILE,
       JSON.stringify(
@@ -100,10 +100,12 @@ function guardarReactionRoles() {
     );
 
   } catch (error) {
+
     console.error(
       'ERROR AL GUARDAR REACTION ROLES:',
       error
     );
+
   }
 }
 
@@ -114,7 +116,9 @@ function guardarReactionRoles() {
 let logsConfig = {};
 
 if (fs.existsSync(LOGS_FILE)) {
+
   try {
+
     logsConfig = JSON.parse(
       fs.readFileSync(
         LOGS_FILE,
@@ -127,6 +131,7 @@ if (fs.existsSync(LOGS_FILE)) {
     );
 
   } catch (error) {
+
     console.error(
       'ERROR AL CARGAR logsConfig.json:',
       error
@@ -137,7 +142,9 @@ if (fs.existsSync(LOGS_FILE)) {
 }
 
 function guardarLogsConfig() {
+
   try {
+
     fs.writeFileSync(
       LOGS_FILE,
       JSON.stringify(
@@ -148,10 +155,12 @@ function guardarLogsConfig() {
     );
 
   } catch (error) {
+
     console.error(
       'ERROR AL GUARDAR CONFIGURACIÓN DE LOGS:',
       error
     );
+
   }
 }
 
@@ -185,11 +194,13 @@ const LINK_REGEX =
   /https?:\/\/[^\s<]+/gi;
 
 // ==========================================
-// COMPROBAR SI ES UN GIF PERMITIDO
+// COMPROBAR GIF PERMITIDO
 // ==========================================
 
 function esGifPermitido(url) {
+
   try {
+
     const urlLimpia =
       url.toLowerCase();
 
@@ -198,7 +209,9 @@ function esGifPermitido(url) {
         urlLimpia
       )
     ) {
+
       return true;
+
     }
 
     if (
@@ -206,7 +219,9 @@ function esGifPermitido(url) {
         'tenor.com'
       )
     ) {
+
       return true;
+
     }
 
     if (
@@ -214,21 +229,28 @@ function esGifPermitido(url) {
         'giphy.com'
       )
     ) {
+
       return true;
+
     }
 
     return false;
 
   } catch (error) {
+
     return false;
+
   }
 }
 
 // ==========================================
-// COMPROBAR SI EL MENSAJE TIENE LINK
+// OBTENER LINKS NO PERMITIDOS
 // ==========================================
 
-function obtenerLinksNoPermitidos(contenido) {
+function obtenerLinksNoPermitidos(
+  contenido
+) {
+
   if (!contenido) return [];
 
   const links =
@@ -256,34 +278,23 @@ async function enviarLogSpam(
   duracion,
   canal
 ) {
+
   try {
+
     const guild =
       member.guild;
 
     const canalLogsId =
       logsConfig[guild.id];
 
-    if (!canalLogsId) {
-      console.log(
-        'NO HAY CANAL DE LOGS CONFIGURADO PARA: ' +
-        guild.name
-      );
-
-      return;
-    }
+    if (!canalLogsId) return;
 
     const canalLogs =
       guild.channels.cache.get(
         canalLogsId
       );
 
-    if (!canalLogs) {
-      console.error(
-        'EL CANAL DE LOGS CONFIGURADO NO EXISTE.'
-      );
-
-      return;
-    }
+    if (!canalLogs) return;
 
     const embed =
       new EmbedBuilder()
@@ -335,7 +346,9 @@ async function enviarLogSpam(
             name: '📍 Canal',
             value:
               canal
-                ? '<#' + canal.id + '>'
+                ? '<#' +
+                  canal.id +
+                  '>'
                 : 'No disponible',
             inline: true
           },
@@ -356,7 +369,8 @@ async function enviarLogSpam(
           })
         )
         .setFooter({
-          text: 'Sistema de seguridad'
+          text:
+            'Sistema de seguridad'
         })
         .setTimestamp();
 
@@ -367,10 +381,12 @@ async function enviarLogSpam(
     });
 
   } catch (error) {
+
     console.error(
       'ERROR AL ENVIAR LOG DE SPAM:',
       error
     );
+
   }
 }
 
@@ -383,25 +399,23 @@ async function enviarLogLink(
   link,
   canal
 ) {
+
   try {
+
     const guild =
       member.guild;
 
     const canalLogsId =
       logsConfig[guild.id];
 
-    if (!canalLogsId) {
-      return;
-    }
+    if (!canalLogsId) return;
 
     const canalLogs =
       guild.channels.cache.get(
         canalLogsId
       );
 
-    if (!canalLogs) {
-      return;
-    }
+    if (!canalLogs) return;
 
     const embed =
       new EmbedBuilder()
@@ -435,7 +449,9 @@ async function enviarLogLink(
             name: '📍 Canal',
             value:
               canal
-                ? '<#' + canal.id + '>'
+                ? '<#' +
+                  canal.id +
+                  '>'
                 : 'No disponible',
             inline: true
           },
@@ -467,7 +483,8 @@ async function enviarLogLink(
           })
         )
         .setFooter({
-          text: 'Sistema de seguridad'
+          text:
+            'Sistema de seguridad'
         })
         .setTimestamp();
 
@@ -478,10 +495,12 @@ async function enviarLogLink(
     });
 
   } catch (error) {
+
     console.error(
       'ERROR AL ENVIAR LOG DE LINK:',
       error
     );
+
   }
 }
 
@@ -527,7 +546,9 @@ client.on(
         message.author &&
         message.author.bot
       ) {
+
         return;
+
       }
 
       const canalLogsId =
@@ -619,7 +640,8 @@ client.on(
             })
           )
           .setFooter({
-            text: 'Sistema de seguridad'
+            text:
+              'Sistema de seguridad'
           })
           .setTimestamp();
 
@@ -660,21 +682,27 @@ client.on(
         mensajeNuevo.author &&
         mensajeNuevo.author.bot
       ) {
+
         return;
+
       }
 
       if (
         mensajeAnterior.partial ||
         mensajeNuevo.partial
       ) {
+
         return;
+
       }
 
       if (
         mensajeAnterior.content ===
         mensajeNuevo.content
       ) {
+
         return;
+
       }
 
       const canalLogsId =
@@ -783,7 +811,8 @@ client.on(
             })
           )
           .setFooter({
-            text: 'Sistema de seguridad'
+            text:
+              'Sistema de seguridad'
           })
           .setTimestamp();
 
@@ -829,7 +858,9 @@ client.on(
           PermissionsBitField.Flags.Administrator
         )
       ) {
+
         return;
+
       }
 
       // ====================================
@@ -876,6 +907,7 @@ client.on(
             'ERROR AL ELIMINAR LINK:',
             error
           );
+
         }
 
         return;
@@ -904,6 +936,7 @@ client.on(
           message.author.id,
           datos
         );
+
       }
 
       datos.mensajes =
@@ -970,6 +1003,7 @@ client.on(
                   );
 
                   await dato.message.delete();
+
                 }
 
               } catch (error) {
@@ -979,6 +1013,7 @@ client.on(
                 );
 
               }
+
             }
 
             await enviarLogSpam(
@@ -1012,6 +1047,7 @@ client.on(
 
                   usuario.mensajes =
                     [];
+
                 }
 
               },
@@ -1022,6 +1058,7 @@ client.on(
 
             datos.silenciado =
               false;
+
           }
 
         } catch (error) {
@@ -1033,7 +1070,9 @@ client.on(
 
           datos.silenciado =
             false;
+
         }
+
       }
 
     } catch (error) {
@@ -1059,14 +1098,18 @@ setInterval(
       mensajesEliminadosPorBot.size >
       1000
     ) {
+
       mensajesEliminadosPorBot.clear();
+
     }
 
     if (
       mensajesEliminadosPorClear.size >
       5000
     ) {
+
       mensajesEliminadosPorClear.clear();
+
     }
 
   },
@@ -1270,7 +1313,9 @@ client.on(
         role.position >=
         botMember.roles.highest.position
       ) {
+
         return;
+
       }
 
       await member.roles.add(
@@ -1506,13 +1551,17 @@ client.on(
               );
 
               errores++;
+
               break;
+
             }
 
             if (
               mensajes.size === 0
             ) {
+
               break;
+
             }
 
             const ahora =
@@ -1523,7 +1572,11 @@ client.on(
                 mensaje =>
                   ahora -
                   mensaje.createdTimestamp <
-                  14 * 24 * 60 * 60 * 1000
+                  14 *
+                  24 *
+                  60 *
+                  60 *
+                  1000
               );
 
             const mensajesAntiguos =
@@ -1531,7 +1584,11 @@ client.on(
                 mensaje =>
                   ahora -
                   mensaje.createdTimestamp >=
-                  14 * 24 * 60 * 60 * 1000
+                  14 *
+                  24 *
+                  60 *
+                  60 *
+                  1000
               );
 
             if (
@@ -1639,6 +1696,7 @@ client.on(
                           );
 
                           return false;
+
                         }
 
                       }
@@ -1721,6 +1779,34 @@ client.on(
             await interaction.reply({
               content:
                 '❌ Selecciona un canal de texto.',
+              ephemeral:
+                true
+            });
+
+            return;
+          }
+
+          const permisos =
+            canal.permissionsFor(
+              interaction.guild.members.me
+            );
+
+          if (
+            !permisos ||
+            !permisos.has(
+              PermissionsBitField.Flags.ViewChannel
+            ) ||
+            !permisos.has(
+              PermissionsBitField.Flags.SendMessages
+            ) ||
+            !permisos.has(
+              PermissionsBitField.Flags.EmbedLinks
+            )
+          ) {
+
+            await interaction.reply({
+              content:
+                '❌ No puedo enviar logs a ese canal. Necesito **Ver canal**, **Enviar mensajes** y **Insertar enlaces**.',
               ephemeral:
                 true
             });
@@ -1849,6 +1935,7 @@ client.on(
 
             emojiMostrar =
               emojiInput;
+
           }
 
           try {
@@ -1889,6 +1976,7 @@ client.on(
 
             emoji:
               emojiMostrar
+
           };
 
           guardarReactionRoles();
@@ -2252,10 +2340,6 @@ client.on(
             return;
           }
 
-          // ==================================
-          // MENU QUE QUIERES COMPRAR
-          // ==================================
-
           const embed =
             new EmbedBuilder()
               .setColor(
@@ -2391,10 +2475,6 @@ client.on(
             return;
           }
 
-          // ==================================
-          // MODAL DE CANTIDAD
-          // ==================================
-
           let nombreProducto;
 
           if (
@@ -2417,6 +2497,7 @@ client.on(
 
             nombreProducto =
               'Conjunto completo';
+
           }
 
           const modal =
@@ -2480,7 +2561,9 @@ client.on(
           interaction.customId !==
           'ticket_menu'
         ) {
+
           return;
+
         }
 
         const tipo =
@@ -2625,6 +2708,7 @@ client.on(
               }
 
             ]
+
           });
 
         const ticketEmbed =
@@ -2717,7 +2801,9 @@ client.on(
             'pedido_cantidad_'
           )
         ) {
+
           return;
+
         }
 
         const datosPedido =
@@ -2760,7 +2846,7 @@ client.on(
             content:
               '**❌ Introduce una cantidad válida. Por ejemplo: __5__**',
             ephemeral:
-            true
+              true
           });
 
           return;
@@ -2772,7 +2858,7 @@ client.on(
 
           await interaction.reply({
             content:
-              '**❌ La cantidad máxima por pedido es de __1000__**.',
+              '**❌ La cantidad máxima por pedido es de __1000__.**',
             ephemeral:
               true
           });
@@ -2902,73 +2988,108 @@ client.on(
           cantidad *
           precioPorUnidad;
 
-// ==================================
-// RESUMEN FINAL
-// ==================================
+        // ==================================
+        // RESUMEN FINAL
+        // ==================================
 
-const embed =
-  new EmbedBuilder()
-    .setColor('#2b2d31')
-    .setTitle('🧾 RESUMEN DE TU PEDIDO')
-    .setDescription(
-      'Aquí están los detalles completos de tu pedido:'
-    )
-    .addFields(
-      {
-        name: '💳 Método de pago',
-        value: '`' + nombreMetodo + '`',
-        inline: true
-      },
-      {
-        name: '🛍️ Producto',
-        value: '`' + nombreProducto + '`',
-        inline: true
-      },
-      {
-        name: '📦 Cantidad',
-        value: '`' + cantidad + '`',
-        inline: true
-      },
-      {
-        name: '💰 Precio por unidad',
-        value:
-          '**' +
-          precioPorUnidad +
-          ' ' +
-          moneda +
-          '**',
-        inline: true
-      },
-      {
-        name: '💵 TOTAL',
-        value:
-          '**' +
-          total +
-          ' ' +
-          moneda +
-          '**',
-        inline: false
-      },
-      {
-        name: '\u200B',
-        value:
-          '🛒 Para comprar abre un <#1357832842561978505>',
-        inline: false
+        const embed =
+          new EmbedBuilder()
+            .setColor('#2b2d31')
+            .setTitle(
+              '🧾 RESUMEN DE TU PEDIDO'
+            )
+            .setDescription(
+              'Aquí están los detalles completos de tu pedido:'
+            )
+            .addFields(
+              {
+                name:
+                  '💳 Método de pago',
+
+                value:
+                  '`' +
+                  nombreMetodo +
+                  '`',
+
+                inline:
+                  true
+              },
+              {
+                name:
+                  '🛍️ Producto',
+
+                value:
+                  '`' +
+                  nombreProducto +
+                  '`',
+
+                inline:
+                  true
+              },
+              {
+                name:
+                  '📦 Cantidad',
+
+                value:
+                  '`' +
+                  cantidad +
+                  '`',
+
+                inline:
+                  true
+              },
+              {
+                name:
+                  '💰 Precio por unidad',
+
+                value:
+                  '**' +
+                  precioPorUnidad +
+                  ' ' +
+                  moneda +
+                  '**',
+
+                inline:
+                  true
+              },
+              {
+                name:
+                  '💵 TOTAL',
+
+                value:
+                  '**' +
+                  total +
+                  ' ' +
+                  moneda +
+                  '**',
+
+                inline:
+                  false
+              },
+              {
+                name:
+                  '\u200B',
+
+                value:
+                  '🛒 Para comprar abre un <#1357832842561978505>',
+
+                inline:
+                  false
+              }
+            )
+            .setTimestamp();
+
+        await interaction.reply({
+          embeds: [
+            embed
+          ],
+          ephemeral:
+            true
+        });
+
+        return;
       }
-    )
-    .setTimestamp();
 
-await interaction.reply({
-  embeds: [
-    embed
-  ],
-  ephemeral: true
-});
-
-return;
-
-      }
-      
     } catch (error) {
 
       console.error(
@@ -2976,19 +3097,29 @@ return;
         error
       );
 
-      if (!interaction.replied && !interaction.deferred) {
+      if (
+        !interaction.replied &&
+        !interaction.deferred
+      ) {
+
         try {
+
           await interaction.reply({
             content:
               '❌ Ocurrió un error al procesar esta interacción.',
-            ephemeral: true
+            ephemeral:
+              true
           });
+
         } catch (replyError) {
+
           console.error(
             'ERROR AL ENVIAR MENSAJE DE ERROR:',
             replyError
           );
+
         }
+
       }
 
     }
@@ -3025,41 +3156,7 @@ if (
   );
 
   process.exit(1);
-}
 
-client.login(
-  process.env.DISCORD_TOKEN
-);
-
-// ==========================================
-// ERROR DEL CLIENTE
-// ==========================================
-
-client.on(
-  'error',
-  (error) => {
-
-    console.error(
-      'ERROR DEL CLIENTE DE DISCORD:',
-      error
-    );
-
-  }
-);
-
-// ==========================================
-// LOGIN
-// ==========================================
-
-if (
-  !process.env.DISCORD_TOKEN
-) {
-
-  console.error(
-    'NO SE ENCONTRO DISCORD_TOKEN EN RAILWAY.'
-  );
-
-  process.exit(1);
 }
 
 client.login(
