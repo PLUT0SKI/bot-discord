@@ -8,8 +8,7 @@ const {
   ButtonStyle,
   PermissionsBitField,
   ChannelType,
-  Partials,
-  SlashCommandBuilder
+  Partials
 } = require('discord.js');
 
 const fs = require('fs');
@@ -175,6 +174,91 @@ const MUTE_TIME = 60000;
 const mensajesEliminadosPorBot = new Set();
 
 // ==========================================
+// DETECTOR DE LINKS
+// ==========================================
+
+const LINK_REGEX =
+  /https?:\/\/[^\s<]+/gi;
+
+// ==========================================
+// COMPROBAR SI ES UN GIF PERMITIDO
+// ==========================================
+
+function esGifPermitido(url) {
+
+  try {
+
+    const urlLimpia =
+      url.toLowerCase();
+
+    // GIF directo
+    if (
+      /\.gif(?:\?[^\s]*)?$/i.test(
+        urlLimpia
+      )
+    ) {
+
+      return true;
+
+    }
+
+    // Tenor
+    if (
+      urlLimpia.includes(
+        'tenor.com'
+      )
+    ) {
+
+      return true;
+
+    }
+
+    // Giphy
+    if (
+      urlLimpia.includes(
+        'giphy.com'
+      )
+    ) {
+
+      return true;
+
+    }
+
+    return false;
+
+  } catch (error) {
+
+    return false;
+
+  }
+
+}
+
+// ==========================================
+// COMPROBAR SI EL MENSAJE TIENE LINK
+// ==========================================
+
+function obtenerLinksNoPermitidos(contenido) {
+
+  if (!contenido) return [];
+
+  const links =
+    contenido.match(
+      LINK_REGEX
+    );
+
+  if (!links) return [];
+
+  return links.filter(
+    link =>
+      !esGifPermitido(
+        link
+      )
+  );
+
+}
+
+// ==========================================
 // LOG DE SPAM
 // ==========================================
 
@@ -338,6 +422,158 @@ async function enviarLogSpam(
 }
 
 // ==========================================
+// LOG DE LINK DUDOSO
+// ==========================================
+
+async function enviarLogLink(
+  member,
+  link,
+  canal
+) {
+
+  try {
+
+    const guild =
+      member.guild;
+
+    const canalLogsId =
+      logsConfig[guild.id];
+
+    if (!canalLogsId) {
+
+      console.log(
+        'NO HAY CANAL DE LOGS CONFIGURADO PARA: ' +
+        guild.name
+      );
+
+      return;
+
+    }
+
+    const canalLogs =
+      guild.channels.cache.get(
+        canalLogsId
+      );
+
+    if (!canalLogs) {
+
+      console.error(
+        'EL CANAL DE LOGS CONFIGURADO NO EXISTE.'
+      );
+
+      return;
+
+    }
+
+    const embed =
+      new EmbedBuilder()
+
+        .setColor('#ff0000')
+
+        .setTitle(
+          '🚨 Link dudoso detectado'
+        )
+
+        .setDescription(
+          'Un usuario envió un enlace no permitido. El mensaje fue eliminado automáticamente.'
+        )
+
+        .addFields(
+
+          {
+            name: '👤 Usuario',
+
+            value:
+              '<@' +
+              member.id +
+              '> `' +
+              member.user.tag +
+              '`',
+
+            inline: false
+          },
+
+          {
+            name: '🆔 ID',
+
+            value:
+              '`' +
+              member.id +
+              '`',
+
+            inline: true
+          },
+
+          {
+            name: '📍 Canal',
+
+            value:
+              canal
+                ? '<#' + canal.id + '>'
+                : 'No disponible',
+
+            inline: true
+          },
+
+          {
+            name: '🔗 Link eliminado',
+
+            value:
+              '```' +
+              link.slice(
+                0,
+                1000
+              ) +
+              '```',
+
+            inline: false
+          },
+
+          {
+            name: '📅 Fecha',
+
+            value:
+              '<t:' +
+              Math.floor(
+                Date.now() / 1000
+              ) +
+              ':F>',
+
+            inline: false
+          }
+
+        )
+
+        .setThumbnail(
+          member.user.displayAvatarURL({
+            size: 256
+          })
+        )
+
+        .setFooter({
+          text: 'Sistema de seguridad'
+        })
+
+        .setTimestamp();
+
+    await canalLogs.send({
+      embeds: [
+        embed
+      ]
+    });
+
+  } catch (error) {
+
+    console.error(
+      'ERROR AL ENVIAR LOG DE LINK:',
+      error
+    );
+
+  }
+
+}
+
+// ==========================================
 // LOG MENSAJE ELIMINADO
 // ==========================================
 
@@ -371,7 +607,9 @@ client.on(
         message.author &&
         message.author.bot
       ) {
+
         return;
+
       }
 
       const canalLogsId =
@@ -527,19 +765,19 @@ client.on(
         mensajeNuevo.author &&
         mensajeNuevo.author.bot
       ) {
+
         return;
+
       }
 
       if (
         mensajeAnterior.partial ||
         mensajeNuevo.partial
       ) {
-        return;
-      }
 
-      // ==================================
-      // SI NO CAMBIÓ EL CONTENIDO
-      // ==================================
+        return;
+
+      }
 
       if (
         mensajeAnterior.content ===
@@ -705,7 +943,7 @@ client.on(
 );
 
 // ==========================================
-// DETECTOR DE SPAM
+// DETECTOR DE SPAM + LINKS
 // ==========================================
 
 client.on(
@@ -736,6 +974,70 @@ client.on(
         return;
 
       }
+
+      // ====================================
+      // DETECTOR DE LINKS
+      // ====================================
+
+      const linksNoPermitidos =
+        obtenerLinksNoPermitidos(
+          message.content
+        );
+
+      if (
+        linksNoPermitidos.length > 0
+      ) {
+
+        try {
+
+          // Marcar antes de eliminar
+          mensajesEliminadosPorBot.add(
+            message.id
+          );
+
+          await message.delete();
+
+          // ==================================
+          // ENVIAR LOG DE LINK
+          // ==================================
+
+          await enviarLogLink(
+
+            member,
+
+            linksNoPermitidos[0],
+
+            message.channel
+
+          );
+
+          console.log(
+            'LINK ELIMINADO | ' +
+            member.user.tag +
+            ' | CANAL: ' +
+            message.channel.name
+          );
+
+        } catch (error) {
+
+          mensajesEliminadosPorBot.delete(
+            message.id
+          );
+
+          console.error(
+            'ERROR AL ELIMINAR LINK:',
+            error
+          );
+
+        }
+
+        return;
+
+      }
+
+      // ====================================
+      // DETECTOR DE SPAM
+      // ====================================
 
       const ahora =
         Date.now();
@@ -831,7 +1133,7 @@ client.on(
             );
 
             // ==================================
-            // MARCAR Y BORRAR MENSAJES
+            // BORRAR MENSAJES DE SPAM
             // ==================================
 
             for (
@@ -846,7 +1148,6 @@ client.on(
                   !dato.message.deleted
                 ) {
 
-                  // Marcar antes de borrar
                   mensajesEliminadosPorBot.add(
                     dato.message.id
                   );
@@ -857,8 +1158,6 @@ client.on(
 
               } catch (error) {
 
-                // Si Discord ya eliminó
-                // el mensaje, limpiar el ID
                 mensajesEliminadosPorBot.delete(
                   dato.message?.id
                 );
@@ -963,7 +1262,7 @@ client.on(
     } catch (error) {
 
       console.error(
-        'ERROR EN DETECTOR DE SPAM:',
+        'ERROR EN DETECTOR DE SPAM/LINKS:',
         error
       );
 
@@ -978,10 +1277,6 @@ client.on(
 
 setInterval(
   () => {
-
-    // Evita que el Set crezca
-    // indefinidamente si Discord
-    // no dispara algún evento.
 
     if (
       mensajesEliminadosPorBot.size >
