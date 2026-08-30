@@ -207,12 +207,13 @@ client.on('interactionCreate', async (interaction) => {
       // COMPROBAR TICKET EXISTENTE
       // =======================
 
-      const ticketExistente = guild.channels.cache.find(
-        (channel) =>
-          channel.type === ChannelType.GuildText &&
-          channel.topic &&
-          channel.topic.includes('TICKET_USER:' + user.id)
-      );
+const ticketExistente = guild.channels.cache.find(
+  (channel) =>
+    channel.type === ChannelType.GuildText &&
+    channel.parentId === TICKET_CATEGORY_ID &&
+    channel.topic &&
+    channel.topic.startsWith('TICKET_USER:' + user.id + ' |')
+);
 
       if (ticketExistente) {
         await interaction.reply({
