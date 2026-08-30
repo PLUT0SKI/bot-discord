@@ -191,7 +191,7 @@ client.on('interactionCreate', async (interaction) => {
         .slice(0, 20);
 
       const channelName =
-        'ticket-' + tipo + '-' + username;
+        tipo + '-' + username;
 
       // =======================
       // CREAR CANAL
