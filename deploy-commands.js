@@ -98,10 +98,10 @@ console.log('✅ /setlogs');
 
 } catch (error) {
 
-```
+  
 console.error('❌ ERROR AL REGISTRAR COMANDOS:');
 console.error(error);
-```
+
 
 }
 
