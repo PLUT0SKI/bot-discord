@@ -8,7 +8,10 @@ const {
   ButtonStyle,
   PermissionsBitField,
   ChannelType,
-  Partials
+  Partials,
+  ModalBuilder,
+  TextInputBuilder,
+  TextInputStyle
 } = require('discord.js');
 
 const fs = require('fs');
@@ -43,6 +46,14 @@ const GOODBYE_CHANNEL_ID = '1357832797448044684';
 
 const REACTION_FILE = './reactionRoles.json';
 const LOGS_FILE = './logsConfig.json';
+
+// ==========================================
+// PRECIOS DE CAMISAS
+// ==========================================
+
+const PRECIO_ROBUX = 200;
+const PRECIO_TRANSFERENCIA = 100;
+const PRECIO_DEPOSITO = 100;
 
 // ==========================================
 // REACTION ROLES
@@ -1428,10 +1439,6 @@ client.on(
           'clear'
         ) {
 
-          // ----------------------------------
-          // COMPROBAR PERMISOS DEL USUARIO
-          // ----------------------------------
-
           if (
             !interaction.memberPermissions.has(
               PermissionsBitField.Flags.ManageMessages
@@ -1478,10 +1485,6 @@ client.on(
             return;
           }
 
-          // ----------------------------------
-          // COMPROBAR PERMISOS DEL BOT
-          // ----------------------------------
-
           const botMember =
             interaction.guild.members.me;
 
@@ -1515,10 +1518,6 @@ client.on(
             return;
           }
 
-          // ----------------------------------
-          // RESPUESTA INICIAL
-          // ----------------------------------
-
           await interaction.reply({
             content:
               '🧹 **Vaciando el canal...**',
@@ -1528,10 +1527,6 @@ client.on(
 
           let totalEliminados = 0;
           let errores = 0;
-
-          // ----------------------------------
-          // BUCLE PRINCIPAL
-          // ----------------------------------
 
           while (true) {
 
@@ -1580,18 +1575,11 @@ client.on(
                   14 * 24 * 60 * 60 * 1000
               );
 
-            // --------------------------------
-            // BORRAR RECIENTES EN BLOQUE
-            // --------------------------------
-
             if (
               mensajesRecientes.size > 0
             ) {
 
               try {
-
-                const cantidad =
-                  mensajesRecientes.size;
 
                 for (
                   const mensaje
@@ -1651,10 +1639,6 @@ client.on(
 
             }
 
-            // --------------------------------
-            // BORRAR ANTIGUOS
-            // --------------------------------
-
             if (
               mensajesAntiguos.size > 0
             ) {
@@ -1663,9 +1647,6 @@ client.on(
                 [
                   ...mensajesAntiguos.values()
                 ];
-
-              // Eliminamos varios a la vez
-              // para hacerlo más rápido.
 
               const BLOQUE =
                 10;
@@ -1735,11 +1716,6 @@ client.on(
 
             }
 
-            // --------------------------------
-            // PEQUEÑA PAUSA PARA EVITAR
-            // RATE LIMITS
-            // --------------------------------
-
             await new Promise(
               resolve =>
                 setTimeout(
@@ -1749,10 +1725,6 @@ client.on(
             );
 
           }
-
-          // ----------------------------------
-          // RESULTADO FINAL
-          // ----------------------------------
 
           try {
 
@@ -2133,6 +2105,109 @@ client.on(
 
           return;
         }
+
+        // ====================================
+        // /PAGOS
+        // ====================================
+
+        if (
+          interaction.commandName ===
+          'pagos'
+        ) {
+
+          const embed =
+            new EmbedBuilder()
+              .setColor(
+                '#2b2d31'
+              )
+              .setTitle(
+                '💳 MÉTODOS DE PAGO'
+              )
+              .setDescription(
+                'Selecciona el método de pago que quieras utilizar.\n\n' +
+
+                '🟨 **Robux**\n' +
+                'Precio por camisa: **200 Robux**\n\n' +
+
+                '🏦 **Transferencia**\n' +
+                'Precio por camisa: **$100 MXN**\n\n' +
+
+                '💵 **Depósito**\n' +
+                'Precio por camisa: **$100 MXN**\n\n' +
+
+                '> Después de seleccionar el método de pago, se te pedirá la cantidad de camisas que deseas comprar.'
+              )
+              .setFooter({
+                text:
+                  'Selecciona una opción para continuar'
+              })
+              .setTimestamp();
+
+          const menu =
+            new StringSelectMenuBuilder()
+              .setCustomId(
+                'pagos_menu'
+              )
+              .setPlaceholder(
+                'Selecciona un método de pago'
+              )
+              .addOptions([
+                {
+                  label:
+                    'Robux',
+                  description:
+                    '200 Robux por camisa',
+                  value:
+                    'robux',
+                  emoji:
+                    '🟨'
+                },
+                {
+                  label:
+                    'Transferencia',
+                  description:
+                    '$100 MXN por camisa',
+                  value:
+                    'transferencia',
+                  emoji:
+                    '🏦'
+                },
+                {
+                  label:
+                    'Depósito',
+                  description:
+                    '$100 MXN por camisa',
+                  value:
+                    'deposito',
+                  emoji:
+                    '💵'
+                }
+              ]);
+
+          const row =
+            new ActionRowBuilder()
+              .addComponents(
+                menu
+              );
+
+          await interaction.channel.send({
+            embeds: [
+              embed
+            ],
+            components: [
+              row
+            ]
+          });
+
+          await interaction.reply({
+            content:
+              '✅ Panel de métodos de pago enviado.',
+            ephemeral:
+              true
+          });
+
+          return;
+        }
       }
 
       // ======================================
@@ -2256,12 +2331,127 @@ client.on(
       }
 
       // ======================================
-      // CREAR TICKET
+      // MENÚS SELECT
       // ======================================
 
       if (
         interaction.isStringSelectMenu()
       ) {
+
+        // ====================================
+        // MENÚ DE PAGOS
+        // ====================================
+
+        if (
+          interaction.customId ===
+          'pagos_menu'
+        ) {
+
+          const metodo =
+            interaction.values[0];
+
+          let nombreMetodo;
+          let precio;
+
+          if (
+            metodo ===
+            'robux'
+          ) {
+
+            nombreMetodo =
+              'Robux';
+
+            precio =
+              PRECIO_ROBUX;
+
+          } else if (
+            metodo ===
+            'transferencia'
+          ) {
+
+            nombreMetodo =
+              'Transferencia';
+
+            precio =
+              PRECIO_TRANSFERENCIA;
+
+          } else if (
+            metodo ===
+            'deposito'
+          ) {
+
+            nombreMetodo =
+              'Depósito';
+
+            precio =
+              PRECIO_DEPOSITO;
+
+          } else {
+
+            await interaction.reply({
+              content:
+                '❌ Método de pago no válido.',
+              ephemeral:
+                true
+            });
+
+            return;
+          }
+
+          const modal =
+            new ModalBuilder()
+              .setCustomId(
+                'pagos_cantidad_' +
+                metodo
+              )
+              .setTitle(
+                'Cantidad de camisas'
+              );
+
+          const cantidadInput =
+            new TextInputBuilder()
+              .setCustomId(
+                'cantidad_camisas'
+              )
+              .setLabel(
+                '¿Cuántas camisas quieres?'
+              )
+              .setPlaceholder(
+                'Ejemplo: 5'
+              )
+              .setStyle(
+                TextInputStyle.Short
+              )
+              .setRequired(
+                true
+              )
+              .setMinLength(
+                1
+              )
+              .setMaxLength(
+                4
+              );
+
+          const row =
+            new ActionRowBuilder()
+              .addComponents(
+                cantidadInput
+              );
+
+          modal.addComponents(
+            row
+          );
+
+          await interaction.showModal(
+            modal
+          );
+
+          return;
+        }
+
+        // ====================================
+        // CREAR TICKET
+        // ====================================
 
         if (
           interaction.customId !==
@@ -2491,6 +2681,219 @@ client.on(
           canal.name +
           ' | USUARIO: ' +
           user.tag
+        );
+
+        return;
+      }
+
+      // ======================================
+      // MODAL DE CANTIDAD DE CAMISAS
+      // ======================================
+
+      if (
+        interaction.isModalSubmit()
+      ) {
+
+        if (
+          !interaction.customId.startsWith(
+            'pagos_cantidad_'
+          )
+        ) {
+          return;
+        }
+
+        const metodo =
+          interaction.customId.replace(
+            'pagos_cantidad_',
+            ''
+          );
+
+        const cantidadTexto =
+          interaction.fields.getTextInputValue(
+            'cantidad_camisas'
+          );
+
+        const cantidad =
+          Number(
+            cantidadTexto
+          );
+
+        if (
+          !Number.isInteger(
+            cantidad
+          ) ||
+          cantidad <= 0
+        ) {
+
+          await interaction.reply({
+            content:
+              '❌ Introduce una cantidad válida de camisas. Por ejemplo: **5**',
+            ephemeral:
+              true
+          });
+
+          return;
+        }
+
+        if (
+          cantidad > 1000
+        ) {
+
+          await interaction.reply({
+            content:
+              '❌ La cantidad máxima por pedido es de **1000 camisas**.',
+            ephemeral:
+              true
+          });
+
+          return;
+        }
+
+        let nombreMetodo;
+        let precio;
+        let moneda;
+
+        if (
+          metodo ===
+          'robux'
+        ) {
+
+          nombreMetodo =
+            'Robux';
+
+          precio =
+            PRECIO_ROBUX;
+
+          moneda =
+            'Robux';
+
+        } else if (
+          metodo ===
+          'transferencia'
+        ) {
+
+          nombreMetodo =
+            'Transferencia';
+
+          precio =
+            PRECIO_TRANSFERENCIA;
+
+          moneda =
+            'MXN';
+
+        } else if (
+          metodo ===
+          'deposito'
+        ) {
+
+          nombreMetodo =
+            'Depósito';
+
+          precio =
+            PRECIO_DEPOSITO;
+
+          moneda =
+            'MXN';
+
+        } else {
+
+          await interaction.reply({
+            content:
+              '❌ Método de pago no válido.',
+            ephemeral:
+              true
+          });
+
+          return;
+        }
+
+        const total =
+          cantidad *
+          precio;
+
+        const embed =
+          new EmbedBuilder()
+            .setColor(
+              '#2b2d31'
+            )
+            .setTitle(
+              '🧾 RESUMEN DE TU PEDIDO'
+            )
+            .setDescription(
+              'Estos son los detalles de tu pedido:'
+            )
+            .addFields(
+              {
+                name:
+                  '💳 Método de pago',
+                value:
+                  '**' +
+                  nombreMetodo +
+                  '**',
+                inline:
+                  true
+              },
+              {
+                name:
+                  '👕 Camisas',
+                value:
+                  '**' +
+                  cantidad +
+                  '**',
+                inline:
+                  true
+              },
+              {
+                name:
+                  '💰 Precio por camisa',
+                value:
+                  '**' +
+                  precio +
+                  ' ' +
+                  moneda +
+                  '**',
+                inline:
+                  true
+              },
+              {
+                name:
+                  '💵 TOTAL',
+                value:
+                  '**' +
+                  total +
+                  ' ' +
+                  moneda +
+                  '**',
+                inline:
+                  false
+              }
+            )
+            .setFooter({
+              text:
+                'Gracias por tu compra'
+            })
+            .setTimestamp();
+
+        await interaction.reply({
+          embeds: [
+            embed
+          ],
+          ephemeral:
+            true
+        });
+
+        console.log(
+          'PEDIDO DE PAGO | ' +
+          'USUARIO: ' +
+          interaction.user.tag +
+          ' | METODO: ' +
+          nombreMetodo +
+          ' | CAMISAS: ' +
+          cantidad +
+          ' | TOTAL: ' +
+          total +
+          ' ' +
+          moneda
         );
 
         return;
