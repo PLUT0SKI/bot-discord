@@ -107,12 +107,12 @@ client.on('interactionCreate', async (interaction) => {
           {
             label: 'Comprar',
             value: 'Comprar',
-            emoji: '🛍️'
+            emoji: '🛒'
           },
           {
             label: 'Soporte',
             value: 'Soporte',
-            emoji: '➕'
+            emoji: '🛠️'
           },
           {
             label: 'Alianzas',
