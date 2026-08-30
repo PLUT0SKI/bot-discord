@@ -2,7 +2,7 @@ const { REST, Routes, SlashCommandBuilder } = require('discord.js');
 
 const DISCORD_TOKEN = process.env.DISCORD_TOKEN;
 
-const CLIENT_ID = '15436446689677780462';
+const CLIENT_ID = '1543644668967780462';
 const GUILD_ID = '1216948563834175488';
 
 const commands = [
