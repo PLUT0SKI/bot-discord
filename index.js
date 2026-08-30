@@ -40,7 +40,7 @@ client.on('guildMemberAdd', async (member) => {
       .setColor('#2b2d31')
       .setTitle('Bienvenido/a')
       .setDescription(
-        'Hola ' + member + ', es un placer tenerte aqui.\n\n' +
+        'Hola <@' + user.id + '>, es un placer tenerte aqui.\n\n' +
         'Pasate por los canales y disfruta.'
       )
       .setThumbnail(
@@ -50,7 +50,7 @@ client.on('guildMemberAdd', async (member) => {
       );
 
     await canal.send({
-      content: 'Hola ' + member + '!',
+      content: 'Hola <@' + user.id + '>'!',
       embeds: [embed]
     });
 
