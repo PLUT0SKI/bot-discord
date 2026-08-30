@@ -50,7 +50,7 @@ client.on('guildMemberAdd', async (member) => {
       );
 
     await canal.send({
-      content: 'Hola <@' + user.id + '>'!',
+      content: 'Hola <@' + user.id + '>!',
       embeds: [embed]
     });
 
