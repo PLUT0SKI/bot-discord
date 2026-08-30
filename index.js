@@ -215,13 +215,13 @@ const ticketExistente = guild.channels.cache.find(
     channel.topic.startsWith('TICKET_USER:' + user.id + ' |')
 );
 
-      if (ticketExistente) {
-        await interaction.reply({
-          content: 'Ya tienes un ticket abierto: ' + ticketExistente,
-          ephemeral: true
-        });
-        return;
-      }
+if (ticketExistente) {
+  await interaction.reply({
+    content: 'Ya tienes un ticket abierto: <#' + ticketExistente.id + '>',
+    ephemeral: true
+  });
+  return;
+}
 
       // =======================
       // COMPROBAR CATEGORIA
