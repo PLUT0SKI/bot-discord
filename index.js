@@ -245,7 +245,7 @@ client.on('interactionCreate', async (interaction) => {
         .setColor('#2b2d31')
         .setTitle('Ticket creado')
         .setDescription(
-          'Hola ' + user + ', gracias por contactar con nosotros.\n\n' +
+          'Hola <@' + user.id + '>, gracias por contactar con nosotros.\n\n' +
           '**Tipo:** ' + tipo + '\n\n' +
           'Explica tu problema o solicitud y espera a que un miembro del equipo te atienda.'
         )
@@ -258,7 +258,7 @@ client.on('interactionCreate', async (interaction) => {
 
       await interaction.reply({
         content:
-          'Tu ticket fue creado correctamente: ' + canal,
+          'Tu ticket fue creado correctamente: <#' + canal.id + '>',
         ephemeral: true
       });
 
