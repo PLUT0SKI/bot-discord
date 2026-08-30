@@ -39,6 +39,7 @@ const client = new Client({
 
 const TICKET_CATEGORY_ID = '1357832792699834548';
 const WELCOME_CHANNEL_ID = '1357832795547893861';
+const GOODBYE_CHANNEL_ID = '1357832797448044684';
 
 const REACTION_FILE = './reactionRoles.json';
 const LOGS_FILE = './logsConfig.json';
@@ -191,7 +192,6 @@ function esGifPermitido(url) {
     const urlLimpia =
       url.toLowerCase();
 
-    // GIF directo
     if (
       /\.gif(?:\?[^\s]*)?$/i.test(
         urlLimpia
@@ -202,7 +202,6 @@ function esGifPermitido(url) {
 
     }
 
-    // Tenor
     if (
       urlLimpia.includes(
         'tenor.com'
@@ -213,7 +212,6 @@ function esGifPermitido(url) {
 
     }
 
-    // Giphy
     if (
       urlLimpia.includes(
         'giphy.com'
@@ -582,10 +580,6 @@ client.on(
   async (message) => {
 
     try {
-
-      // ====================================
-      // IGNORAR MENSAJES BORRADOS POR EL BOT
-      // ====================================
 
       if (
         mensajesEliminadosPorBot.has(
@@ -961,10 +955,6 @@ client.on(
 
       if (!member) return;
 
-      // ====================================
-      // NO DETECTAR ADMINISTRADORES
-      // ====================================
-
       if (
         member.permissions.has(
           PermissionsBitField.Flags.Administrator
@@ -990,25 +980,16 @@ client.on(
 
         try {
 
-          // Marcar antes de eliminar
           mensajesEliminadosPorBot.add(
             message.id
           );
 
           await message.delete();
 
-          // ==================================
-          // ENVIAR LOG DE LINK
-          // ==================================
-
           await enviarLogLink(
-
             member,
-
             linksNoPermitidos[0],
-
             message.channel
-
           );
 
           console.log(
@@ -1064,10 +1045,6 @@ client.on(
 
       }
 
-      // ====================================
-      // ELIMINAR MENSAJES ANTIGUOS
-      // ====================================
-
       datos.mensajes =
         datos.mensajes.filter(
           dato =>
@@ -1075,10 +1052,6 @@ client.on(
             dato.timestamp <=
             SPAM_TIME
         );
-
-      // ====================================
-      // GUARDAR MENSAJE
-      // ====================================
 
       datos.mensajes.push({
 
@@ -1089,10 +1062,6 @@ client.on(
           message
 
       });
-
-      // ====================================
-      // COMPROBAR SPAM
-      // ====================================
 
       if (
         datos.mensajes.length >=
@@ -1116,10 +1085,6 @@ client.on(
 
         try {
 
-          // ==================================
-          // SILENCIAR
-          // ==================================
-
           if (
             member.moderatable
           ) {
@@ -1131,10 +1096,6 @@ client.on(
               'Spam detectado automáticamente'
 
             );
-
-            // ==================================
-            // BORRAR MENSAJES DE SPAM
-            // ==================================
 
             for (
               const dato
@@ -1170,20 +1131,11 @@ client.on(
 
             }
 
-            // ==================================
-            // ENVIAR LOG DE SPAM
-            // ==================================
-
             await enviarLogSpam(
-
               member,
-
               cantidad,
-
               MUTE_TIME,
-
               message.channel
-
             );
 
             console.log(
@@ -1201,10 +1153,6 @@ client.on(
               'SILENCIADO 60 SEGUNDOS'
 
             );
-
-            // ==================================
-            // REACTIVAR DETECTOR
-            // ==================================
 
             setTimeout(
               () => {
@@ -1272,7 +1220,7 @@ client.on(
 );
 
 // ==========================================
-// LIMPIEZA DE IDS DE MENSAJES DEL BOT
+// LIMPIEZA DE IDS
 // ==========================================
 
 setInterval(
@@ -1377,6 +1325,84 @@ client.on(
 
       console.error(
         'ERROR EN BIENVENIDA:',
+        error
+      );
+
+    }
+
+  }
+);
+
+// ==========================================
+// DESPEDIDA
+// ==========================================
+
+client.on(
+  'guildMemberRemove',
+  async (member) => {
+
+    try {
+
+      const canal =
+        member.guild.channels.cache.get(
+          GOODBYE_CHANNEL_ID
+        );
+
+      if (!canal) {
+
+        console.error(
+          'CANAL DE DESPEDIDA NO ENCONTRADO: ' +
+          GOODBYE_CHANNEL_ID
+        );
+
+        return;
+
+      }
+
+      const embed =
+        new EmbedBuilder()
+
+          .setColor(
+            '#2b2d31'
+          )
+
+          .setTitle(
+            'Hasta luego'
+          )
+
+          .setDescription(
+
+            'Adios <@' +
+            member.id +
+            '>, esperamos volver a verte pronto.\n\n' +
+
+            'Gracias por haber formado parte del servidor.'
+
+          )
+
+          .setThumbnail(
+            member.user.displayAvatarURL({
+              size: 256
+            })
+          );
+
+      await canal.send({
+
+        content:
+          'Adios <@' +
+          member.id +
+          '>!',
+
+        embeds: [
+          embed
+        ]
+
+      });
+
+    } catch (error) {
+
+      console.error(
+        'ERROR EN DESPEDIDA:',
         error
       );
 
