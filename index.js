@@ -252,7 +252,7 @@ client.on('interactionCreate', async (interaction) => {
         .setTimestamp();
 
       await canal.send({
-        content: 'Bienvenido ' + user,
+        content: 'Bienvenido <@' + user.id + '>',
         embeds: [ticketEmbed]
       });
 
