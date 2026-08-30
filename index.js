@@ -1,10 +1,13 @@
-const { 
-  Client, 
-  GatewayIntentBits, 
-  EmbedBuilder, 
-  ActionRowBuilder, 
-  StringSelectMenuBuilder, 
-  PermissionsBitField 
+```js
+const {
+  Client,
+  GatewayIntentBits,
+  EmbedBuilder,
+  ActionRowBuilder,
+  StringSelectMenuBuilder,
+  ButtonBuilder,
+  ButtonStyle,
+  PermissionsBitField
 } = require('discord.js');
 
 const client = new Client({
@@ -22,6 +25,7 @@ client.once('ready', () => {
 // =======================
 // 🎉 BIENVENIDA
 // =======================
+
 client.on('guildMemberAdd', async member => {
 
   const canal = member.guild.channels.cache.find(c => c.name === 'bienvenida');
@@ -32,7 +36,7 @@ client.on('guildMemberAdd', async member => {
     .setTitle('¡Bienvenido/a!')
     .setDescription(`Hola ${member}, es un placer tenerte aquí.\n\nPásate por los canales y disfruta 🔥`)
     .setThumbnail(member.user.displayAvatarURL({ dynamic: true }))
-    .setImage('https://i.imgur.com/tuimagen.png'); // tu banner
+    .setImage('https://i.imgur.com/tuimagen.png');
 
   canal.send({
     content: `👋 ¡Hola ${member}!`,
@@ -45,7 +49,12 @@ client.on('guildMemberAdd', async member => {
 // =======================
 // 🎟️ PANEL DE TICKETS
 // =======================
+
 client.on('interactionCreate', async interaction => {
+
+  // =======================
+  // COMANDO /TICKETS
+  // =======================
 
   if (interaction.isChatInputCommand()) {
 
@@ -82,7 +91,8 @@ client.on('interactionCreate', async interaction => {
           }
         ]);
 
-      const row = new ActionRowBuilder().addComponents(menu);
+      const row = new ActionRowBuilder()
+        .addComponents(menu);
 
       await interaction.reply({
         embeds: [embed],
@@ -95,42 +105,108 @@ client.on('interactionCreate', async interaction => {
   // =======================
   // 📂 CREAR TICKET
   // =======================
+
   if (interaction.isStringSelectMenu()) {
 
     if (interaction.customId === 'ticket_menu') {
 
       const tipo = interaction.values[0];
 
-const canal = await interaction.guild.channels.create({
-  name: `${tipo}-${interaction.user.username}`,
-  type: 0,
-  parent: '1357832792699834548',
+      // Nombre bonito de la opción
+      const nombres = {
+        comprar: 'Comprar',
+        soporte: 'Soporte',
+        alianza: 'Alianzas'
+      };
 
-  permissionOverwrites: [
-    {
-      id: interaction.guild.id,
-      deny: [
-        PermissionsBitField.Flags.ViewChannel
-      ]
-    },
-    {
-      id: interaction.user.id,
-      allow: [
-        PermissionsBitField.Flags.ViewChannel,
-        PermissionsBitField.Flags.SendMessages,
-        PermissionsBitField.Flags.ReadMessageHistory
-      ]
-    }
-  ]
-});
-      canal.send(`🎫 Ticket creado para ${interaction.user}`);
+      const nombreTipo = nombres[tipo] || tipo;
 
-      interaction.reply({
-        content: '✅ Tu ticket fue creado',
+      const canal = await interaction.guild.channels.create({
+        name: `${tipo}-${interaction.user.username}`,
+        type: 0,
+        parent: '1357832792699834548',
+
+        permissionOverwrites: [
+          {
+            id: interaction.guild.id,
+            deny: [PermissionsBitField.Flags.ViewChannel]
+          },
+          {
+            id: interaction.user.id,
+            allow: [
+              PermissionsBitField.Flags.ViewChannel,
+              PermissionsBitField.Flags.SendMessages
+            ]
+          }
+        ]
+      });
+
+
+      // =======================
+      // 🎫 EMBED DEL TICKET
+      // =======================
+
+      const ticketEmbed = new EmbedBuilder()
+        .setColor('#2b2d31')
+        .setTitle('Ticket Abierto')
+        .setDescription(
+          `${interaction.user} ha creado un nuevo ticket de **${nombreTipo}**`
+        )
+        .setThumbnail(interaction.user.displayAvatarURL({ dynamic: true }));
+
+
+      // =======================
+      // 🔴 BOTÓN CERRAR
+      // =======================
+
+      const cerrarButton = new ButtonBuilder()
+        .setCustomId('cerrar_ticket')
+        .setLabel('Cerrar Ticket')
+        .setEmoji('🔒')
+        .setStyle(ButtonStyle.Danger);
+
+      const buttonRow = new ActionRowBuilder()
+        .addComponents(cerrarButton);
+
+
+      await canal.send({
+        embeds: [ticketEmbed],
+        components: [buttonRow]
+      });
+
+
+      await interaction.reply({
+        content: `✅ Tu ticket fue creado: ${canal}`,
         ephemeral: true
       });
     }
   }
+
+
+  // =======================
+  // 🔒 CERRAR TICKET
+  // =======================
+
+  if (interaction.isButton()) {
+
+    if (interaction.customId === 'cerrar_ticket') {
+
+      await interaction.reply({
+        content: '🔒 Cerrando ticket...',
+        ephemeral: true
+      });
+
+      setTimeout(async () => {
+        await interaction.channel.delete().catch(() => {});
+      }, 1500);
+    }
+  }
+
+});
+
+
+client.login(process.env.DISCORD_TOKEN);
+```
 
 });
 
