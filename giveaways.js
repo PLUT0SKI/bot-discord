@@ -1,4 +1,5 @@
 const {
+  Client,
   EmbedBuilder,
   ActionRowBuilder,
   ButtonBuilder,
@@ -34,21 +35,15 @@ function duracionAMs(texto) {
 
   const cantidad = Number(match[1]);
   const unidad = match[2].toLowerCase();
-  const valores = {
-    s: 1000,
-    m: 60000,
-    h: 3600000,
-    d: 86400000,
-    w: 604800000
-  };
-
+  const valores = { s: 1000, m: 60000, h: 3600000, d: 86400000, w: 604800000 };
   const duracion = cantidad * valores[unidad];
+
   if (!Number.isSafeInteger(duracion) || duracion < 5000) return null;
   return duracion;
 }
 
 function crearEmbedSorteo(sorteo, terminado = false, ganadorIds = []) {
-  const embed = new EmbedBuilder()
+  return new EmbedBuilder()
     .setColor(terminado ? '#2b2d31' : '#5865F2')
     .setTitle(terminado ? '🎉 SORTEO FINALIZADO' : '🎉 SORTEO')
     .setDescription(
@@ -62,8 +57,6 @@ function crearEmbedSorteo(sorteo, terminado = false, ganadorIds = []) {
         : `⏰ **Termina:** <t:${Math.floor(sorteo.fin / 1000)}:R>\n\n¡Pulsa el botón para participar!`)
     )
     .setFooter({ text: `ID del sorteo: ${sorteo.id}` });
-
-  return embed;
 }
 
 function crearBotonParticipar(sorteo) {
@@ -83,7 +76,6 @@ async function finalizarSorteo(client, sorteoId) {
   sorteo.finalizado = true;
   const participantes = [...new Set(sorteo.participantes)];
   const ganadores = [];
-
   const cantidadGanadores = Math.min(sorteo.ganadores, participantes.length);
   const disponibles = [...participantes];
 
@@ -95,6 +87,7 @@ async function finalizarSorteo(client, sorteoId) {
   try {
     const canal = await client.channels.fetch(sorteo.canalId);
     const mensaje = await canal.messages.fetch(sorteo.mensajeId);
+
     await mensaje.edit({
       embeds: [crearEmbedSorteo(sorteo, true, ganadores)],
       components: []
@@ -114,6 +107,7 @@ async function finalizarSorteo(client, sorteoId) {
 
 function programarSorteo(client, sorteo) {
   const restante = sorteo.fin - Date.now();
+
   if (restante <= 0) {
     finalizarSorteo(client, sorteo.id);
     return;
@@ -122,7 +116,7 @@ function programarSorteo(client, sorteo) {
   setTimeout(() => finalizarSorteo(client, sorteo.id), restante);
 }
 
-module.exports = function iniciarSistemaSorteos(client) {
+function iniciarSistemaSorteos(client) {
   client.on('ready', () => {
     for (const sorteo of Object.values(giveaways)) {
       if (!sorteo.finalizado) programarSorteo(client, sorteo);
@@ -177,8 +171,7 @@ module.exports = function iniciarSistemaSorteos(client) {
         guardarSorteos();
         programarSorteo(client, sorteo);
 
-        await interaction.reply({ content: `✅ Sorteo creado correctamente en ${canal}.`, ephemeral: true });
-        return;
+        return interaction.reply({ content: `✅ Sorteo creado correctamente en ${canal}.`, ephemeral: true });
       }
 
       if (!interaction.isButton() || !interaction.customId.startsWith('giveaway_join_')) return;
@@ -194,16 +187,22 @@ module.exports = function iniciarSistemaSorteos(client) {
         sorteo.participantes = sorteo.participantes.filter(id => id !== interaction.user.id);
         guardarSorteos();
 
-        const mensaje = await interaction.message.fetch();
-        await mensaje.edit({ embeds: [crearEmbedSorteo(sorteo)], components: [crearBotonParticipar(sorteo)] });
+        await interaction.message.edit({
+          embeds: [crearEmbedSorteo(sorteo)],
+          components: [crearBotonParticipar(sorteo)]
+        });
+
         return interaction.reply({ content: '↩️ Saliste del sorteo.', ephemeral: true });
       }
 
       sorteo.participantes.push(interaction.user.id);
       guardarSorteos();
 
-      const mensaje = await interaction.message.fetch();
-      await mensaje.edit({ embeds: [crearEmbedSorteo(sorteo)], components: [crearBotonParticipar(sorteo)] });
+      await interaction.message.edit({
+        embeds: [crearEmbedSorteo(sorteo)],
+        components: [crearBotonParticipar(sorteo)]
+      });
+
       return interaction.reply({ content: '🎉 ¡Ya estás participando!', ephemeral: true });
     } catch (error) {
       console.error('ERROR EN EL SISTEMA DE SORTEOS:', error);
@@ -212,4 +211,13 @@ module.exports = function iniciarSistemaSorteos(client) {
       }
     }
   });
+}
+
+const loginOriginal = Client.prototype.login;
+Client.prototype.login = function (...args) {
+  if (!this.__giveawaySystemStarted) {
+    this.__giveawaySystemStarted = true;
+    iniciarSistemaSorteos(this);
+  }
+  return loginOriginal.apply(this, args);
 };
