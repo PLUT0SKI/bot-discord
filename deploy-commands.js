@@ -40,48 +40,20 @@ if (!DISCORD_TOKEN) {
   process.exit(1);
 }
 
-const rest = new REST({ version: '10' }).setToken(DISCORD_TOKEN);
-
-async function ejecutarConTimeout(peticion, nombre) {
-  try {
-    console.log(`⏳ ${nombre}...`);
-    const resultado = await Promise.race([
-      peticion(),
-      new Promise((_, reject) =>
-        setTimeout(() => reject(new Error(`Timeout: Discord no respondió a tiempo en ${nombre}.`)), 20000)
-      )
-    ]);
-    console.log(`✅ ${nombre} completado.`);
-    return resultado;
-  } catch (error) {
-    console.error(`❌ ${nombre} falló.`);
-    console.error(`Código: ${error.code ?? 'N/A'}`);
-    console.error(`Mensaje: ${error.message ?? error}`);
-    if (error.rawError) console.error('Respuesta de Discord:', error.rawError);
-    throw error;
-  }
-}
+const rest = new REST({ version: '10', timeout: 30000 }).setToken(DISCORD_TOKEN);
 
 (async () => {
   try {
-    console.log('🗑️ Eliminando comandos globales...');
-    await ejecutarConTimeout(
-      () => rest.put(Routes.applicationCommands(CLIENT_ID), { body: [] }),
-      'Eliminación de comandos globales'
-    );
-
-    console.log('🗑️ Eliminando comandos anteriores del servidor...');
-    await ejecutarConTimeout(
-      () => rest.put(Routes.applicationGuildCommands(CLIENT_ID, GUILD_ID), { body: [] }),
-      'Eliminación de comandos del servidor'
-    );
-
     console.log('🔄 Registrando comandos nuevos...');
-    await ejecutarConTimeout(
-      () => rest.put(Routes.applicationGuildCommands(CLIENT_ID, GUILD_ID), { body: commands }),
-      'Registro de comandos nuevos'
+    console.log(`📦 Comandos a registrar: ${commands.length}`);
+    console.log('⏳ Enviando comandos a Discord...');
+
+    const registrados = await rest.put(
+      Routes.applicationGuildCommands(CLIENT_ID, GUILD_ID),
+      { body: commands }
     );
 
+    console.log(`✅ Discord registró ${registrados.length} comandos correctamente.`);
     console.log('');
     console.log('======================================');
     console.log('✅ COMANDOS REGISTRADOS CORRECTAMENTE');
@@ -101,6 +73,10 @@ async function ejecutarConTimeout(peticion, nombre) {
     console.error('======================================');
     console.error('❌ NO SE PUDIERON REGISTRAR LOS COMANDOS');
     console.error('======================================');
+    console.error(`Código: ${error.code ?? 'N/A'}`);
+    console.error(`Mensaje: ${error.message ?? error}`);
+    if (error.status) console.error(`HTTP: ${error.status}`);
+    if (error.rawError) console.error('Respuesta de Discord:', error.rawError);
     console.error(error);
     process.exitCode = 1;
   }
