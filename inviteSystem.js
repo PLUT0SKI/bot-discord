@@ -13,7 +13,6 @@ const guildQueues = new Map();
 function writeJsonAtomic(file, data) {
   const tempFile = `${file}.tmp`;
   const content = JSON.stringify(data, null, 2);
-
   const fd = fs.openSync(tempFile, 'w');
   try {
     fs.writeSync(fd, content, null, 'utf8');
@@ -21,17 +20,13 @@ function writeJsonAtomic(file, data) {
   } finally {
     fs.closeSync(fd);
   }
-
   fs.renameSync(tempFile, file);
 }
 
 function saveData() {
   try {
-    // Guardamos el archivo principal y una copia de respaldo.
-    // Los dos se escriben inmediatamente cuando cambia un contador.
     writeJsonAtomic(INVITES_FILE, inviteData);
     writeJsonAtomic(INVITES_BACKUP_FILE, inviteData);
-
     console.log(`💾 Invitaciones guardadas: ${INVITES_FILE}`);
   } catch (error) {
     console.error('❌ ERROR AL GUARDAR invites.json:', error);
@@ -44,10 +39,8 @@ function isValidInviteData(data) {
 
 function readJson(file) {
   if (!fs.existsSync(file)) return null;
-
   const raw = fs.readFileSync(file, 'utf8').trim();
   if (!raw) return null;
-
   const parsed = JSON.parse(raw);
   return isValidInviteData(parsed) ? parsed : null;
 }
@@ -56,14 +49,12 @@ function loadData() {
   try {
     let loaded = null;
 
-    // Primero intentamos el archivo principal.
     try {
       loaded = readJson(INVITES_FILE);
     } catch (error) {
       console.error('⚠️ invites.json está dañado. Intentando recuperar el respaldo...');
     }
 
-    // Si está vacío/dañado, recuperamos el respaldo SIN borrar los datos.
     if (!loaded) {
       try {
         loaded = readJson(INVITES_BACKUP_FILE);
@@ -84,30 +75,6 @@ function loadData() {
   } catch (error) {
     console.error('❌ ERROR AL CARGAR EL SISTEMA DE INVITACIONES:', error);
     inviteData = {};
-  }
-}
-
-function reloadData() {
-  try {
-    let loaded = null;
-
-    try {
-      loaded = readJson(INVITES_FILE);
-    } catch (error) {
-      console.error('⚠️ No se pudo leer invites.json; usando respaldo si existe.');
-    }
-
-    if (!loaded) {
-      try {
-        loaded = readJson(INVITES_BACKUP_FILE);
-      } catch (error) {
-        // Se conserva inviteData actual si ambos archivos no están disponibles.
-      }
-    }
-
-    if (loaded) inviteData = loaded;
-  } catch (error) {
-    console.error('❌ ERROR AL RECARGAR invites.json:', error);
   }
 }
 
@@ -204,9 +171,7 @@ async function findUsedInvite(guild, oldCache) {
       }
     }
 
-    if (usedInvite) {
-      return { invites, usedInvite };
-    }
+    if (usedInvite) return { invites, usedInvite };
 
     if (attempt < 7) {
       await new Promise(resolve => setTimeout(resolve, 750));
@@ -236,18 +201,17 @@ async function handleMemberAdd(member) {
         return;
       }
 
-      reloadData();
-
       const data = getGuildData(member.guild.id);
       const inviterId = usedInvite.inviterId;
       const previousTotal = Number(data.users[inviterId] || 0);
       const total = previousTotal + 1;
 
+      // ESTE es el único contador oficial del sistema.
+      // Tanto el mensaje de entrada como /invites leen este mismo valor.
       data.users[inviterId] = total;
       data.joinedBy[member.id] = inviterId;
 
-      // Se guarda INMEDIATAMENTE después de cada invitación.
-      // Así, un reinicio posterior no elimina el contador.
+      // Guardar inmediatamente para que sobreviva a reinicios.
       saveData();
 
       const channel = member.guild.channels.cache.get(INVITE_CHANNEL_ID);
@@ -258,7 +222,6 @@ async function handleMemberAdd(member) {
       }
 
       const mensaje = `**${member} fue invitado a la comunidad por <@${inviterId}> y ahora tiene __${total} invitación${total === 1 ? '' : 'es'}__.**`;
-
       await channel.send({ content: mensaje });
 
       console.log(`✅ ${member.user.tag} fue invitado por ${inviterId}. Antes: ${previousTotal}. Ahora: ${total}`);
@@ -275,8 +238,12 @@ async function handleMemberRemove(member) {
 }
 
 function getInvites(userId, guildId) {
-  reloadData();
-  return Number(getGuildData(guildId).users[userId] || 0);
+  // IMPORTANTE: NO recargamos invites.json aquí.
+  // /invites debe leer exactamente el mismo objeto en memoria
+  // que acaba de actualizar guildMemberAdd. Así nunca puede mostrar
+  // 0 mientras el mensaje de entrada muestra 1.
+  const data = getGuildData(guildId);
+  return Number(data.users[userId] || 0);
 }
 
 async function initializeGuild(guild) {
