@@ -194,6 +194,312 @@ const LINK_REGEX =
   /https?:\/\/[^\s<]+/gi;
 
 // ==========================================
+// EMBED BUILDER
+// ==========================================
+
+const embedBuilders = new Map();
+
+function obtenerEmbedKey(interaction) {
+
+  return (
+    interaction.guild.id +
+    ':' +
+    interaction.user.id
+  );
+
+}
+
+function obtenerDatosEmbed(interaction) {
+
+  const key =
+    obtenerEmbedKey(interaction);
+
+  if (!embedBuilders.has(key)) {
+
+    embedBuilders.set(
+      key,
+      {
+        title: '',
+        description: '',
+        color: '#2b2d31',
+        footer: '',
+        thumbnail: '',
+        image: '',
+        fields: []
+      }
+    );
+
+  }
+
+  return embedBuilders.get(key);
+
+}
+
+function crearEmbedDesdeDatos(datos) {
+
+  const embed =
+    new EmbedBuilder()
+      .setColor(
+        datos.color || '#2b2d31'
+      );
+
+  if (datos.title) {
+
+    embed.setTitle(
+      datos.title
+    );
+
+  }
+
+  if (datos.description) {
+
+    embed.setDescription(
+      datos.description
+    );
+
+  }
+
+  if (datos.footer) {
+
+    embed.setFooter({
+      text:
+        datos.footer
+    });
+
+  }
+
+  if (datos.thumbnail) {
+
+    embed.setThumbnail(
+      datos.thumbnail
+    );
+
+  }
+
+  if (datos.image) {
+
+    embed.setImage(
+      datos.image
+    );
+
+  }
+
+  if (
+    datos.fields &&
+    datos.fields.length > 0
+  ) {
+
+    embed.addFields(
+      datos.fields
+    );
+
+  }
+
+  return embed;
+
+}
+
+function crearMenuEmbed() {
+
+  const menu =
+    new StringSelectMenuBuilder()
+      .setCustomId(
+        'embed_builder_menu'
+      )
+      .setPlaceholder(
+        'Selecciona qué quieres configurar'
+      )
+      .addOptions([
+
+        {
+          label:
+            'Título',
+          description:
+            'Configurar el título del embed',
+          value:
+            'embed_title',
+          emoji:
+            '📝'
+        },
+
+        {
+          label:
+            'Descripción',
+          description:
+            'Configurar la descripción',
+          value:
+            'embed_description',
+          emoji:
+            '📄'
+        },
+
+        {
+          label:
+            'Color',
+          description:
+            'Cambiar el color del embed',
+          value:
+            'embed_color',
+          emoji:
+            '🎨'
+        },
+
+        {
+          label:
+            'Footer',
+          description:
+            'Configurar el texto inferior',
+          value:
+            'embed_footer',
+          emoji:
+            '🔻'
+        },
+
+        {
+          label:
+            'Thumbnail',
+          description:
+            'Agregar una imagen pequeña',
+          value:
+            'embed_thumbnail',
+          emoji:
+            '🖼️'
+        },
+
+        {
+          label:
+            'Imagen',
+          description:
+            'Agregar una imagen grande',
+          value:
+            'embed_image',
+          emoji:
+            '🌄'
+        },
+
+        {
+          label:
+            'Agregar campo',
+          description:
+            'Agregar un campo al embed',
+          value:
+            'embed_field',
+          emoji:
+            '➕'
+        },
+
+        {
+          label:
+            'Vista previa',
+          description:
+            'Ver cómo quedará el embed',
+          value:
+            'embed_preview',
+          emoji:
+            '👀'
+        },
+
+        {
+          label:
+            'Enviar embed',
+          description:
+            'Enviar el embed al canal',
+          value:
+            'embed_send',
+          emoji:
+            '📤'
+        },
+
+        {
+          label:
+            'Cancelar',
+          description:
+            'Cancelar el creador de embeds',
+          value:
+            'embed_cancel',
+          emoji:
+            '❌'
+        }
+
+      ]);
+
+  return new ActionRowBuilder()
+    .addComponents(
+      menu
+    );
+
+}
+
+function crearPanelEmbed(datos) {
+
+  const embed =
+    new EmbedBuilder()
+      .setColor(
+        datos.color || '#2b2d31'
+      )
+      .setTitle(
+        '🛠️ CREADOR DE EMBEDS'
+      )
+      .setDescription(
+        'Configura tu embed utilizando el menú de abajo.\n\n' +
+
+        '📝 **Título:** ' +
+        (
+          datos.title
+            ? '`Configurado`'
+            : '`Sin configurar`'
+        ) +
+        '\n' +
+
+        '📄 **Descripción:** ' +
+        (
+          datos.description
+            ? '`Configurada`'
+            : '`Sin configurar`'
+        ) +
+        '\n' +
+
+        '🎨 **Color:** `' +
+        (
+          datos.color ||
+          '#2b2d31'
+        ) +
+        '`\n' +
+
+        '🔻 **Footer:** ' +
+        (
+          datos.footer
+            ? '`Configurado`'
+            : '`Sin configurar`'
+        ) +
+        '\n' +
+
+        '🖼️ **Thumbnail:** ' +
+        (
+          datos.thumbnail
+            ? '`Configurado`'
+            : '`Sin configurar`'
+        ) +
+        '\n' +
+
+        '🌄 **Imagen:** ' +
+        (
+          datos.image
+            ? '`Configurada`'
+            : '`Sin configurar`'
+        ) +
+        '\n' +
+
+        '➕ **Campos:** `' +
+        datos.fields.length +
+        '`'
+      );
+
+  return embed;
+
+}
+
+// ==========================================
 // COMPROBAR GIF PERMITIDO
 // ==========================================
 
@@ -266,6 +572,7 @@ function obtenerLinksNoPermitidos(
         link
       )
   );
+
 }
 
 // ==========================================
@@ -388,6 +695,7 @@ async function enviarLogSpam(
     );
 
   }
+
 }
 
 // ==========================================
@@ -502,6 +810,7 @@ async function enviarLogLink(
     );
 
   }
+
 }
 
 // ==========================================
@@ -863,10 +1172,6 @@ client.on(
 
       }
 
-      // ====================================
-      // DETECTOR DE LINKS
-      // ====================================
-
       const linksNoPermitidos =
         obtenerLinksNoPermitidos(
           message.content
@@ -912,10 +1217,6 @@ client.on(
 
         return;
       }
-
-      // ====================================
-      // DETECTOR DE SPAM
-      // ====================================
 
       const ahora =
         Date.now();
@@ -1433,6 +1734,70 @@ client.on(
       if (
         interaction.isChatInputCommand()
       ) {
+
+        // ====================================
+        // /EMBED
+        // ====================================
+
+        if (
+          interaction.commandName ===
+          'embed'
+        ) {
+
+          if (
+            !interaction.memberPermissions.has(
+              PermissionsBitField.Flags.ManageMessages
+            )
+          ) {
+
+            await interaction.reply({
+              content:
+                '❌ Necesitas el permiso **Gestionar mensajes** para usar este comando.',
+              ephemeral:
+                true
+            });
+
+            return;
+          }
+
+          const key =
+            obtenerEmbedKey(
+              interaction
+            );
+
+          embedBuilders.set(
+            key,
+            {
+              title: '',
+              description: '',
+              color: '#2b2d31',
+              footer: '',
+              thumbnail: '',
+              image: '',
+              fields: []
+            }
+          );
+
+          const datos =
+            embedBuilders.get(
+              key
+            );
+
+          await interaction.reply({
+            embeds: [
+              crearPanelEmbed(
+                datos
+              )
+            ],
+            components: [
+              crearMenuEmbed()
+            ],
+            ephemeral:
+              true
+          });
+
+          return;
+        }
 
         // ====================================
         // /CLEAR
@@ -2181,6 +2546,575 @@ client.on(
       }
 
       // ======================================
+      // MENÚ EMBED
+      // ======================================
+
+      if (
+        interaction.isStringSelectMenu() &&
+        interaction.customId ===
+        'embed_builder_menu'
+      ) {
+
+        const datos =
+          obtenerDatosEmbed(
+            interaction
+          );
+
+        const opcion =
+          interaction.values[0];
+
+        // ==================================
+        // TÍTULO
+        // ==================================
+
+        if (
+          opcion ===
+          'embed_title'
+        ) {
+
+          const modal =
+            new ModalBuilder()
+              .setCustomId(
+                'embed_modal_title'
+              )
+              .setTitle(
+                'Configurar título'
+              );
+
+          const input =
+            new TextInputBuilder()
+              .setCustomId(
+                'embed_title_input'
+              )
+              .setLabel(
+                'Título del embed'
+              )
+              .setPlaceholder(
+                'Escribe el título'
+              )
+              .setStyle(
+                TextInputStyle.Short
+              )
+              .setRequired(
+                false
+              )
+              .setMaxLength(
+                256
+              );
+
+          modal.addComponents(
+            new ActionRowBuilder()
+              .addComponents(
+                input
+              )
+          );
+
+          await interaction.showModal(
+            modal
+          );
+
+          return;
+        }
+
+        // ==================================
+        // DESCRIPCIÓN
+        // ==================================
+
+        if (
+          opcion ===
+          'embed_description'
+        ) {
+
+          const modal =
+            new ModalBuilder()
+              .setCustomId(
+                'embed_modal_description'
+              )
+              .setTitle(
+                'Configurar descripción'
+              );
+
+          const input =
+            new TextInputBuilder()
+              .setCustomId(
+                'embed_description_input'
+              )
+              .setLabel(
+                'Descripción'
+              )
+              .setPlaceholder(
+                'Escribe la descripción del embed'
+              )
+              .setStyle(
+                TextInputStyle.Paragraph
+              )
+              .setRequired(
+                false
+              )
+              .setMaxLength(
+                4000
+              );
+
+          modal.addComponents(
+            new ActionRowBuilder()
+              .addComponents(
+                input
+              )
+          );
+
+          await interaction.showModal(
+            modal
+          );
+
+          return;
+        }
+
+        // ==================================
+        // COLOR
+        // ==================================
+
+        if (
+          opcion ===
+          'embed_color'
+        ) {
+
+          const modal =
+            new ModalBuilder()
+              .setCustomId(
+                'embed_modal_color'
+              )
+              .setTitle(
+                'Cambiar color'
+              );
+
+          const input =
+            new TextInputBuilder()
+              .setCustomId(
+                'embed_color_input'
+              )
+              .setLabel(
+                'Color HEX'
+              )
+              .setPlaceholder(
+                '#ff0000'
+              )
+              .setStyle(
+                TextInputStyle.Short
+              )
+              .setRequired(
+                true
+              )
+              .setMinLength(
+                7
+              )
+              .setMaxLength(
+                7
+              );
+
+          modal.addComponents(
+            new ActionRowBuilder()
+              .addComponents(
+                input
+              )
+          );
+
+          await interaction.showModal(
+            modal
+          );
+
+          return;
+        }
+
+        // ==================================
+        // FOOTER
+        // ==================================
+
+        if (
+          opcion ===
+          'embed_footer'
+        ) {
+
+          const modal =
+            new ModalBuilder()
+              .setCustomId(
+                'embed_modal_footer'
+              )
+              .setTitle(
+                'Configurar footer'
+              );
+
+          const input =
+            new TextInputBuilder()
+              .setCustomId(
+                'embed_footer_input'
+              )
+              .setLabel(
+                'Texto del footer'
+              )
+              .setPlaceholder(
+                'Texto inferior del embed'
+              )
+              .setStyle(
+                TextInputStyle.Short
+              )
+              .setRequired(
+                false
+              )
+              .setMaxLength(
+                2048
+              );
+
+          modal.addComponents(
+            new ActionRowBuilder()
+              .addComponents(
+                input
+              )
+          );
+
+          await interaction.showModal(
+            modal
+          );
+
+          return;
+        }
+
+        // ==================================
+        // THUMBNAIL
+        // ==================================
+
+        if (
+          opcion ===
+          'embed_thumbnail'
+        ) {
+
+          const modal =
+            new ModalBuilder()
+              .setCustomId(
+                'embed_modal_thumbnail'
+              )
+              .setTitle(
+                'Thumbnail'
+              );
+
+          const input =
+            new TextInputBuilder()
+              .setCustomId(
+                'embed_thumbnail_input'
+              )
+              .setLabel(
+                'URL de la imagen'
+              )
+              .setPlaceholder(
+                'https://ejemplo.com/imagen.png'
+              )
+              .setStyle(
+                TextInputStyle.Short
+              )
+              .setRequired(
+                false
+              )
+              .setMaxLength(
+                2048
+              );
+
+          modal.addComponents(
+            new ActionRowBuilder()
+              .addComponents(
+                input
+              )
+          );
+
+          await interaction.showModal(
+            modal
+          );
+
+          return;
+        }
+
+        // ==================================
+        // IMAGEN
+        // ==================================
+
+        if (
+          opcion ===
+          'embed_image'
+        ) {
+
+          const modal =
+            new ModalBuilder()
+              .setCustomId(
+                'embed_modal_image'
+              )
+              .setTitle(
+                'Imagen'
+              );
+
+          const input =
+            new TextInputBuilder()
+              .setCustomId(
+                'embed_image_input'
+              )
+              .setLabel(
+                'URL de la imagen'
+              )
+              .setPlaceholder(
+                'https://ejemplo.com/imagen.png'
+              )
+              .setStyle(
+                TextInputStyle.Short
+              )
+              .setRequired(
+                false
+              )
+              .setMaxLength(
+                2048
+              );
+
+          modal.addComponents(
+            new ActionRowBuilder()
+              .addComponents(
+                input
+              )
+          );
+
+          await interaction.showModal(
+            modal
+          );
+
+          return;
+        }
+
+        // ==================================
+        // AGREGAR CAMPO
+        // ==================================
+
+        if (
+          opcion ===
+          'embed_field'
+        ) {
+
+          const modal =
+            new ModalBuilder()
+              .setCustomId(
+                'embed_modal_field'
+              )
+              .setTitle(
+                'Agregar campo'
+              );
+
+          const nombre =
+            new TextInputBuilder()
+              .setCustomId(
+                'embed_field_name'
+              )
+              .setLabel(
+                'Nombre del campo'
+              )
+              .setPlaceholder(
+                'Ejemplo: Precio'
+              )
+              .setStyle(
+                TextInputStyle.Short
+              )
+              .setRequired(
+                true
+              )
+              .setMaxLength(
+                256
+              );
+
+          const valor =
+            new TextInputBuilder()
+              .setCustomId(
+                'embed_field_value'
+              )
+              .setLabel(
+                'Contenido del campo'
+              )
+              .setPlaceholder(
+                'Ejemplo: 100 Robux'
+              )
+              .setStyle(
+                TextInputStyle.Paragraph
+              )
+              .setRequired(
+                true
+              )
+              .setMaxLength(
+                1024
+              );
+
+          const inline =
+            new TextInputBuilder()
+              .setCustomId(
+                'embed_field_inline'
+              )
+              .setLabel(
+                '¿Inline? escribe si o no'
+              )
+              .setPlaceholder(
+                'si / no'
+              )
+              .setStyle(
+                TextInputStyle.Short
+              )
+              .setRequired(
+                false
+              )
+              .setMaxLength(
+                3
+              );
+
+          modal.addComponents(
+            new ActionRowBuilder()
+              .addComponents(
+                nombre
+              ),
+            new ActionRowBuilder()
+              .addComponents(
+                valor
+              ),
+            new ActionRowBuilder()
+              .addComponents(
+                inline
+              )
+          );
+
+          await interaction.showModal(
+            modal
+          );
+
+          return;
+        }
+
+        // ==================================
+        // VISTA PREVIA
+        // ==================================
+
+        if (
+          opcion ===
+          'embed_preview'
+        ) {
+
+          const embed =
+            crearEmbedDesdeDatos(
+              datos
+            );
+
+          await interaction.reply({
+            content:
+              '👀 **Vista previa:**',
+            embeds: [
+              embed
+            ],
+            ephemeral:
+              true
+          });
+
+          return;
+        }
+
+        // ==================================
+        // ENVIAR EMBED
+        // ==================================
+
+        if (
+          opcion ===
+          'embed_send'
+        ) {
+
+          const embed =
+            crearEmbedDesdeDatos(
+              datos
+            );
+
+          if (
+            !datos.title &&
+            !datos.description &&
+            datos.fields.length === 0 &&
+            !datos.image &&
+            !datos.thumbnail &&
+            !datos.footer
+          ) {
+
+            await interaction.reply({
+              content:
+                '❌ El embed está vacío. Configura al menos un elemento antes de enviarlo.',
+              ephemeral:
+                true
+            });
+
+            return;
+          }
+
+          try {
+
+            await interaction.channel.send({
+              embeds: [
+                embed
+              ]
+            });
+
+            embedBuilders.delete(
+              obtenerEmbedKey(
+                interaction
+              )
+            );
+
+            await interaction.reply({
+              content:
+                '✅ **Embed enviado correctamente.**',
+              ephemeral:
+                true
+            });
+
+          } catch (error) {
+
+            console.error(
+              'ERROR AL ENVIAR EMBED:',
+              error
+            );
+
+            await interaction.reply({
+              content:
+                '❌ No pude enviar el embed. Comprueba que tenga permiso para **Enviar mensajes** e **Insertar enlaces**.',
+              ephemeral:
+                true
+            });
+
+          }
+
+          return;
+        }
+
+        // ==================================
+        // CANCELAR
+        // ==================================
+
+        if (
+          opcion ===
+          'embed_cancel'
+        ) {
+
+          embedBuilders.delete(
+            obtenerEmbedKey(
+              interaction
+            )
+          );
+
+          await interaction.update({
+            content:
+              '❌ **Creador de embeds cancelado.**',
+            embeds: [],
+            components: []
+          });
+
+          return;
+        }
+
+      }
+
+      // ======================================
       // BOTONES
       // ======================================
 
@@ -2298,6 +3232,7 @@ client.on(
 
           return;
         }
+
       }
 
       // ======================================
@@ -2473,31 +3408,6 @@ client.on(
             });
 
             return;
-          }
-
-          let nombreProducto;
-
-          if (
-            producto ===
-            'camisa'
-          ) {
-
-            nombreProducto =
-              'Camisa';
-
-          } else if (
-            producto ===
-            'pantalon'
-          ) {
-
-            nombreProducto =
-              'Pantalón/Short';
-
-          } else {
-
-            nombreProducto =
-              'Conjunto completo';
-
           }
 
           const modal =
@@ -2789,62 +3699,579 @@ client.on(
       }
 
       // ======================================
-      // MODAL DE CANTIDAD
+      // MODALES
       // ======================================
 
       if (
         interaction.isModalSubmit()
       ) {
 
+        const key =
+          obtenerEmbedKey(
+            interaction
+          );
+
+        const datos =
+          embedBuilders.get(
+            key
+          );
+
+        // ==================================
+        // EMBED TITLE
+        // ==================================
+
         if (
-          !interaction.customId.startsWith(
+          interaction.customId ===
+          'embed_modal_title'
+        ) {
+
+          if (!datos) return;
+
+          datos.title =
+            interaction.fields.getTextInputValue(
+              'embed_title_input'
+            );
+
+          await interaction.reply({
+            content:
+              '✅ Título actualizado.',
+            ephemeral:
+              true
+          });
+
+          return;
+        }
+
+        // ==================================
+        // EMBED DESCRIPTION
+        // ==================================
+
+        if (
+          interaction.customId ===
+          'embed_modal_description'
+        ) {
+
+          if (!datos) return;
+
+          datos.description =
+            interaction.fields.getTextInputValue(
+              'embed_description_input'
+            );
+
+          await interaction.reply({
+            content:
+              '✅ Descripción actualizada.',
+            ephemeral:
+              true
+          });
+
+          return;
+        }
+
+        // ==================================
+        // EMBED COLOR
+        // ==================================
+
+        if (
+          interaction.customId ===
+          'embed_modal_color'
+        ) {
+
+          if (!datos) return;
+
+          const color =
+            interaction.fields.getTextInputValue(
+              'embed_color_input'
+            ).trim();
+
+          if (
+            !/^#[0-9A-Fa-f]{6}$/.test(
+              color
+            )
+          ) {
+
+            await interaction.reply({
+              content:
+                '❌ Color inválido. Usa un color HEX como `#ff0000`.',
+              ephemeral:
+                true
+            });
+
+            return;
+          }
+
+          datos.color =
+            color;
+
+          await interaction.reply({
+            content:
+              '✅ Color actualizado a `' +
+              color +
+              '`.',
+            ephemeral:
+              true
+          });
+
+          return;
+        }
+
+        // ==================================
+        // EMBED FOOTER
+        // ==================================
+
+        if (
+          interaction.customId ===
+          'embed_modal_footer'
+        ) {
+
+          if (!datos) return;
+
+          datos.footer =
+            interaction.fields.getTextInputValue(
+              'embed_footer_input'
+            );
+
+          await interaction.reply({
+            content:
+              '✅ Footer actualizado.',
+            ephemeral:
+              true
+          });
+
+          return;
+        }
+
+        // ==================================
+        // EMBED THUMBNAIL
+        // ==================================
+
+        if (
+          interaction.customId ===
+          'embed_modal_thumbnail'
+        ) {
+
+          if (!datos) return;
+
+          const url =
+            interaction.fields.getTextInputValue(
+              'embed_thumbnail_input'
+            ).trim();
+
+          if (
+            url &&
+            !/^https?:\/\/.+/i.test(
+              url
+            )
+          ) {
+
+            await interaction.reply({
+              content:
+                '❌ La URL no parece válida.',
+              ephemeral:
+                true
+            });
+
+            return;
+          }
+
+          datos.thumbnail =
+            url;
+
+          await interaction.reply({
+            content:
+              url
+                ? '✅ Thumbnail actualizado.'
+                : '✅ Thumbnail eliminado.',
+            ephemeral:
+              true
+          });
+
+          return;
+        }
+
+        // ==================================
+        // EMBED IMAGE
+        // ==================================
+
+        if (
+          interaction.customId ===
+          'embed_modal_image'
+        ) {
+
+          if (!datos) return;
+
+          const url =
+            interaction.fields.getTextInputValue(
+              'embed_image_input'
+            ).trim();
+
+          if (
+            url &&
+            !/^https?:\/\/.+/i.test(
+              url
+            )
+          ) {
+
+            await interaction.reply({
+              content:
+                '❌ La URL no parece válida.',
+              ephemeral:
+                true
+            });
+
+            return;
+          }
+
+          datos.image =
+            url;
+
+          await interaction.reply({
+            content:
+              url
+                ? '✅ Imagen actualizada.'
+                : '✅ Imagen eliminada.',
+            ephemeral:
+              true
+          });
+
+          return;
+        }
+
+        // ==================================
+        // EMBED FIELD
+        // ==================================
+
+        if (
+          interaction.customId ===
+          'embed_modal_field'
+        ) {
+
+          if (!datos) return;
+
+          if (
+            datos.fields.length >= 25
+          ) {
+
+            await interaction.reply({
+              content:
+                '❌ Un embed puede tener como máximo **25 campos**.',
+              ephemeral:
+                true
+            });
+
+            return;
+          }
+
+          const nombre =
+            interaction.fields.getTextInputValue(
+              'embed_field_name'
+            );
+
+          const valor =
+            interaction.fields.getTextInputValue(
+              'embed_field_value'
+            );
+
+          const inlineTexto =
+            interaction.fields.getTextInputValue(
+              'embed_field_inline'
+            )
+              .trim()
+              .toLowerCase();
+
+          datos.fields.push({
+            name:
+              nombre,
+            value:
+              valor,
+            inline:
+              inlineTexto ===
+              'si'
+          });
+
+          await interaction.reply({
+            content:
+              '✅ Campo agregado correctamente.\n\n' +
+              '📌 **Nombre:** ' +
+              nombre,
+            ephemeral:
+              true
+          });
+
+          return;
+        }
+
+        // ==================================
+        // MODAL CANTIDAD
+        // ==================================
+
+        if (
+          interaction.customId.startsWith(
             'pedido_cantidad_'
           )
         ) {
 
-          return;
+          const datosPedido =
+            interaction.customId.replace(
+              'pedido_cantidad_',
+              ''
+            );
 
-        }
+          const partes =
+            datosPedido.split('_');
 
-        const datosPedido =
-          interaction.customId.replace(
-            'pedido_cantidad_',
-            ''
-          );
+          const metodo =
+            partes[0];
 
-        const partes =
-          datosPedido.split('_');
+          const producto =
+            partes[1];
 
-        const metodo =
-          partes[0];
+          const cantidadTexto =
+            interaction.fields.getTextInputValue(
+              'cantidad_producto'
+            );
 
-        const producto =
-          partes[1];
+          const cantidad =
+            Number(
+              cantidadTexto
+            );
 
-        const cantidadTexto =
-          interaction.fields.getTextInputValue(
-            'cantidad_producto'
-          );
+          if (
+            !Number.isInteger(
+              cantidad
+            ) ||
+            cantidad <= 0
+          ) {
 
-        const cantidad =
-          Number(
-            cantidadTexto
-          );
+            await interaction.reply({
+              content:
+                '**❌ Introduce una cantidad válida. Por ejemplo: __5__**',
+              ephemeral:
+                true
+            });
 
-        // ==================================
-        // VALIDAR CANTIDAD
-        // ==================================
+            return;
+          }
 
-        if (
-          !Number.isInteger(
-            cantidad
-          ) ||
-          cantidad <= 0
-        ) {
+          if (
+            cantidad > 1000
+          ) {
+
+            await interaction.reply({
+              content:
+                '**❌ La cantidad máxima por pedido es de __1000__.**',
+              ephemeral:
+                true
+            });
+
+            return;
+          }
+
+          let nombreMetodo;
+          let precioBase;
+          let moneda;
+
+          if (
+            metodo ===
+            'robux'
+          ) {
+
+            nombreMetodo =
+              'Robux';
+
+            precioBase =
+              PRECIO_ROBUX;
+
+            moneda =
+              'Robux';
+
+          } else if (
+            metodo ===
+            'transferencia'
+          ) {
+
+            nombreMetodo =
+              'Transferencia';
+
+            precioBase =
+              PRECIO_TRANSFERENCIA;
+
+            moneda =
+              'MXN';
+
+          } else if (
+            metodo ===
+            'deposito'
+          ) {
+
+            nombreMetodo =
+              'Depósito';
+
+            precioBase =
+              PRECIO_DEPOSITO;
+
+            moneda =
+              'MXN';
+
+          } else {
+
+            await interaction.reply({
+              content:
+                '❌ Método de pago no válido.',
+              ephemeral:
+                true
+            });
+
+            return;
+          }
+
+          let nombreProducto;
+          let multiplicador;
+
+          if (
+            producto ===
+            'camisa'
+          ) {
+
+            nombreProducto =
+              'Camisa';
+
+            multiplicador =
+              MULTIPLICADOR_CAMISA;
+
+          } else if (
+            producto ===
+            'pantalon'
+          ) {
+
+            nombreProducto =
+              'Pantalón/Short';
+
+            multiplicador =
+              MULTIPLICADOR_PANTALON;
+
+          } else if (
+            producto ===
+            'conjunto'
+          ) {
+
+            nombreProducto =
+              'Conjunto completo';
+
+            multiplicador =
+              MULTIPLICADOR_CONJUNTO;
+
+          } else {
+
+            await interaction.reply({
+              content:
+                '❌ Producto no válido.',
+              ephemeral:
+                true
+            });
+
+            return;
+          }
+
+          const precioPorUnidad =
+            precioBase *
+            multiplicador;
+
+          const total =
+            cantidad *
+            precioPorUnidad;
+
+          const embed =
+            new EmbedBuilder()
+              .setColor('#2b2d31')
+              .setTitle(
+                '🧾 RESUMEN DE TU PEDIDO'
+              )
+              .setDescription(
+                'Aquí están los detalles completos de tu pedido:'
+              )
+              .addFields(
+                {
+                  name:
+                    '💳 Método de pago',
+
+                  value:
+                    '`' +
+                    nombreMetodo +
+                    '`',
+
+                  inline:
+                    true
+                },
+                {
+                  name:
+                    '🛍️ Producto',
+
+                  value:
+                    '`' +
+                    nombreProducto +
+                    '`',
+
+                  inline:
+                    true
+                },
+                {
+                  name:
+                    '📦 Cantidad',
+
+                  value:
+                    '`' +
+                    cantidad +
+                    '`',
+
+                  inline:
+                    true
+                },
+                {
+                  name:
+                    '💰 Precio por unidad',
+
+                  value:
+                    '**' +
+                    precioPorUnidad +
+                    ' ' +
+                    moneda +
+                    '**',
+
+                  inline:
+                    true
+                },
+                {
+                  name:
+                    '💵 TOTAL',
+
+                  value:
+                    '**' +
+                    total +
+                    ' ' +
+                    moneda +
+                    '**',
+
+                  inline:
+                    false
+                },
+                {
+                  name:
+                    '\u200B',
+
+                  value:
+                    '🛒 Para comprar abre un <#1357832842561978505>',
+
+                  inline:
+                    false
+                }
+              )
+              .setTimestamp();
 
           await interaction.reply({
-            content:
-              '**❌ Introduce una cantidad válida. Por ejemplo: __5__**',
+            embeds: [
+              embed
+            ],
             ephemeral:
               true
           });
@@ -2852,242 +4279,6 @@ client.on(
           return;
         }
 
-        if (
-          cantidad > 1000
-        ) {
-
-          await interaction.reply({
-            content:
-              '**❌ La cantidad máxima por pedido es de __1000__.**',
-            ephemeral:
-              true
-          });
-
-          return;
-        }
-
-        // ==================================
-        // DATOS DEL PRODUCTO
-        // ==================================
-
-        let nombreMetodo;
-        let precioBase;
-        let moneda;
-
-        if (
-          metodo ===
-          'robux'
-        ) {
-
-          nombreMetodo =
-            'Robux';
-
-          precioBase =
-            PRECIO_ROBUX;
-
-          moneda =
-            'Robux';
-
-        } else if (
-          metodo ===
-          'transferencia'
-        ) {
-
-          nombreMetodo =
-            'Transferencia';
-
-          precioBase =
-            PRECIO_TRANSFERENCIA;
-
-          moneda =
-            'MXN';
-
-        } else if (
-          metodo ===
-          'deposito'
-        ) {
-
-          nombreMetodo =
-            'Depósito';
-
-          precioBase =
-            PRECIO_DEPOSITO;
-
-          moneda =
-            'MXN';
-
-        } else {
-
-          await interaction.reply({
-            content:
-              '❌ Método de pago no válido.',
-            ephemeral:
-              true
-          });
-
-          return;
-        }
-
-        let nombreProducto;
-        let multiplicador;
-
-        if (
-          producto ===
-          'camisa'
-        ) {
-
-          nombreProducto =
-            'Camisa';
-
-          multiplicador =
-            MULTIPLICADOR_CAMISA;
-
-        } else if (
-          producto ===
-          'pantalon'
-        ) {
-
-          nombreProducto =
-            'Pantalón/Short';
-
-          multiplicador =
-            MULTIPLICADOR_PANTALON;
-
-        } else if (
-          producto ===
-          'conjunto'
-        ) {
-
-          nombreProducto =
-            'Conjunto completo';
-
-          multiplicador =
-            MULTIPLICADOR_CONJUNTO;
-
-        } else {
-
-          await interaction.reply({
-            content:
-              '❌ Producto no válido.',
-            ephemeral:
-              true
-          });
-
-          return;
-        }
-
-        // ==================================
-        // PRECIO FINAL
-        // ==================================
-
-        const precioPorUnidad =
-          precioBase *
-          multiplicador;
-
-        const total =
-          cantidad *
-          precioPorUnidad;
-
-        // ==================================
-        // RESUMEN FINAL
-        // ==================================
-
-        const embed =
-          new EmbedBuilder()
-            .setColor('#2b2d31')
-            .setTitle(
-              '🧾 RESUMEN DE TU PEDIDO'
-            )
-            .setDescription(
-              'Aquí están los detalles completos de tu pedido:'
-            )
-            .addFields(
-              {
-                name:
-                  '💳 Método de pago',
-
-                value:
-                  '`' +
-                  nombreMetodo +
-                  '`',
-
-                inline:
-                  true
-              },
-              {
-                name:
-                  '🛍️ Producto',
-
-                value:
-                  '`' +
-                  nombreProducto +
-                  '`',
-
-                inline:
-                  true
-              },
-              {
-                name:
-                  '📦 Cantidad',
-
-                value:
-                  '`' +
-                  cantidad +
-                  '`',
-
-                inline:
-                  true
-              },
-              {
-                name:
-                  '💰 Precio por unidad',
-
-                value:
-                  '**' +
-                  precioPorUnidad +
-                  ' ' +
-                  moneda +
-                  '**',
-
-                inline:
-                  true
-              },
-              {
-                name:
-                  '💵 TOTAL',
-
-                value:
-                  '**' +
-                  total +
-                  ' ' +
-                  moneda +
-                  '**',
-
-                inline:
-                  false
-              },
-              {
-                name:
-                  '\u200B',
-
-                value:
-                  '🛒 Para comprar abre un <#1357832842561978505>',
-
-                inline:
-                  false
-              }
-            )
-            .setTimestamp();
-
-        await interaction.reply({
-          embeds: [
-            embed
-          ],
-          ephemeral:
-            true
-        });
-
-        return;
       }
 
     } catch (error) {
@@ -3125,6 +4316,54 @@ client.on(
     }
 
   }
+);
+
+// ==========================================
+// LIMPIAR EMBEDS ANTIGUOS
+// ==========================================
+
+setInterval(
+  () => {
+
+    for (
+      const [
+        key,
+        datos
+      ]
+      of embedBuilders
+    ) {
+
+      if (
+        !datos.lastActivity
+      ) {
+
+        datos.lastActivity =
+          Date.now();
+
+        continue;
+
+      }
+
+      if (
+        Date.now() -
+        datos.lastActivity >
+        30 *
+        60 *
+        1000
+      ) {
+
+        embedBuilders.delete(
+          key
+        );
+
+      }
+
+    }
+
+  },
+  10 *
+  60 *
+  1000
 );
 
 // ==========================================
