@@ -3,63 +3,109 @@ const path = require('path');
 const { Client, EmbedBuilder, PermissionsBitField, MessageFlags } = require('discord.js');
 
 const INVITES_FILE = path.join(__dirname, 'invites.json');
+const INVITES_BACKUP_FILE = path.join(__dirname, 'invites.backup.json');
 const INVITE_CHANNEL_ID = '1543837870106869831';
 
 let inviteData = {};
 const inviteCache = new Map();
 const guildQueues = new Map();
 
+function writeJsonAtomic(file, data) {
+  const tempFile = `${file}.tmp`;
+  const content = JSON.stringify(data, null, 2);
+
+  const fd = fs.openSync(tempFile, 'w');
+  try {
+    fs.writeSync(fd, content, null, 'utf8');
+    fs.fsyncSync(fd);
+  } finally {
+    fs.closeSync(fd);
+  }
+
+  fs.renameSync(tempFile, file);
+}
+
 function saveData() {
   try {
-    const tempFile = `${INVITES_FILE}.tmp`;
-    fs.writeFileSync(tempFile, JSON.stringify(inviteData, null, 2), 'utf8');
-    fs.renameSync(tempFile, INVITES_FILE);
+    // Guardamos el archivo principal y una copia de respaldo.
+    // Los dos se escriben inmediatamente cuando cambia un contador.
+    writeJsonAtomic(INVITES_FILE, inviteData);
+    writeJsonAtomic(INVITES_BACKUP_FILE, inviteData);
+
     console.log(`💾 Invitaciones guardadas: ${INVITES_FILE}`);
   } catch (error) {
     console.error('❌ ERROR AL GUARDAR invites.json:', error);
   }
 }
 
+function isValidInviteData(data) {
+  return data && typeof data === 'object' && !Array.isArray(data);
+}
+
+function readJson(file) {
+  if (!fs.existsSync(file)) return null;
+
+  const raw = fs.readFileSync(file, 'utf8').trim();
+  if (!raw) return null;
+
+  const parsed = JSON.parse(raw);
+  return isValidInviteData(parsed) ? parsed : null;
+}
+
 function loadData() {
   try {
-    if (!fs.existsSync(INVITES_FILE)) {
-      inviteData = {};
-      saveData();
-      console.log('🆕 invites.json creado.');
+    let loaded = null;
+
+    // Primero intentamos el archivo principal.
+    try {
+      loaded = readJson(INVITES_FILE);
+    } catch (error) {
+      console.error('⚠️ invites.json está dañado. Intentando recuperar el respaldo...');
+    }
+
+    // Si está vacío/dañado, recuperamos el respaldo SIN borrar los datos.
+    if (!loaded) {
+      try {
+        loaded = readJson(INVITES_BACKUP_FILE);
+      } catch (error) {
+        console.error('⚠️ invites.backup.json también está dañado o no existe.');
+      }
+    }
+
+    if (loaded) {
+      inviteData = loaded;
+      console.log('✅ invites.json cargado correctamente.');
       return;
     }
 
-    const raw = fs.readFileSync(INVITES_FILE, 'utf8').trim();
-    inviteData = raw ? JSON.parse(raw) : {};
-
-    if (!inviteData || typeof inviteData !== 'object' || Array.isArray(inviteData)) {
-      inviteData = {};
-      saveData();
-    }
-  } catch (error) {
-    console.error('❌ ERROR AL CARGAR invites.json:', error);
     inviteData = {};
     saveData();
+    console.log('🆕 invites.json creado correctamente.');
+  } catch (error) {
+    console.error('❌ ERROR AL CARGAR EL SISTEMA DE INVITACIONES:', error);
+    inviteData = {};
   }
 }
 
-// Recarga el archivo justo antes de leer/escribir un contador.
-// Esto evita que /invites y guildMemberAdd usen copias antiguas
-// si el proceso fue reiniciado o existe más de una instancia activa.
 function reloadData() {
   try {
-    if (!fs.existsSync(INVITES_FILE)) {
-      inviteData = {};
-      saveData();
-      return;
+    let loaded = null;
+
+    try {
+      loaded = readJson(INVITES_FILE);
+    } catch (error) {
+      console.error('⚠️ No se pudo leer invites.json; usando respaldo si existe.');
     }
 
-    const raw = fs.readFileSync(INVITES_FILE, 'utf8').trim();
-    inviteData = raw ? JSON.parse(raw) : {};
-
-    if (!inviteData || typeof inviteData !== 'object' || Array.isArray(inviteData)) {
-      inviteData = {};
+    if (!loaded) {
+      try {
+        loaded = readJson(INVITES_BACKUP_FILE);
+      } catch (error) {
+        // Se conserva inviteData actual si ambos archivos no están disponibles.
+      }
     }
+
+    if (loaded) inviteData = loaded;
   } catch (error) {
     console.error('❌ ERROR AL RECARGAR invites.json:', error);
   }
@@ -88,7 +134,6 @@ async function fetchGuildInvites(guild) {
       return null;
     }
 
-    // cache:false fuerza una consulta nueva a Discord.
     return await guild.invites.fetch({ cache: false });
   } catch (error) {
     console.error(`❌ No pude obtener las invitaciones de ${guild.name}: ${error.message}`);
@@ -191,7 +236,6 @@ async function handleMemberAdd(member) {
         return;
       }
 
-      // Siempre leemos el contador más reciente antes de incrementarlo.
       reloadData();
 
       const data = getGuildData(member.guild.id);
@@ -202,6 +246,8 @@ async function handleMemberAdd(member) {
       data.users[inviterId] = total;
       data.joinedBy[member.id] = inviterId;
 
+      // Se guarda INMEDIATAMENTE después de cada invitación.
+      // Así, un reinicio posterior no elimina el contador.
       saveData();
 
       const channel = member.guild.channels.cache.get(INVITE_CHANNEL_ID);
@@ -238,11 +284,6 @@ async function initializeGuild(guild) {
   if (!invites) return;
 
   inviteCache.set(guild.id, makeInviteCache(invites));
-
-  // IMPORTANTE: no reconstruimos los contadores usando invite.uses.
-  // invite.uses es el uso histórico de Discord y puede no coincidir
-  // con el contador persistente del bot. El contador oficial del sistema
-  // es invites.json y solo cambia cuando nuestro bot detecta una entrada.
   console.log(`✅ ${guild.name}: ${invites.size} invitaciones cargadas en caché.`);
 }
 
