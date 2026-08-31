@@ -28,19 +28,18 @@ function crearEmbedSorteo(sorteo, terminado = false, ganadorIds = []) {
     .setFooter({ text: `ID del sorteo: ${sorteo.id}` });
 
   if (terminado) {
-    embed.setDescription(
-      `🎁 **${sorteo.premio}**\n\n` +
-      `🏆 **Ganador${ganadorIds.length === 1 ? '' : 'es'}:** ${ganadorIds.length ? ganadorIds.map(id => `<@${id}>`).join(', ') : 'Ninguno'}\n` +
-      `👥 **Participantes:** ${sorteo.participantes.length}`
+    embed.addFields(
+      { name: '🎁 Premio', value: `\`${sorteo.premio}\``, inline: true },
+      { name: '🏆 Ganadores', value: ganadorIds.length ? ganadorIds.map(id => `<@${id}>`).join(', ') : '`Ninguno`', inline: true },
+      { name: '👥 Participantes', value: `\`${sorteo.participantes.length}\``, inline: true }
     );
   } else {
-    embed.setDescription(
-      `🎁 **${sorteo.premio}**\n\n` +
-      `🏆 **${sorteo.ganadores}** ganador${sorteo.ganadores === 1 ? '' : 'es'}     ` +
-      `👥 **${sorteo.participantes.length}** participante${sorteo.participantes.length === 1 ? '' : 's'}\n\n` +
-      `⏰ **Termina:** <t:${Math.floor(sorteo.fin / 1000)}:R>\n\n` +
-      `¡Pulsa el botón **🎉 Participar** para entrar!`
+    embed.addFields(
+      { name: '🎁 Premio', value: `\`${sorteo.premio}\``, inline: true },
+      { name: '🏆 Ganadores', value: `\`${sorteo.ganadores}\``, inline: true },
+      { name: '👥 Participantes', value: `\`${sorteo.participantes.length}\``, inline: true }
     );
+    embed.setDescription(`\n⏰ **Termina:** <t:${Math.floor(sorteo.fin / 1000)}:R>\n\n¡Pulsa **🎉 Participar** para entrar!`);
   }
 
   return embed;
@@ -51,14 +50,11 @@ function crearBotonParticipar(sorteo) {
 }
 
 function crearModalSorteo() {
-  return new ModalBuilder()
-    .setCustomId('giveaway_create_modal')
-    .setTitle('🎉 Crear sorteo')
-    .addComponents(
-      new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('premio').setLabel('Premio').setPlaceholder('Ejemplo: 1000 Robux').setStyle(TextInputStyle.Short).setRequired(true).setMaxLength(100)),
-      new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('duracion').setLabel('Duración').setPlaceholder('Ejemplo: 30m, 2h, 1d o 1w').setStyle(TextInputStyle.Short).setRequired(true).setMaxLength(20)),
-      new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('ganadores').setLabel('Número de ganadores').setPlaceholder('Ejemplo: 1').setStyle(TextInputStyle.Short).setRequired(true).setMaxLength(2))
-    );
+  return new ModalBuilder().setCustomId('giveaway_create_modal').setTitle('🎉 Crear sorteo').addComponents(
+    new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('premio').setLabel('Premio').setPlaceholder('Ejemplo: 1000 Robux').setStyle(TextInputStyle.Short).setRequired(true).setMaxLength(100)),
+    new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('duracion').setLabel('Duración').setPlaceholder('Ejemplo: 30m, 2h, 1d o 1w').setStyle(TextInputStyle.Short).setRequired(true).setMaxLength(20)),
+    new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('ganadores').setLabel('Número de ganadores').setPlaceholder('Ejemplo: 1').setStyle(TextInputStyle.Short).setRequired(true).setMaxLength(2))
+  );
 }
 
 async function finalizarSorteo(client, id) {
@@ -69,7 +65,6 @@ async function finalizarSorteo(client, id) {
   const ganadores = [];
   const cantidad = Math.min(sorteo.ganadores, disponibles.length);
   while (ganadores.length < cantidad) ganadores.push(disponibles.splice(Math.floor(Math.random() * disponibles.length), 1)[0]);
-
   try {
     const canal = await client.channels.fetch(sorteo.canalId);
     const mensaje = await canal.messages.fetch(sorteo.mensajeId);
@@ -88,14 +83,12 @@ function programarSorteo(client, sorteo) {
 
 function iniciarSistemaSorteos(client) {
   client.on('ready', () => Object.values(giveaways).forEach(s => { if (!s.finalizado) programarSorteo(client, s); }));
-
   client.on('interactionCreate', async interaction => {
     try {
       if (interaction.isChatInputCommand() && interaction.commandName === 'sorteo') {
         if (!interaction.memberPermissions.has(PermissionsBitField.Flags.ManageGuild)) return interaction.reply({ content: '❌ No tienes permisos para crear sorteos.', ephemeral: true });
         return interaction.showModal(crearModalSorteo());
       }
-
       if (interaction.isModalSubmit() && interaction.customId === 'giveaway_create_modal') {
         if (!interaction.memberPermissions.has(PermissionsBitField.Flags.ManageGuild)) return interaction.reply({ content: '❌ No tienes permisos para crear sorteos.', ephemeral: true });
         const premio = interaction.fields.getTextInputValue('premio').trim();
@@ -115,7 +108,6 @@ function iniciarSistemaSorteos(client) {
         programarSorteo(client, sorteo);
         return interaction.reply({ content: '✅ Sorteo creado correctamente.', ephemeral: true });
       }
-
       if (!interaction.isButton() || !interaction.customId.startsWith('giveaway_join_')) return;
       const id = interaction.customId.replace('giveaway_join_', '');
       const sorteo = giveaways[id];
