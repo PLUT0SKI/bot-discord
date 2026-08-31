@@ -70,23 +70,6 @@ async function fetchGuildInvites(guild) {
   }
 }
 
-async function refreshGuildInvites(guild) {
-  const invites = await fetchGuildInvites(guild);
-  if (!invites) return null;
-
-  const cache = new Map();
-
-  for (const invite of invites.values()) {
-    cache.set(invite.code, {
-      uses: invite.uses ?? 0,
-      inviterId: invite.inviter?.id ?? null
-    });
-  }
-
-  inviteCache.set(guild.id, cache);
-  return cache;
-}
-
 function queueGuildTask(guildId, task) {
   const previous = guildQueues.get(guildId) || Promise.resolve();
   const next = previous
@@ -107,7 +90,7 @@ async function handleMemberAdd(member) {
 
   return queueGuildTask(member.guild.id, async () => {
     try {
-      // Esperamos un poco para que Discord actualice el contador de usos.
+      // Esperamos para que Discord actualice el contador de usos.
       await new Promise(resolve => setTimeout(resolve, 1500));
 
       const oldCache = inviteCache.get(member.guild.id);
@@ -138,7 +121,6 @@ async function handleMemberAdd(member) {
         }
       }
 
-      // Siempre actualizamos la caché después de comprobar el cambio.
       inviteCache.set(member.guild.id, newCache);
 
       if (!usedInvite?.inviterId) {
@@ -149,9 +131,8 @@ async function handleMemberAdd(member) {
       const data = getGuildData(member.guild.id);
       const inviterId = usedInvite.inviterId;
 
-      // IMPORTANTE: las invitaciones NO se descuentan cuando alguien abandona.
-      // Discord mantiene el contador de usos de la invitación, así que este
-      // sistema guarda el total real de invitaciones realizadas.
+      // Guardamos quién invitó a cada miembro para poder descontar
+      // exactamente esa invitación cuando el miembro abandone el servidor.
       data.users[inviterId] = (data.users[inviterId] || 0) + 1;
       data.joinedBy[member.id] = inviterId;
 
@@ -178,9 +159,31 @@ async function handleMemberAdd(member) {
 async function handleMemberRemove(member) {
   if (!member.guild || member.user.bot) return;
 
-  // NO modificamos el contador al salir.
-  // Una invitación usada sigue contando como uso de la invitación en Discord.
-  console.log(`ℹ️ ${member.user.tag} salió. Sus invitaciones no se descontarán.`);
+  return queueGuildTask(member.guild.id, async () => {
+    try {
+      const data = getGuildData(member.guild.id);
+      const inviterId = data.joinedBy[member.id];
+
+      // Si no tenemos registrado quién lo invitó, no tocamos ningún contador.
+      if (!inviterId) {
+        console.log(`ℹ️ ${member.user.tag} salió, pero no tenía invitador registrado.`);
+        return;
+      }
+
+      // El miembro salió: quitamos exactamente la invitación que había generado.
+      const currentTotal = data.users[inviterId] || 0;
+      data.users[inviterId] = Math.max(0, currentTotal - 1);
+
+      // Eliminamos el vínculo porque el miembro ya no está dentro.
+      delete data.joinedBy[member.id];
+
+      saveData();
+
+      console.log(`➖ ${member.user.tag} salió. Se descontó 1 invitación a ${inviterId}. Total: ${data.users[inviterId]}`);
+    } catch (error) {
+      console.error('❌ ERROR AL DESCONTAR INVITACIÓN:', error);
+    }
+  });
 }
 
 function getInvites(userId, guildId) {
@@ -202,8 +205,6 @@ async function initializeGuild(guild) {
 
   inviteCache.set(guild.id, cache);
 
-  // Si invites.json estaba vacío pero las invitaciones de Discord ya tienen
-  // usos, recuperamos esos usos sin duplicarlos.
   const data = getGuildData(guild.id);
   let changed = false;
 
@@ -219,8 +220,9 @@ async function initializeGuild(guild) {
   for (const [inviterId, discordTotal] of Object.entries(discordTotals)) {
     const savedTotal = data.users[inviterId] || 0;
 
-    // Nunca bajamos un contador guardado. Esto protege el historial si
-    // alguien elimina una invitación o Discord deja de mostrarla.
+    // Solo recuperamos un contador mayor al guardado. No lo bajamos aquí,
+    // porque Discord conserva los usos históricos de una invitación aunque
+    // el miembro invitado haya abandonado el servidor.
     if (discordTotal > savedTotal) {
       data.users[inviterId] = discordTotal;
       changed = true;
