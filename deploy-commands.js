@@ -1,9 +1,4 @@
-const {
-  REST,
-  Routes,
-  SlashCommandBuilder,
-  ChannelType
-} = require('discord.js');
+const { REST, Routes, SlashCommandBuilder, ChannelType } = require('discord.js');
 
 const DISCORD_TOKEN = process.env.DISCORD_TOKEN;
 const CLIENT_ID = '1543644668967780462';
@@ -40,44 +35,29 @@ if (!DISCORD_TOKEN) {
   process.exit(1);
 }
 
-const rest = new REST({ version: '10', timeout: 30000 }).setToken(DISCORD_TOKEN);
+const rest = new REST({ version: '10' }).setToken(DISCORD_TOKEN);
 
 (async () => {
   try {
-    console.log('🔄 Registrando comandos nuevos...');
-    console.log(`📦 Comandos a registrar: ${commands.length}`);
-    console.log('⏳ Enviando comandos a Discord...');
+    console.log('Registrando comandos nuevos...');
 
-    const registrados = await rest.put(
-      Routes.applicationGuildCommands(CLIENT_ID, GUILD_ID),
-      { body: commands }
-    );
+    await Promise.race([
+      rest.put(Routes.applicationCommands(CLIENT_ID), { body: [] }),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout al eliminar comandos globales.')), 30000))
+    ]);
 
-    console.log(`✅ Discord registró ${registrados.length} comandos correctamente.`);
-    console.log('');
-    console.log('======================================');
-    console.log('✅ COMANDOS REGISTRADOS CORRECTAMENTE');
-    console.log('======================================');
-    console.log('✅ /tickets');
-    console.log('✅ /pagos');
-    console.log('✅ /addreaction');
-    console.log('✅ /setlogs');
-    console.log('✅ /clear');
-    console.log('✅ /embed');
-    console.log('✅ /sorteo');
-    console.log('✅ /reroll');
-    console.log('✅ /cancelarsorteo');
-    console.log('======================================');
+    await Promise.race([
+      rest.put(Routes.applicationGuildCommands(CLIENT_ID, GUILD_ID), { body: [] }),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout al eliminar comandos del servidor.')), 30000))
+    ]);
+
+    await Promise.race([
+      rest.put(Routes.applicationGuildCommands(CLIENT_ID, GUILD_ID), { body: commands }),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout al registrar comandos nuevos.')), 30000))
+    ]);
+
+    console.log('✅ Comandos registrados correctamente.');
   } catch (error) {
-    console.error('');
-    console.error('======================================');
-    console.error('❌ NO SE PUDIERON REGISTRAR LOS COMANDOS');
-    console.error('======================================');
-    console.error(`Código: ${error.code ?? 'N/A'}`);
-    console.error(`Mensaje: ${error.message ?? error}`);
-    if (error.status) console.error(`HTTP: ${error.status}`);
-    if (error.rawError) console.error('Respuesta de Discord:', error.rawError);
-    console.error(error);
-    process.exitCode = 1;
+    console.error('❌ Error al registrar comandos:', error);
   }
 })();
