@@ -41,6 +41,7 @@ const client = new Client({
 // ==========================================
 
 const TICKET_CATEGORY_ID = '1357832792699834548';
+const TICKET_STAFF_ROLE_ID = '1543794671195529246';
 const WELCOME_CHANNEL_ID = '1543780167900471316';
 const GOODBYE_CHANNEL_ID = '1543780307688497223';
 
@@ -3583,6 +3584,11 @@ client.on(
 
             permissionOverwrites: [
 
+              // =================================
+              // SERVIDOR
+              // NADIE SIN PERMISOS PUEDE VERLO
+              // =================================
+
               {
                 id:
                   guild.id,
@@ -3591,6 +3597,10 @@ client.on(
                   PermissionsBitField.Flags.ViewChannel
                 ]
               },
+
+              // =================================
+              // USUARIO QUE CREÓ EL TICKET
+              // =================================
 
               {
                 id:
@@ -3604,6 +3614,28 @@ client.on(
                   PermissionsBitField.Flags.EmbedLinks
                 ]
               },
+
+              // =================================
+              // ROL STAFF
+              // PUEDE VER TODOS LOS TICKETS
+              // =================================
+
+              {
+                id:
+                  TICKET_STAFF_ROLE_ID,
+
+                allow: [
+                  PermissionsBitField.Flags.ViewChannel,
+                  PermissionsBitField.Flags.SendMessages,
+                  PermissionsBitField.Flags.ReadMessageHistory,
+                  PermissionsBitField.Flags.AttachFiles,
+                  PermissionsBitField.Flags.EmbedLinks
+                ]
+              },
+
+              // =================================
+              // BOT
+              // =================================
 
               {
                 id:
@@ -3663,9 +3695,17 @@ client.on(
               cerrarBoton
             );
 
+        // ====================================
+        // MENSAJE INICIAL DEL TICKET
+        // ETIQUETA AL ROL STAFF
+        // ====================================
+
         await canal.send({
+
           content:
-            'Bienvenido <@' +
+            '<@&' +
+            TICKET_STAFF_ROLE_ID +
+            '> | Bienvenido <@' +
             user.id +
             '>',
 
@@ -3676,6 +3716,7 @@ client.on(
           components: [
             rowCerrar
           ]
+
         });
 
         await interaction.reply({
