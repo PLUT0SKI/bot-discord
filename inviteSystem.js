@@ -87,8 +87,6 @@ async function handleMemberAdd(member) {
 
   const total = data.users[inviterId];
 
-  // ÚNICO mensaje público del sistema de invitaciones al entrar un miembro.
-  // Todo el texto va en negritas y solo la cantidad de invitaciones va subrayada.
   const mensaje =
     `**${member} fue invitado a la comunidad por <@${inviterId}> y ahora tiene __${total} invitación${total === 1 ? '' : 'es'}__.**`;
 
@@ -125,15 +123,13 @@ function install(client) {
     console.log('✅ Sistema de invitaciones cargado.');
   });
 
-  // Evita que otro listener del sistema anterior de invitaciones procese entradas/salidas.
-  client.removeAllListeners('guildMemberAdd');
-  client.removeAllListeners('guildMemberRemove');
-
+  // IMPORTANTE: NO borrar los listeners existentes.
+  // index.js también utiliza guildMemberAdd/guildMemberRemove para bienvenida y despedida.
+  // Ambos sistemas deben funcionar al mismo tiempo.
   client.on('guildMemberAdd', handleMemberAdd);
   client.on('guildMemberRemove', handleMemberRemove);
 
   // /invites: respuesta efímera, visible únicamente para quien ejecuta el comando.
-  // Ya NO existe !invites ni !invitaciones.
   client.on('interactionCreate', async interaction => {
     if (!interaction.isChatInputCommand()) return;
     if (interaction.commandName !== 'invites') return;
