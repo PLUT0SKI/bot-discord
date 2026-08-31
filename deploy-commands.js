@@ -64,6 +64,38 @@ const commands = [
     .setName('embed')
     .setDescription('Abre el creador de embeds')
     .toJSON(),
+
+  new SlashCommandBuilder()
+    .setName('sorteo')
+    .setDescription('Crea un sorteo')
+    .addStringOption(option =>
+      option
+        .setName('premio')
+        .setDescription('Premio del sorteo')
+        .setRequired(true)
+    )
+    .addStringOption(option =>
+      option
+        .setName('duracion')
+        .setDescription('Duración, por ejemplo: 30m, 2h, 1d o 1w')
+        .setRequired(true)
+    )
+    .addIntegerOption(option =>
+      option
+        .setName('ganadores')
+        .setDescription('Cantidad de ganadores')
+        .setMinValue(1)
+        .setMaxValue(20)
+        .setRequired(true)
+    )
+    .addChannelOption(option =>
+      option
+        .setName('canal')
+        .setDescription('Canal donde se publicará el sorteo')
+        .addChannelTypes(ChannelType.GuildText, ChannelType.GuildAnnouncement)
+        .setRequired(false)
+    )
+    .toJSON()
 ];
 
 if (!DISCORD_TOKEN) {
@@ -108,6 +140,7 @@ const rest = new REST({ version: '10' }).setToken(DISCORD_TOKEN);
     console.log('✅ /setlogs');
     console.log('✅ /clear');
     console.log('✅ /embed');
+    console.log('✅ /sorteo');
     console.log('======================================');
   } catch (error) {
     console.error('');
