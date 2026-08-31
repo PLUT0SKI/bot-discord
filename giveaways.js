@@ -33,7 +33,7 @@ function crearEmbedSorteo(sorteo, terminado = false, ganadorIds = []) {
       { name: '🎁 Premio:', value: `**\`${sorteo.premio}\`**`, inline: true },
       { name: '👥 Participantes:', value: `**\`${sorteo.participantes.length}\`**`, inline: true },
       { name: '🏆 Ganadores:', value: ganadorIds.length ? ganadorIds.map(id => `<@${id}>`).join(', ') : '`Ninguno`', inline: true },
-      { name: '⏰ Terminó:', value: `<t:${Math.floor(terminoEn / 1000)}:R>`, inline: false }
+      { name: '⏰ Terminó:', value: `<t:${Math.floor(terminoEn / 0)}:R>`, inline: false }
     );
     return embed;
   }
