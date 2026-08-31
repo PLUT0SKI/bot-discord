@@ -94,7 +94,7 @@ async function finalizarSorteo(client, sorteoId) {
     });
 
     if (ganadores.length > 0) {
-      await canal.send(`🎉 ¡Felicidades ${ganadores.map(id => `<@${id}>`).join(', ')}! Ganaste **${sorteo.premio}**.`);
+      await canal.send(`🎉 ¡Felicidades ${ganadores.map(id => `<@${id}>`).join(', ')} ganaste **${sorteo.premio}** abre un <#1357832842561978505> para reclamar tu **${sorteo.premio}**.`);
     } else {
       await canal.send(`❌ El sorteo de **${sorteo.premio}** terminó sin suficientes participantes.`);
     }
