@@ -64,14 +64,6 @@ const commands = [
     .setName('embed')
     .setDescription('Abre el creador de embeds')
     .toJSON(),
-
-  // =======================
-  // /INVITES
-  // =======================
-  new SlashCommandBuilder()
-    .setName('invites')
-    .setDescription('Muestra cuántas invitaciones tienes')
-    .toJSON()
 ];
 
 if (!DISCORD_TOKEN) {
@@ -116,7 +108,6 @@ const rest = new REST({ version: '10' }).setToken(DISCORD_TOKEN);
     console.log('✅ /setlogs');
     console.log('✅ /clear');
     console.log('✅ /embed');
-    console.log('✅ /invites');
     console.log('======================================');
   } catch (error) {
     console.error('');
