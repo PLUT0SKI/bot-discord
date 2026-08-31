@@ -45,7 +45,34 @@ const rest = new REST({ version: '10' }).setToken(DISCORD_TOKEN);
 (async () => {
   try {
     console.log('🔄 Registrando comandos nuevos...');
-    await rest.put(Routes.applicationGuildCommands(CLIENT_ID, GUILD_ID), { body: commands });
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 30000);
+
+    let response;
+    try {
+      response = await fetch(
+        `https://discord.com/api/v10/applications/${CLIENT_ID}/guilds/${GUILD_ID}/commands`,
+        {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bot ${DISCORD_TOKEN}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(commands),
+          signal: controller.signal
+        }
+      );
+    } finally {
+      clearTimeout(timeout);
+    }
+
+    const responseText = await response.text();
+
+    if (!response.ok) {
+      throw new Error(`Discord HTTP ${response.status}: ${responseText}`);
+    }
+
     console.log('');
     console.log('======================================');
     console.log('✅ COMANDOS REGISTRADOS CORRECTAMENTE');
@@ -63,6 +90,12 @@ const rest = new REST({ version: '10' }).setToken(DISCORD_TOKEN);
   } catch (error) {
     console.error('');
     console.error('❌ ERROR AL REGISTRAR COMANDOS:');
-    console.error(error);
+    if (error.name === 'AbortError') {
+      console.error('❌ Discord no respondió después de 30 segundos.');
+      console.error('❌ El problema está en la conexión entre el contenedor y la API de Discord.');
+    } else {
+      console.error(error);
+    }
+    process.exitCode = 1;
   }
 })();
