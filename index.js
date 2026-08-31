@@ -1499,7 +1499,7 @@ client.on(
 // ==========================================
 
 client.on(
-  'guildMemberRemove',
+  'guildMemberAdd',
   async (member) => {
 
     try {
@@ -1516,14 +1516,10 @@ client.on(
           .setColor(
             '#2b2d31'
           )
-          .setTitle(
-            'Hasta luego'
-          )
           .setDescription(
-            'Adios <@' +
+            'Hasta pronto <@' +
             member.id +
-            '>, esperamos volver a verte pronto.\n\n' +
-            'Gracias por haber formado parte del servidor.'
+            '>, esperamos que vuelvas pronto\n\n'
           )
           .setThumbnail(
             member.user.displayAvatarURL({
@@ -1553,7 +1549,6 @@ client.on(
 
   }
 );
-
 // ==========================================
 // REACTION ROLE - AGREGAR
 // ==========================================
