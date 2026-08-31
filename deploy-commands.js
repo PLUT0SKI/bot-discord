@@ -1,4 +1,9 @@
-const { REST, Routes, SlashCommandBuilder, ChannelType } = require('discord.js');
+const {
+  REST,
+  Routes,
+  SlashCommandBuilder,
+  ChannelType
+} = require('discord.js');
 
 const DISCORD_TOKEN = process.env.DISCORD_TOKEN;
 const CLIENT_ID = '1543644668967780462';
@@ -39,25 +44,31 @@ const rest = new REST({ version: '10' }).setToken(DISCORD_TOKEN);
 
 (async () => {
   try {
-    console.log('Registrando comandos nuevos...');
-
-    await Promise.race([
-      rest.put(Routes.applicationCommands(CLIENT_ID), { body: [] }),
-      new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout al eliminar comandos globales.')), 30000))
-    ]);
-
-    await Promise.race([
-      rest.put(Routes.applicationGuildCommands(CLIENT_ID, GUILD_ID), { body: [] }),
-      new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout al eliminar comandos del servidor.')), 30000))
-    ]);
-
-    await Promise.race([
-      rest.put(Routes.applicationGuildCommands(CLIENT_ID, GUILD_ID), { body: commands }),
-      new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout al registrar comandos nuevos.')), 30000))
-    ]);
-
-    console.log('✅ Comandos registrados correctamente.');
+    console.log('🗑️ Eliminando comandos globales...');
+    await rest.put(Routes.applicationCommands(CLIENT_ID), { body: [] });
+    console.log('✅ Comandos globales eliminados.');
+    console.log('🗑️ Eliminando comandos anteriores del servidor...');
+    await rest.put(Routes.applicationGuildCommands(CLIENT_ID, GUILD_ID), { body: [] });
+    console.log('✅ Comandos anteriores eliminados.');
+    console.log('🔄 Registrando comandos nuevos...');
+    await rest.put(Routes.applicationGuildCommands(CLIENT_ID, GUILD_ID), { body: commands });
+    console.log('');
+    console.log('======================================');
+    console.log('✅ COMANDOS REGISTRADOS CORRECTAMENTE');
+    console.log('======================================');
+    console.log('✅ /tickets');
+    console.log('✅ /pagos');
+    console.log('✅ /addreaction');
+    console.log('✅ /setlogs');
+    console.log('✅ /clear');
+    console.log('✅ /embed');
+    console.log('✅ /sorteo');
+    console.log('✅ /reroll');
+    console.log('✅ /cancelarsorteo');
+    console.log('======================================');
   } catch (error) {
-    console.error('❌ Error al registrar comandos:', error);
+    console.error('');
+    console.error('❌ ERROR AL REGISTRAR COMANDOS:');
+    console.error(error);
   }
 })();
