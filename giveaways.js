@@ -28,18 +28,18 @@ function crearEmbedSorteo(sorteo, terminado = false, ganadorIds = []) {
     .setFooter({ text: `ID del sorteo: ${sorteo.id}` });
 
   if (terminado) {
+    const terminoEn = sorteo.terminoEn || sorteo.fin;
     embed.addFields(
       { name: '🎁 Premio:', value: `**\`${sorteo.premio}\`**`, inline: true },
       { name: '👥 Participantes:', value: `**\`${sorteo.participantes.length}\`**`, inline: true },
       { name: '🏆 Ganadores:', value: ganadorIds.length ? ganadorIds.map(id => `<@${id}>`).join(', ') : '`Ninguno`', inline: true },
-      { name: '⏰ Terminó:', value: `<t:${Math.floor(sorteo.fin / 1000)}:R>`, inline: false }
+      { name: '⏰ Terminó:', value: `<t:${Math.floor(terminoEn / 1000)}:R>`, inline: false }
     );
     return embed;
   }
 
   const restante = sorteo.fin - Date.now();
   const aviso = restante <= 10 * 60 * 1000 ? '\n⚠️ **¡El sorteo terminara pronto!**' : '';
-
   embed.addFields(
     { name: '🎁 Premio:', value: `**\`${sorteo.premio}\`**`, inline: true },
     { name: '🏆 Ganadores:', value: `**\`${sorteo.ganadores}\`**`, inline: true },
@@ -51,9 +51,7 @@ function crearEmbedSorteo(sorteo, terminado = false, ganadorIds = []) {
 }
 
 function crearBotonParticipar(sorteo) {
-  return new ActionRowBuilder().addComponents(
-    new ButtonBuilder().setCustomId(`giveaway_join_${sorteo.id}`).setLabel('Participar').setEmoji('🎉').setStyle(ButtonStyle.Primary)
-  );
+  return new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId(`giveaway_join_${sorteo.id}`).setLabel('Participar').setEmoji('🎉').setStyle(ButtonStyle.Primary));
 }
 
 function crearModalSorteo() {
@@ -77,6 +75,7 @@ async function finalizarSorteo(client, id) {
   const sorteo = obtenerSorteo(id);
   if (!sorteo || sorteo.finalizado) return null;
   sorteo.finalizado = true;
+  sorteo.terminoEn = Date.now();
   const disponibles = [...new Set(sorteo.participantes)];
   const ganadores = [];
   const cantidad = Math.min(sorteo.ganadores, disponibles.length);
