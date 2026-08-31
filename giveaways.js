@@ -24,29 +24,36 @@ function duracionAMs(texto) {
 function crearEmbedSorteo(sorteo, terminado = false, ganadorIds = []) {
   const embed = new EmbedBuilder()
     .setColor(terminado ? '#2b2d31' : '#5865F2')
-    .setTitle(terminado ? '🎉 SORTEO FINALIZADO' : '🎉 SORTEO')
+    .setTitle(terminado ? '🎊 SORTEO FINALIZADO' : '🎉 SORTEO')
     .setFooter({ text: `ID del sorteo: ${sorteo.id}` });
 
   if (terminado) {
+    embed.setDescription(`🎁 **${sorteo.premio}**\n\n🏆 **Ganador${ganadorIds.length === 1 ? '' : 'es'}:** ${ganadorIds.length ? ganadorIds.map(id => `<@${id}>`).join(', ') : '`Ninguno`'}`);
     embed.addFields(
-      { name: '🎁 Premio', value: `  **\`${sorteo.premio}\`**`, inline: true },
-      { name: '🏆 Ganadores', value: ganadorIds.length ? ganadorIds.map(id => `  <@${id}>`).join(', ') : '  `Ninguno`', inline: true },
-      { name: '👥 Participantes', value: `  **\`${sorteo.participantes.length}\`**`, inline: true }
+      { name: '👥 Participantes', value: `**\`${sorteo.participantes.length}\`**`, inline: true },
+      { name: '🏆 Ganadores', value: ganadorIds.length ? ganadorIds.map(id => `<@${id}>`).join(', ') : '`Ninguno`', inline: true },
+      { name: '📌 Estado', value: '`Finalizado`', inline: true }
     );
-  } else {
-    embed.addFields(
-      { name: '🎁 Premio', value: `  **\`${sorteo.premio}\`**`, inline: true },
-      { name: '🏆 Ganadores', value: `  **\`${sorteo.ganadores}\`**`, inline: true },
-      { name: '👥 Participantes', value: `  **\`${sorteo.participantes.length}\`**`, inline: true }
-    );
-    embed.addFields({ name: '⏰ Termina', value: `<t:${Math.floor(sorteo.fin / 1000)}:R>`, inline: false });
-    embed.setDescription('Pulsa el botón **🎉 Participar** para entrar al sorteo.');
+    return embed;
   }
+
+  const restante = sorteo.fin - Date.now();
+  const aviso = restante <= 10 * 60 * 1000 ? '\n⚠️ **¡El sorteo termina pronto!**' : '';
+
+  embed.addFields(
+    { name: '🎁 Premio', value: `**\`${sorteo.premio}\`**`, inline: true },
+    { name: '🏆 Ganadores', value: `**\`${sorteo.ganadores}\`**`, inline: true },
+    { name: '👥 Participantes', value: `**\`${sorteo.participantes.length}\`**`, inline: true }
+  );
+  embed.addFields({ name: '⏰ Termina', value: `<t:${Math.floor(sorteo.fin / 1000)}:R>${aviso}`, inline: false });
+  embed.setDescription('Pulsa el botón **🎉 Participar** para entrar al sorteo.');
   return embed;
 }
 
 function crearBotonParticipar(sorteo) {
-  return new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId(`giveaway_join_${sorteo.id}`).setLabel('Participar').setEmoji('🎉').setStyle(ButtonStyle.Primary));
+  return new ActionRowBuilder().addComponents(
+    new ButtonBuilder().setCustomId(`giveaway_join_${sorteo.id}`).setLabel('Participar').setEmoji('🎉').setStyle(ButtonStyle.Primary)
+  );
 }
 
 function crearModalSorteo() {
@@ -57,22 +64,103 @@ function crearModalSorteo() {
   );
 }
 
+function obtenerSorteo(id) {
+  return giveaways[id] || null;
+}
+
+async function editarMensajeSorteo(client, sorteo, embed, components = []) {
+  const canal = await client.channels.fetch(sorteo.canalId);
+  const mensaje = await canal.messages.fetch(sorteo.mensajeId);
+  await mensaje.edit({ embeds: [embed], components });
+  return canal;
+}
+
 async function finalizarSorteo(client, id) {
-  const sorteo = giveaways[id];
-  if (!sorteo || sorteo.finalizado) return;
+  const sorteo = obtenerSorteo(id);
+  if (!sorteo || sorteo.finalizado) return null;
+
   sorteo.finalizado = true;
   const disponibles = [...new Set(sorteo.participantes)];
   const ganadores = [];
   const cantidad = Math.min(sorteo.ganadores, disponibles.length);
-  while (ganadores.length < cantidad) ganadores.push(disponibles.splice(Math.floor(Math.random() * disponibles.length), 1)[0]);
+
+  while (ganadores.length < cantidad) {
+    ganadores.push(disponibles.splice(Math.floor(Math.random() * disponibles.length), 1)[0]);
+  }
+
+  try {
+    const canal = await editarMensajeSorteo(client, sorteo, crearEmbedSorteo(sorteo, true, ganadores));
+    if (ganadores.length) {
+      await canal.send(`🎉 ¡Felicidades ${ganadores.map(id => `<@${id}>`).join(', ')}! Ganaste **${sorteo.premio}**. Abre un <#1357832842561978505> para reclamar tu premio.`);
+    } else {
+      await canal.send(`❌ El sorteo de **${sorteo.premio}** terminó sin suficientes participantes.`);
+    }
+  } catch (error) {
+    console.error(`ERROR AL FINALIZAR EL SORTEO ${id}:`, error);
+  }
+
+  guardarSorteos();
+  return ganadores;
+}
+
+async function rerollSorteo(client, id, interaction) {
+  const sorteo = obtenerSorteo(id);
+  if (!sorteo) return interaction.reply({ content: '❌ No encontré un sorteo con ese ID.', ephemeral: true });
+  if (!sorteo.finalizado) return interaction.reply({ content: '❌ Ese sorteo todavía está activo.', ephemeral: true });
+  if (!sorteo.participantes.length) return interaction.reply({ content: '❌ Ese sorteo no tuvo participantes.', ephemeral: true });
+
+  const ganadorAnterior = sorteo.ultimoGanadores || [];
+  const candidatos = sorteo.participantes.filter(idParticipante => !ganadorAnterior.includes(idParticipante));
+  const disponibles = candidatos.length ? candidatos : [...sorteo.participantes];
+  const ganadores = [];
+  const cantidad = Math.min(sorteo.ganadores, disponibles.length);
+
+  while (ganadores.length < cantidad) {
+    ganadores.push(disponibles.splice(Math.floor(Math.random() * disponibles.length), 1)[0]);
+  }
+
+  sorteo.ultimoGanadores = ganadores;
+  sorteo.reRolls = (sorteo.reRolls || 0) + 1;
+
   try {
     const canal = await client.channels.fetch(sorteo.canalId);
     const mensaje = await canal.messages.fetch(sorteo.mensajeId);
     await mensaje.edit({ embeds: [crearEmbedSorteo(sorteo, true, ganadores)], components: [] });
-    if (ganadores.length) await canal.send(`🎉¡Felicidades ${ganadores.map(id => `<@${id}>`).join(', ')} ganaste **${sorteo.premio}** abre un <#1357832842561978505> para reclamar tu **${sorteo.premio}**!`);
-    else await canal.send(`❌El sorteo de **${sorteo.premio}** terminó sin suficientes participantes.`);
-  } catch (error) { console.error(`ERROR AL FINALIZAR EL SORTEO ${id}:`, error); }
+    await canal.send(`🔄 **Re-roll del sorteo:** ${ganadores.map(id => `<@${id}>`).join(', ')} ${ganadores.length === 1 ? 'ha sido elegido' : 'han sido elegidos'} como nuevo${ganadores.length === 1 ? '' : 's'} ganador${ganadores.length === 1 ? '' : 'es'} de **${sorteo.premio}**.`);
+  } catch (error) {
+    console.error(`ERROR AL HACER REROLL DEL SORTEO ${id}:`, error);
+    return interaction.reply({ content: '❌ No pude actualizar el sorteo.', ephemeral: true });
+  }
+
   guardarSorteos();
+  return interaction.reply({ content: '✅ Re-roll realizado correctamente.', ephemeral: true });
+}
+
+async function cancelarSorteo(client, id, interaction) {
+  const sorteo = obtenerSorteo(id);
+  if (!sorteo) return interaction.reply({ content: '❌ No encontré un sorteo con ese ID.', ephemeral: true });
+  if (sorteo.finalizado) return interaction.reply({ content: '❌ Ese sorteo ya terminó.', ephemeral: true });
+
+  sorteo.finalizado = true;
+  sorteo.cancelado = true;
+
+  try {
+    const canal = await editarMensajeSorteo(client, sorteo,
+      new EmbedBuilder()
+        .setColor('#2b2d31')
+        .setTitle('🛑 SORTEO CANCELADO')
+        .setDescription(`🎁 **${sorteo.premio}**\n\n❌ Este sorteo fue cancelado por un administrador.`)
+        .addFields({ name: '👥 Participantes', value: `**\`${sorteo.participantes.length}\`**`, inline: true })
+        .setFooter({ text: `ID del sorteo: ${sorteo.id}` })
+    );
+    await canal.send(`🛑 El sorteo de **${sorteo.premio}** fue cancelado.`);
+  } catch (error) {
+    console.error(`ERROR AL CANCELAR EL SORTEO ${id}:`, error);
+    return interaction.reply({ content: '❌ No pude actualizar el sorteo.', ephemeral: true });
+  }
+
+  guardarSorteos();
+  return interaction.reply({ content: '✅ Sorteo cancelado correctamente.', ephemeral: true });
 }
 
 function programarSorteo(client, sorteo) {
@@ -83,12 +171,24 @@ function programarSorteo(client, sorteo) {
 
 function iniciarSistemaSorteos(client) {
   client.on('ready', () => Object.values(giveaways).forEach(s => { if (!s.finalizado) programarSorteo(client, s); }));
+
   client.on('interactionCreate', async interaction => {
     try {
       if (interaction.isChatInputCommand() && interaction.commandName === 'sorteo') {
         if (!interaction.memberPermissions.has(PermissionsBitField.Flags.ManageGuild)) return interaction.reply({ content: '❌ No tienes permisos para crear sorteos.', ephemeral: true });
         return interaction.showModal(crearModalSorteo());
       }
+
+      if (interaction.isChatInputCommand() && interaction.commandName === 'reroll') {
+        if (!interaction.memberPermissions.has(PermissionsBitField.Flags.ManageGuild)) return interaction.reply({ content: '❌ No tienes permisos para hacer re-rolls.', ephemeral: true });
+        return rerollSorteo(client, interaction.options.getString('id'), interaction);
+      }
+
+      if (interaction.isChatInputCommand() && interaction.commandName === 'cancelarsorteo') {
+        if (!interaction.memberPermissions.has(PermissionsBitField.Flags.ManageGuild)) return interaction.reply({ content: '❌ No tienes permisos para cancelar sorteos.', ephemeral: true });
+        return cancelarSorteo(client, interaction.options.getString('id'), interaction);
+      }
+
       if (interaction.isModalSubmit() && interaction.customId === 'giveaway_create_modal') {
         if (!interaction.memberPermissions.has(PermissionsBitField.Flags.ManageGuild)) return interaction.reply({ content: '❌ No tienes permisos para crear sorteos.', ephemeral: true });
         const premio = interaction.fields.getTextInputValue('premio').trim();
@@ -99,8 +199,9 @@ function iniciarSistemaSorteos(client) {
         if (!Number.isInteger(ganadores) || ganadores < 1 || ganadores > 50) return interaction.reply({ content: '❌ El número de ganadores debe estar entre 1 y 50.', ephemeral: true });
         const canal = interaction.channel;
         if (!canal || ![ChannelType.GuildText, ChannelType.GuildAnnouncement].includes(canal.type)) return interaction.reply({ content: '❌ Este comando debe utilizarse en un canal de texto.', ephemeral: true });
+
         const id = `${Date.now()}_${interaction.user.id}`;
-        const sorteo = { id, guildId: interaction.guild.id, canalId: canal.id, mensajeId: null, creadorId: interaction.user.id, premio, ganadores, participantes: [], fin: Date.now() + duracion, finalizado: false };
+        const sorteo = { id, guildId: interaction.guild.id, canalId: canal.id, mensajeId: null, creadorId: interaction.user.id, premio, ganadores, participantes: [], fin: Date.now() + duracion, finalizado: false, ultimoGanadores: [] };
         const mensaje = await canal.send({ embeds: [crearEmbedSorteo(sorteo)], components: [crearBotonParticipar(sorteo)] });
         sorteo.mensajeId = mensaje.id;
         giveaways[id] = sorteo;
@@ -108,16 +209,19 @@ function iniciarSistemaSorteos(client) {
         programarSorteo(client, sorteo);
         return interaction.reply({ content: '✅ Sorteo creado correctamente.', ephemeral: true });
       }
+
       if (!interaction.isButton() || !interaction.customId.startsWith('giveaway_join_')) return;
       const id = interaction.customId.replace('giveaway_join_', '');
-      const sorteo = giveaways[id];
+      const sorteo = obtenerSorteo(id);
       if (!sorteo || sorteo.finalizado) return interaction.reply({ content: '❌ Este sorteo ya terminó.', ephemeral: true });
+
       if (sorteo.participantes.includes(interaction.user.id)) {
         sorteo.participantes = sorteo.participantes.filter(userId => userId !== interaction.user.id);
         guardarSorteos();
         await interaction.message.edit({ embeds: [crearEmbedSorteo(sorteo)], components: [crearBotonParticipar(sorteo)] });
         return interaction.reply({ content: '↩️ Saliste del sorteo.', ephemeral: true });
       }
+
       sorteo.participantes.push(interaction.user.id);
       guardarSorteos();
       await interaction.message.edit({ embeds: [crearEmbedSorteo(sorteo)], components: [crearBotonParticipar(sorteo)] });
