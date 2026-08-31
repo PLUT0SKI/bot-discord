@@ -28,7 +28,7 @@ function crearEmbedSorteo(sorteo, terminado = false, ganadorIds = []) {
     .setFooter({ text: `ID del sorteo: ${sorteo.id}` });
 
   if (terminado) {
-    const terminoEn = sorteo.terminoEn || sorteo.fin;
+    const terminoEn = sorteo.terminoEn || Date.now();
     embed.addFields(
       { name: '🎁 Premio:', value: `**\`${sorteo.premio}\`**`, inline: true },
       { name: '👥 Participantes:', value: `**\`${sorteo.participantes.length}\`**`, inline: true },
@@ -119,6 +119,7 @@ async function cancelarSorteo(client, id, interaction) {
   if (sorteo.finalizado) return interaction.reply({ content: '❌ Ese sorteo ya terminó.', ephemeral: true });
   sorteo.finalizado = true;
   sorteo.cancelado = true;
+  sorteo.terminoEn = Date.now();
   try {
     const canal = await editarMensajeSorteo(client, sorteo, new EmbedBuilder().setColor('#2b2d31').setTitle('🛑 SORTEO CANCELADO').setDescription(`🎁 **${sorteo.premio}**\n\n❌ Este sorteo fue cancelado por un administrador.`).addFields({ name: '👥 Participantes', value: `**\`${sorteo.participantes.length}\`**`, inline: true }).setFooter({ text: `ID del sorteo: ${sorteo.id}` }));
     await canal.send(`🛑 El sorteo de **${sorteo.premio}** fue cancelado.`);
@@ -159,8 +160,9 @@ function iniciarSistemaSorteos(client) {
         if (!Number.isInteger(ganadores) || ganadores < 1 || ganadores > 50) return interaction.reply({ content: '❌ El número de ganadores debe estar entre 1 y 50.', ephemeral: true });
         const canal = interaction.channel;
         if (!canal || ![ChannelType.GuildText, ChannelType.GuildAnnouncement].includes(canal.type)) return interaction.reply({ content: '❌ Este comando debe utilizarse en un canal de texto.', ephemeral: true });
-        const id = `${Date.now()}_${interaction.user.id}`;
-        const sorteo = { id, guildId: interaction.guild.id, canalId: canal.id, mensajeId: null, creadorId: interaction.user.id, premio, ganadores, participantes: [], fin: Date.now() + duracion, finalizado: false, ultimoGanadores: [] };
+        const inicio = Date.now();
+        const id = `${inicio}_${interaction.user.id}`;
+        const sorteo = { id, guildId: interaction.guild.id, canalId: canal.id, mensajeId: null, creadorId: interaction.user.id, premio, ganadores, participantes: [], inicio, fin: inicio + duracion, finalizado: false, ultimoGanadores: [] };
         const mensaje = await canal.send({ embeds: [crearEmbedSorteo(sorteo)], components: [crearBotonParticipar(sorteo)] });
         sorteo.mensajeId = mensaje.id;
         giveaways[id] = sorteo;
