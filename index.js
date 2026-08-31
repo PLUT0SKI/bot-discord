@@ -1516,10 +1516,13 @@ client.on(
           .setColor(
             '#2b2d31'
           )
+        .setTitle(
+            'Hasta pronto'
+          )
           .setDescription(
-            'Hasta pronto <@' +
+            'Adios <@' +
             member.id +
-            '>, esperamos que vuelvas pronto\n\n'
+            '>, ha salido de la comunidad.\n\nEsperamos volver a verte pronto.'
           )
           .setThumbnail(
             member.user.displayAvatarURL({
