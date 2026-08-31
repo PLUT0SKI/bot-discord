@@ -28,10 +28,11 @@ function crearEmbedSorteo(sorteo, terminado = false, ganadorIds = []) {
     .setFooter({ text: `ID del sorteo: ${sorteo.id}` });
 
   if (terminado) {
-    embed.setDescription(`🎁 **${sorteo.premio}**\n\n🏆 **Ganador${ganadorIds.length === 1 ? '' : 'es'}:** ${ganadorIds.length ? ganadorIds.map(id => `<@${id}>`).join(', ') : '`Ninguno`'}\n\n⏰ **Terminó:** <t:${Math.floor(sorteo.fin / 1000)}:R>`);
+    embed.setDescription(`🎁 **${sorteo.premio}**\n\n🏆 **Ganador${ganadorIds.length === 1 ? '' : 'es'}:** ${ganadorIds.length ? ganadorIds.map(id => `<@${id}>`).join(', ') : '`Ninguno`'}`);
     embed.addFields(
       { name: '👥 Participantes:', value: `**\`${sorteo.participantes.length}\`**`, inline: true },
-      { name: '🏆 Ganadores:', value: ganadorIds.length ? ganadorIds.map(id => `<@${id}>`).join(', ') : '`Ninguno`', inline: true }
+      { name: '🏆 Ganadores:', value: ganadorIds.length ? ganadorIds.map(id => `<@${id}>`).join(', ') : '`Ninguno`', inline: true },
+      { name: '⏰ Terminó:', value: `<t:${Math.floor(sorteo.fin / 1000)}:R>`, inline: false }
     );
     return embed;
   }
