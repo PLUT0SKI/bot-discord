@@ -29,15 +29,15 @@ function crearEmbedSorteo(sorteo, terminado = false, ganadorIds = []) {
 
   if (terminado) {
     embed.addFields(
-      { name: '🎁 Premio', value: `**\`${sorteo.premio}\`**`, inline: true },
-      { name: '🏆 Ganadores', value: ganadorIds.length ? ganadorIds.map(id => `<@${id}>`).join(', ') : '`Ninguno`', inline: true },
-      { name: '👥 Participantes', value: `**\`${sorteo.participantes.length}\`**`, inline: true }
+      { name: '🎁 Premio', value: `  **\`${sorteo.premio}\`**`, inline: true },
+      { name: '🏆 Ganadores', value: ganadorIds.length ? ganadorIds.map(id => `  <@${id}>`).join(', ') : '  `Ninguno`', inline: true },
+      { name: '👥 Participantes', value: `  **\`${sorteo.participantes.length}\`**`, inline: true }
     );
   } else {
     embed.addFields(
-      { name: '🎁 Premio', value: `**\`${sorteo.premio}\`**`, inline: true },
-      { name: '🏆 Ganadores', value: `**\`${sorteo.ganadores}\`**`, inline: true },
-      { name: '👥 Participantes', value: `**\`${sorteo.participantes.length}\`**`, inline: true }
+      { name: '🎁 Premio', value: `  **\`${sorteo.premio}\`**`, inline: true },
+      { name: '🏆 Ganadores', value: `  **\`${sorteo.ganadores}\`**`, inline: true },
+      { name: '👥 Participantes', value: `  **\`${sorteo.participantes.length}\`**`, inline: true }
     );
     embed.addFields({ name: '⏰ Termina', value: `<t:${Math.floor(sorteo.fin / 1000)}:R>`, inline: false });
     embed.setDescription('Pulsa el botón **🎉 Participar** para entrar al sorteo.');
@@ -69,8 +69,8 @@ async function finalizarSorteo(client, id) {
     const canal = await client.channels.fetch(sorteo.canalId);
     const mensaje = await canal.messages.fetch(sorteo.mensajeId);
     await mensaje.edit({ embeds: [crearEmbedSorteo(sorteo, true, ganadores)], components: [] });
-    if (ganadores.length) await canal.send(`🎉 ¡Felicidades ${ganadores.map(id => `<@${id}>`).join(', ')}! Ganaste **${sorteo.premio}**.`);
-    else await canal.send(`❌ El sorteo de **${sorteo.premio}** terminó sin suficientes participantes.`);
+    if (ganadores.length) await canal.send(`🎉¡Felicidades ${ganadores.map(id => `<@${id}>`).join(', ')} ganaste **${sorteo.premio}** abre un <#1357832842561978505> para reclamar tu **${sorteo.premio}**!`);
+    else await canal.send(`❌El sorteo de **${sorteo.premio}** terminó sin suficientes participantes.`);
   } catch (error) { console.error(`ERROR AL FINALIZAR EL SORTEO ${id}:`, error); }
   guardarSorteos();
 }
