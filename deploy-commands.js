@@ -105,6 +105,17 @@ const commands = [
     .setDescription(
       'Elimina todos los mensajes del canal'
     )
+    .toJSON(),
+
+  // =======================
+  // /EMBED
+  // =======================
+
+  new SlashCommandBuilder()
+    .setName('embed')
+    .setDescription(
+      'Abre el creador de embeds'
+    )
     .toJSON()
 
 ];
@@ -225,6 +236,10 @@ const rest =
 
     console.log(
       '✅ /clear'
+    );
+
+    console.log(
+      '✅ /embed'
     );
 
     console.log(
