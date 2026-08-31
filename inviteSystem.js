@@ -2,7 +2,7 @@ const fs = require('fs');
 const { Client, EmbedBuilder } = require('discord.js');
 
 const INVITES_FILE = './invites.json';
-const WELCOME_CHANNEL_ID = '1543780167900471316';
+const INVITE_CHANNEL_ID = '1543837870106869831';
 
 let inviteData = {};
 let inviteCache = new Map();
@@ -37,12 +37,14 @@ async function refreshGuildInvites(guild) {
   try {
     const invites = await guild.invites.fetch();
     const cache = new Map();
+
     invites.forEach(invite => {
       cache.set(invite.code, {
         uses: invite.uses || 0,
         inviterId: invite.inviter?.id || null
       });
     });
+
     inviteCache.set(guild.id, cache);
     return cache;
   } catch (error) {
@@ -58,6 +60,7 @@ async function findUsedInvite(guild) {
 
   for (const [code, current] of newCache) {
     const previous = oldCache.get(code);
+
     if (current.uses > (previous?.uses || 0)) {
       return current;
     }
@@ -79,22 +82,16 @@ async function handleMemberAdd(member) {
   data.joinedBy[member.id] = inviterId;
   saveData();
 
-  const channel = member.guild.channels.cache.get(WELCOME_CHANNEL_ID);
+  const channel = member.guild.channels.cache.get(INVITE_CHANNEL_ID);
   if (!channel || !channel.isTextBased()) return;
 
   const total = data.users[inviterId];
 
-  const embed = new EmbedBuilder()
-    .setColor('#2b2d31')
-    .setTitle('🎉 ¡Nuevo miembro!')
-    .setDescription(
-      `👤 ${member} fue invitado a la comunidad por <@${inviterId}>.\n\n` +
-      `🎟️ **<@${inviterId}> ahora tiene ${total} invitación${total === 1 ? '' : 'es'}.**`
-    )
-    .setThumbnail(member.user.displayAvatarURL({ dynamic: true }))
-    .setFooter({ text: 'Sistema de invitaciones' });
+  // Mensaje normal, SIN embed.
+  const mensaje =
+    `${member} fue invitado a la comunidad por <@${inviterId}> y ahora tiene ${total} invitación${total === 1 ? '' : 'es'}.`;
 
-  await channel.send({ embeds: [embed] }).catch(() => {});
+  await channel.send({ content: mensaje }).catch(() => {});
 }
 
 async function handleMemberRemove(member) {
@@ -123,6 +120,7 @@ function install(client) {
     for (const guild of client.guilds.cache.values()) {
       await refreshGuildInvites(guild);
     }
+
     console.log('✅ Sistema de invitaciones cargado.');
   });
 
@@ -140,7 +138,9 @@ function install(client) {
     const embed = new EmbedBuilder()
       .setColor('#2b2d31')
       .setTitle('🎟️ Tus invitaciones')
-      .setDescription(`${message.author}, actualmente tienes **${total} invitación${total === 1 ? '' : 'es'}** en la comunidad.`)
+      .setDescription(
+        `${message.author}, actualmente tienes **${total} invitación${total === 1 ? '' : 'es'}** en la comunidad.`
+      )
       .setFooter({ text: 'Sistema de invitaciones' });
 
     await message.reply({ embeds: [embed] }).catch(() => {});
@@ -148,11 +148,13 @@ function install(client) {
 }
 
 const originalLogin = Client.prototype.login;
+
 Client.prototype.login = function (...args) {
   if (!this.__inviteSystemInstalled) {
     this.__inviteSystemInstalled = true;
     install(this);
   }
+
   return originalLogin.apply(this, args);
 };
 
