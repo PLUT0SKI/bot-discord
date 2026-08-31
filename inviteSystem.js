@@ -5,7 +5,6 @@ const { Client, EmbedBuilder, PermissionsBitField, MessageFlags } = require('dis
 const INVITES_FILE = path.join(__dirname, 'invites.json');
 const INVITES_BACKUP_FILE = path.join(__dirname, 'invites.backup.json');
 const INVITE_CHANNEL_ID = '1543837870106869831';
-const GOODBYE_CHANNEL_ID = '1543780307688497223';
 
 let inviteData = {};
 const inviteCache = new Map();
@@ -49,11 +48,15 @@ function readJson(file) {
 function loadData() {
   try {
     let loaded = null;
-    try { loaded = readJson(INVITES_FILE); } catch (error) {
+    try {
+      loaded = readJson(INVITES_FILE);
+    } catch (error) {
       console.error('⚠️ invites.json está dañado. Intentando recuperar el respaldo...');
     }
     if (!loaded) {
-      try { loaded = readJson(INVITES_BACKUP_FILE); } catch (error) {
+      try {
+        loaded = readJson(INVITES_BACKUP_FILE);
+      } catch (error) {
         console.error('⚠️ invites.backup.json también está dañado o no existe.');
       }
     }
@@ -177,22 +180,6 @@ async function handleMemberAdd(member) {
   });
 }
 
-async function handleMemberRemove(member) {
-  if (!member.guild || member.user.bot) return;
-  try {
-    const channel = member.guild.channels.cache.get(GOODBYE_CHANNEL_ID);
-    if (!channel || !channel.isTextBased()) {
-      console.error(`❌ No encontré el canal de despedidas ${GOODBYE_CHANNEL_ID}.`);
-      return;
-    }
-    const mensaje = `👋 **${member.user.username} salió de la comunidad. ¡Esperamos volver a verte pronto!**`;
-    await channel.send({ content: mensaje });
-    console.log(`👋 Despedida enviada para ${member.user.tag}.`);
-  } catch (error) {
-    console.error(`❌ ERROR AL ENVIAR DESPEDIDA DE ${member.user.tag}:`, error);
-  }
-}
-
 function getInvites(userId, guildId) {
   const data = getGuildData(guildId);
   return Number(data.users[userId] || 0);
@@ -213,7 +200,6 @@ function install(client) {
     console.log(`✅ Sistema de invitaciones listo. Archivo: ${INVITES_FILE}`);
   });
   client.on('guildMemberAdd', handleMemberAdd);
-  client.on('guildMemberRemove', handleMemberRemove);
   client.on('interactionCreate', async interaction => {
     if (!interaction.isChatInputCommand()) return;
     if (interaction.commandName !== 'invites') return;
