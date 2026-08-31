@@ -28,24 +28,23 @@ function crearEmbedSorteo(sorteo, terminado = false, ganadorIds = []) {
     .setFooter({ text: `ID del sorteo: ${sorteo.id}` });
 
   if (terminado) {
-    embed.setDescription(`🎁 **${sorteo.premio}**\n\n🏆 **Ganador${ganadorIds.length === 1 ? '' : 'es'}:** ${ganadorIds.length ? ganadorIds.map(id => `<@${id}>`).join(', ') : '`Ninguno`'}`);
     embed.addFields(
-      { name: '👥 Participantes', value: `**\`${sorteo.participantes.length}\`**`, inline: true },
-      { name: '🏆 Ganadores', value: ganadorIds.length ? ganadorIds.map(id => `<@${id}>`).join(', ') : '`Ninguno`', inline: true },
-      { name: '📌 Estado', value: '`Finalizado`', inline: true }
+    { name: '🎁 Premio:', value: `**\`${sorteo.premio}\`**`, inline: true },
+    { name: '🏆 Ganadores:', value: ganadorIds.length ? ganadorIds.map(id => `<@${id}>`).join(', ') : '`Ninguno`', inline: true }
+    { name: '👥 Participantes:', value: `**\`${sorteo.participantes.length}\`**`, inline: true },
     );
     return embed;
   }
 
   const restante = sorteo.fin - Date.now();
-  const aviso = restante <= 10 * 60 * 1000 ? '\n⚠️ **¡El sorteo termina pronto!**' : '';
+  const aviso = restante <= 10 * 60 * 1000 ? '\n⚠️ **¡El sorteo terminara pronto!**' : '';
 
   embed.addFields(
-    { name: '🎁 Premio', value: `**\`${sorteo.premio}\`**`, inline: true },
-    { name: '🏆 Ganadores', value: `**\`${sorteo.ganadores}\`**`, inline: true },
-    { name: '👥 Participantes', value: `**\`${sorteo.participantes.length}\`**`, inline: true }
+    { name: '🎁 Premio:', value: `**\`${sorteo.premio}\`**`, inline: true },
+    { name: '🏆 Ganadores:', value: `**\`${sorteo.ganadores}\`**`, inline: true },
+    { name: '👥 Participantes:', value: `**\`${sorteo.participantes.length}\`**`, inline: true }
   );
-  embed.addFields({ name: '⏰ Termina', value: `<t:${Math.floor(sorteo.fin / 1000)}:R>${aviso}`, inline: false });
+  embed.addFields({ name: '⏰ Termina:', value: `<t:${Math.floor(sorteo.fin / 1000)}:R>${aviso}`, inline: false });
   embed.setDescription('Pulsa el botón **🎉 Participar** para entrar al sorteo.');
   return embed;
 }
