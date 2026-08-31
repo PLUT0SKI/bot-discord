@@ -197,12 +197,12 @@ function install(client) {
           const cutoff = Date.now() - 7 * 24 * 60 * 60 * 1000;
           const sales = readJson(DATA.sales, []).filter(s => s.guildId === interaction.guild.id && new Date(s.date).getTime() >= cutoff);
           const total = sales.reduce((a, s) => a + Number(s.price || 0), 0);
-          return interaction.reply({ embeds: [new EmbedBuilder().setColor('#2b2d31').setTitle('📊 Reporte de ganancias — últimos 7 días').addFields({ name: 'Ventas', value: String(sales.length), inline: true }, { name: 'Ganancias', value: `$${total.toFixed(2)}`, inline: true })] });
+          return interaction.reply({ embeds: [new EmbedBuilder().setColor('#2b2d31').setTitle('📊 Reporte de ganancias — últimos 7 días').addFields({ name: 'Ventas', value: String(sales.length), inline: true }, { name: 'Ganancias', value: `$${total.toFixed(2)}`, inline: true })], ephemeral: true });
         }
 
         if (name === 'limpiarventas') {
           writeJson(DATA.sales, []);
-          return interaction.reply('🗑️ Historial de ventas eliminado.');
+          return interaction.reply({ content: '🗑️ Historial de ventas eliminado.', ephemeral: true });
         }
 
         if (name === 'pendientes') {
@@ -268,12 +268,5 @@ function install(client) {
     }
   });
 }
-
-const { Client } = require('discord.js');
-const originalLogin = Client.prototype.login;
-Client.prototype.login = function(...args) {
-  install(this);
-  return originalLogin.apply(this, args);
-};
 
 module.exports = { install };
