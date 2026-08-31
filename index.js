@@ -41,8 +41,8 @@ const client = new Client({
 // ==========================================
 
 const TICKET_CATEGORY_ID = '1357832792699834548';
-const WELCOME_CHANNEL_ID = '1357832795547893861';
-const GOODBYE_CHANNEL_ID = '1357832797448044684';
+const WELCOME_CHANNEL_ID = '1543780167900471316';
+const GOODBYE_CHANNEL_ID = '1543780307688497223';
 
 const REACTION_FILE = './reactionRoles.json';
 const LOGS_FILE = './logsConfig.json';
