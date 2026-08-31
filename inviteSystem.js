@@ -1,5 +1,5 @@
 const fs = require('fs');
-const { Client, EmbedBuilder } = require('discord.js');
+const { Client } = require('discord.js');
 
 const INVITES_FILE = './invites.json';
 const INVITE_CHANNEL_ID = '1543837870106869831';
@@ -87,8 +87,7 @@ async function handleMemberAdd(member) {
 
   const total = data.users[inviterId];
 
-  // ÚNICO mensaje que se envía cuando entra un miembro.
-  // Sin embed y únicamente en INVITE_CHANNEL_ID.
+  // ÚNICO mensaje público del sistema de invitaciones al entrar un miembro.
   const mensaje =
     `${member} fue invitado a la comunidad por <@${inviterId}> y ahora tiene ${total} invitación${total === 1 ? '' : 'es'}.`;
 
@@ -125,32 +124,26 @@ function install(client) {
     console.log('✅ Sistema de invitaciones cargado.');
   });
 
-  // Elimina los listeners anteriores de entrada para evitar que
-  // el sistema de bienvenida de index.js mande otro mensaje/embed.
-  // Después dejamos únicamente el sistema de invitaciones.
+  // Evita que otro listener del sistema anterior de invitaciones procese entradas/salidas.
   client.removeAllListeners('guildMemberAdd');
   client.removeAllListeners('guildMemberRemove');
 
   client.on('guildMemberAdd', handleMemberAdd);
   client.on('guildMemberRemove', handleMemberRemove);
 
-  client.on('messageCreate', async message => {
-    if (message.author.bot || !message.guild) return;
+  // /invites: respuesta efímera, visible únicamente para quien ejecuta el comando.
+  // Ya NO existe !invites ni !invitaciones.
+  client.on('interactionCreate', async interaction => {
+    if (!interaction.isChatInputCommand()) return;
+    if (interaction.commandName !== 'invites') return;
+    if (!interaction.guild) return;
 
-    const command = message.content.trim().toLowerCase();
-    if (command !== '!invites' && command !== '!invitaciones') return;
+    const total = getInvites(interaction.user.id, interaction.guild.id);
 
-    const total = getInvites(message.author.id, message.guild.id);
-
-    const embed = new EmbedBuilder()
-      .setColor('#2b2d31')
-      .setTitle('🎟️ Tus invitaciones')
-      .setDescription(
-        `${message.author}, actualmente tienes **${total} invitación${total === 1 ? '' : 'es'}** en la comunidad.`
-      )
-      .setFooter({ text: 'Sistema de invitaciones' });
-
-    await message.reply({ embeds: [embed] }).catch(() => {});
+    await interaction.reply({
+      content: `🎟️ ${interaction.user}, actualmente tienes **${total} invitación${total === 1 ? '' : 'es'}** en la comunidad.`,
+      ephemeral: true
+    }).catch(() => {});
   });
 }
 
