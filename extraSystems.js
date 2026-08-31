@@ -21,7 +21,7 @@ const CFG = {
   ticketCategory: process.env.TICKET_CATEGORY_ID || '1357832792699834548',
   staffRole: process.env.TICKET_STAFF_ROLE_ID || '1543794671195529246',
   welcomeChannel: process.env.WELCOME_CHANNEL_ID || '1543780167900471316',
-  buyerRole: process.env.BUYER_ROLE_ID || '',
+  buyerRole: process.env.BUYER_ROLE_ID || '1357832739453272204',
   payment: process.env.PAYMENT_INFO || 'Configura PAYMENT_INFO en tus variables de entorno.',
   deposit: process.env.DEPOSIT_INFO || 'Configura DEPOSIT_INFO en tus variables de entorno.'
 };
