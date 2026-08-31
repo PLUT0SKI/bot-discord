@@ -88,8 +88,9 @@ async function handleMemberAdd(member) {
   const total = data.users[inviterId];
 
   // ÚNICO mensaje público del sistema de invitaciones al entrar un miembro.
+  // Todo el texto va en negritas y solo la cantidad de invitaciones va subrayada.
   const mensaje =
-    `${member} fue invitado a la comunidad por <@${inviterId}> y ahora tiene ${total} invitación${total === 1 ? '' : 'es'}.`;
+    `**${member} fue invitado a la comunidad por <@${inviterId}> y ahora tiene __${total} invitación${total === 1 ? '' : 'es'}__.**`;
 
   await channel.send({ content: mensaje }).catch(() => {});
 }
