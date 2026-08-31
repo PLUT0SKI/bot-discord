@@ -29,19 +29,19 @@ function crearEmbedSorteo(sorteo, terminado = false, ganadorIds = []) {
 
   if (terminado) {
     embed.addFields(
-      { name: '🎁 Premio', value: `\`${sorteo.premio}\``, inline: true },
+      { name: '🎁 Premio', value: `**\`${sorteo.premio}\`**`, inline: true },
       { name: '🏆 Ganadores', value: ganadorIds.length ? ganadorIds.map(id => `<@${id}>`).join(', ') : '`Ninguno`', inline: true },
-      { name: '👥 Participantes', value: `\`${sorteo.participantes.length}\``, inline: true }
+      { name: '👥 Participantes', value: `**\`${sorteo.participantes.length}\`**`, inline: true }
     );
   } else {
     embed.addFields(
-      { name: '🎁 Premio', value: `\`${sorteo.premio}\``, inline: true },
-      { name: '🏆 Ganadores', value: `\`${sorteo.ganadores}\``, inline: true },
-      { name: '👥 Participantes', value: `\`${sorteo.participantes.length}\``, inline: true }
+      { name: '🎁 Premio', value: `**\`${sorteo.premio}\`**`, inline: true },
+      { name: '🏆 Ganadores', value: `**\`${sorteo.ganadores}\`**`, inline: true },
+      { name: '👥 Participantes', value: `**\`${sorteo.participantes.length}\`**`, inline: true }
     );
-    embed.setDescription(`\n⏰ **Termina:** <t:${Math.floor(sorteo.fin / 1000)}:R>\n\n¡Pulsa **🎉 Participar** para entrar!`);
+    embed.addFields({ name: '⏰ Termina', value: `<t:${Math.floor(sorteo.fin / 1000)}:R>`, inline: false });
+    embed.setDescription('Pulsa el botón **🎉 Participar** para entrar al sorteo.');
   }
-
   return embed;
 }
 
