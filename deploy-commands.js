@@ -22,7 +22,17 @@ const commands = [
     .addChannelOption(option => option.setName('canal').setDescription('Canal donde se enviarán los logs').addChannelTypes(ChannelType.GuildText, ChannelType.GuildAnnouncement).setRequired(true)).toJSON(),
   new SlashCommandBuilder().setName('clear').setDescription('Elimina todos los mensajes del canal').toJSON(),
   new SlashCommandBuilder().setName('embed').setDescription('Abre el creador de embeds').toJSON(),
-  new SlashCommandBuilder().setName('sorteo').setDescription('Abre el panel para crear un sorteo').toJSON()
+  new SlashCommandBuilder().setName('sorteo').setDescription('Abre el formulario para crear un sorteo').toJSON(),
+  new SlashCommandBuilder()
+    .setName('reroll')
+    .setDescription('Elige un nuevo ganador de un sorteo finalizado')
+    .addStringOption(option => option.setName('id').setDescription('ID del sorteo').setRequired(true))
+    .toJSON(),
+  new SlashCommandBuilder()
+    .setName('cancelarsorteo')
+    .setDescription('Cancela un sorteo activo')
+    .addStringOption(option => option.setName('id').setDescription('ID del sorteo').setRequired(true))
+    .toJSON()
 ];
 
 if (!DISCORD_TOKEN) {
@@ -53,6 +63,8 @@ const rest = new REST({ version: '10' }).setToken(DISCORD_TOKEN);
     console.log('✅ /clear');
     console.log('✅ /embed');
     console.log('✅ /sorteo');
+    console.log('✅ /reroll');
+    console.log('✅ /cancelarsorteo');
     console.log('======================================');
   } catch (error) {
     console.error('');
