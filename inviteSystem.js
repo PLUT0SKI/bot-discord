@@ -1,5 +1,5 @@
 const fs = require('fs');
-const { Client } = require('discord.js');
+const { Client, EmbedBuilder } = require('discord.js');
 
 const INVITES_FILE = './invites.json';
 const INVITE_CHANNEL_ID = '1543837870106869831';
@@ -123,13 +123,11 @@ function install(client) {
     console.log('✅ Sistema de invitaciones cargado.');
   });
 
-  // IMPORTANTE: NO borrar los listeners existentes.
-  // index.js también utiliza guildMemberAdd/guildMemberRemove para bienvenida y despedida.
-  // Ambos sistemas deben funcionar al mismo tiempo.
+  // NO borrar los listeners existentes: bienvenida y despedida deben seguir funcionando.
   client.on('guildMemberAdd', handleMemberAdd);
   client.on('guildMemberRemove', handleMemberRemove);
 
-  // /invites: respuesta efímera, visible únicamente para quien ejecuta el comando.
+  // /invites: embed efímero, visible únicamente para quien ejecuta el comando.
   client.on('interactionCreate', async interaction => {
     if (!interaction.isChatInputCommand()) return;
     if (interaction.commandName !== 'invites') return;
@@ -137,8 +135,15 @@ function install(client) {
 
     const total = getInvites(interaction.user.id, interaction.guild.id);
 
+    const embed = new EmbedBuilder()
+      .setTitle('🎟️ Tus invitaciones')
+      .setDescription(`Actualmente tienes **${total} invitación${total === 1 ? '' : 'es'}** en la comunidad.`)
+      .setColor(0x5865F2)
+      .setThumbnail(interaction.user.displayAvatarURL({ dynamic: true }))
+      .setFooter({ text: 'Sistema de invitaciones' });
+
     await interaction.reply({
-      content: `🎟️ ${interaction.user}, actualmente tienes **${total} invitación${total === 1 ? '' : 'es'}** en la comunidad.`,
+      embeds: [embed],
       ephemeral: true
     }).catch(() => {});
   });
