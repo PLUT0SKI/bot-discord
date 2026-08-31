@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "node -r ./inviteSystem.js -r ./farewellSystem.js index.js",
+    "start": "node index.js",
     "test": "echo \"Error: no test specified\" && exit 0"
   },
   "keywords": [],
