@@ -44,12 +44,6 @@ const rest = new REST({ version: '10' }).setToken(DISCORD_TOKEN);
 
 (async () => {
   try {
-    console.log('🗑️ Eliminando comandos globales...');
-    await rest.put(Routes.applicationCommands(CLIENT_ID), { body: [] });
-    console.log('✅ Comandos globales eliminados.');
-    console.log('🗑️ Eliminando comandos anteriores del servidor...');
-    await rest.put(Routes.applicationGuildCommands(CLIENT_ID, GUILD_ID), { body: [] });
-    console.log('✅ Comandos anteriores eliminados.');
     console.log('🔄 Registrando comandos nuevos...');
     await rest.put(Routes.applicationGuildCommands(CLIENT_ID, GUILD_ID), { body: commands });
     console.log('');
