@@ -87,7 +87,8 @@ async function handleMemberAdd(member) {
 
   const total = data.users[inviterId];
 
-  // Mensaje normal, SIN embed.
+  // ÚNICO mensaje que se envía cuando entra un miembro.
+  // Sin embed y únicamente en INVITE_CHANNEL_ID.
   const mensaje =
     `${member} fue invitado a la comunidad por <@${inviterId}> y ahora tiene ${total} invitación${total === 1 ? '' : 'es'}.`;
 
@@ -123,6 +124,12 @@ function install(client) {
 
     console.log('✅ Sistema de invitaciones cargado.');
   });
+
+  // Elimina los listeners anteriores de entrada para evitar que
+  // el sistema de bienvenida de index.js mande otro mensaje/embed.
+  // Después dejamos únicamente el sistema de invitaciones.
+  client.removeAllListeners('guildMemberAdd');
+  client.removeAllListeners('guildMemberRemove');
 
   client.on('guildMemberAdd', handleMemberAdd);
   client.on('guildMemberRemove', handleMemberRemove);
