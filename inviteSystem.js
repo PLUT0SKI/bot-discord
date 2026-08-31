@@ -36,12 +36,32 @@ function loadData() {
       inviteData = {};
       saveData();
     }
-
-    console.log('✅ invites.json cargado correctamente.');
   } catch (error) {
     console.error('❌ ERROR AL CARGAR invites.json:', error);
     inviteData = {};
     saveData();
+  }
+}
+
+// Recarga el archivo justo antes de leer/escribir un contador.
+// Esto evita que /invites y guildMemberAdd usen copias antiguas
+// si el proceso fue reiniciado o existe más de una instancia activa.
+function reloadData() {
+  try {
+    if (!fs.existsSync(INVITES_FILE)) {
+      inviteData = {};
+      saveData();
+      return;
+    }
+
+    const raw = fs.readFileSync(INVITES_FILE, 'utf8').trim();
+    inviteData = raw ? JSON.parse(raw) : {};
+
+    if (!inviteData || typeof inviteData !== 'object' || Array.isArray(inviteData)) {
+      inviteData = {};
+    }
+  } catch (error) {
+    console.error('❌ ERROR AL RECARGAR invites.json:', error);
   }
 }
 
@@ -68,7 +88,8 @@ async function fetchGuildInvites(guild) {
       return null;
     }
 
-    return await guild.invites.fetch();
+    // cache:false fuerza una consulta nueva a Discord.
+    return await guild.invites.fetch({ cache: false });
   } catch (error) {
     console.error(`❌ No pude obtener las invitaciones de ${guild.name}: ${error.message}`);
     return null;
@@ -81,7 +102,7 @@ function makeInviteCache(invites) {
   for (const invite of invites.values()) {
     cache.set(invite.code, {
       uses: invite.uses ?? 0,
-      inviterId: invite.inviter?.id ?? null
+      inviterId: invite.inviter?.id ?? invite.inviterId ?? null
     });
   }
 
@@ -114,9 +135,7 @@ function queueGuildTask(guildId, task) {
 }
 
 async function findUsedInvite(guild, oldCache) {
-  // Discord puede tardar un poco en actualizar invite.uses.
-  // Hacemos varios intentos para evitar falsos "no se pudo determinar".
-  for (let attempt = 0; attempt < 6; attempt++) {
+  for (let attempt = 0; attempt < 8; attempt++) {
     const invites = await fetchGuildInvites(guild);
     if (!invites) return { invites: null, usedInvite: null };
 
@@ -126,13 +145,14 @@ async function findUsedInvite(guild, oldCache) {
       const previous = oldCache?.get(invite.code);
       const currentUses = invite.uses ?? 0;
       const previousUses = previous?.uses ?? 0;
-      const inviterId = invite.inviter?.id ?? previous?.inviterId ?? null;
+      const inviterId = invite.inviter?.id ?? invite.inviterId ?? previous?.inviterId ?? null;
 
       if (inviterId && currentUses > previousUses) {
-        if (!usedInvite || currentUses > usedInvite.uses) {
+        if (!usedInvite || currentUses - previousUses > usedInvite.delta) {
           usedInvite = {
             code: invite.code,
             uses: currentUses,
+            delta: currentUses - previousUses,
             inviterId
           };
         }
@@ -143,8 +163,8 @@ async function findUsedInvite(guild, oldCache) {
       return { invites, usedInvite };
     }
 
-    if (attempt < 5) {
-      await new Promise(resolve => setTimeout(resolve, 1000));
+    if (attempt < 7) {
+      await new Promise(resolve => setTimeout(resolve, 750));
     }
   }
 
@@ -158,7 +178,6 @@ async function handleMemberAdd(member) {
   return queueGuildTask(member.guild.id, async () => {
     try {
       const oldCache = inviteCache.get(member.guild.id);
-
       const result = await findUsedInvite(member.guild, oldCache);
       const newInvites = result.invites;
       const usedInvite = result.usedInvite;
@@ -172,16 +191,19 @@ async function handleMemberAdd(member) {
         return;
       }
 
+      // Siempre leemos el contador más reciente antes de incrementarlo.
+      reloadData();
+
       const data = getGuildData(member.guild.id);
       const inviterId = usedInvite.inviterId;
+      const previousTotal = Number(data.users[inviterId] || 0);
+      const total = previousTotal + 1;
 
-      data.users[inviterId] = (data.users[inviterId] || 0) + 1;
+      data.users[inviterId] = total;
       data.joinedBy[member.id] = inviterId;
 
-      // Guardamos inmediatamente después de cada invitación.
       saveData();
 
-      const total = data.users[inviterId];
       const channel = member.guild.channels.cache.get(INVITE_CHANNEL_ID);
 
       if (!channel || !channel.isTextBased()) {
@@ -193,7 +215,7 @@ async function handleMemberAdd(member) {
 
       await channel.send({ content: mensaje });
 
-      console.log(`✅ ${member.user.tag} fue invitado por ${inviterId}. Total: ${total}`);
+      console.log(`✅ ${member.user.tag} fue invitado por ${inviterId}. Antes: ${previousTotal}. Ahora: ${total}`);
       console.log(`💾 invites.json actualizado para ${inviterId}: ${total}`);
     } catch (error) {
       console.error('❌ ERROR EN SISTEMA DE INVITACIONES:', error);
@@ -203,48 +225,25 @@ async function handleMemberAdd(member) {
 
 async function handleMemberRemove(member) {
   if (!member.guild || member.user.bot) return;
-
-  // No descontamos invitaciones cuando alguien abandona.
   console.log(`ℹ️ ${member.user.tag} salió. No se descontó la invitación.`);
 }
 
 function getInvites(userId, guildId) {
-  return getGuildData(guildId).users[userId] || 0;
+  reloadData();
+  return Number(getGuildData(guildId).users[userId] || 0);
 }
 
 async function initializeGuild(guild) {
   const invites = await fetchGuildInvites(guild);
   if (!invites) return;
 
-  const cache = makeInviteCache(invites);
-  inviteCache.set(guild.id, cache);
+  inviteCache.set(guild.id, makeInviteCache(invites));
 
-  const data = getGuildData(guild.id);
-  const discordTotals = {};
-  let changed = false;
-
-  // Recupera usos de invitaciones que Discord todavía conserva.
-  for (const invite of invites.values()) {
-    const inviterId = invite.inviter?.id;
-    if (!inviterId) continue;
-
-    const uses = invite.uses ?? 0;
-    discordTotals[inviterId] = (discordTotals[inviterId] || 0) + uses;
-  }
-
-  for (const [inviterId, discordTotal] of Object.entries(discordTotals)) {
-    const savedTotal = data.users[inviterId] || 0;
-
-    if (discordTotal > savedTotal) {
-      data.users[inviterId] = discordTotal;
-      changed = true;
-    }
-  }
-
-  if (changed) {
-    saveData();
-    console.log(`🔄 ${guild.name}: contadores recuperados desde Discord.`);
-  }
+  // IMPORTANTE: no reconstruimos los contadores usando invite.uses.
+  // invite.uses es el uso histórico de Discord y puede no coincidir
+  // con el contador persistente del bot. El contador oficial del sistema
+  // es invites.json y solo cambia cuando nuestro bot detecta una entrada.
+  console.log(`✅ ${guild.name}: ${invites.size} invitaciones cargadas en caché.`);
 }
 
 function install(client) {
