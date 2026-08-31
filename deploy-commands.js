@@ -40,9 +40,7 @@ if (!DISCORD_TOKEN) {
   process.exit(1);
 }
 
-const rest = new REST({ version: '10' })
-  .setToken(DISCORD_TOKEN)
-  .setTimeout(15000);
+const rest = new REST({ version: '10' }).setToken(DISCORD_TOKEN);
 
 async function ejecutarConTimeout(peticion, nombre) {
   try {
