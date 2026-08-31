@@ -1,7 +1,9 @@
 const fs = require('fs');
+const path = require('path');
 const { Client, EmbedBuilder } = require('discord.js');
 
-const INVITES_FILE = './invites.json';
+// Guardar siempre junto al bot, no dependiendo de la carpeta desde donde se ejecute Node.
+const INVITES_FILE = path.join(__dirname, 'invites.json');
 const INVITE_CHANNEL_ID = '1543837870106869831';
 
 let inviteData = {};
@@ -9,8 +11,17 @@ let inviteCache = new Map();
 
 function loadData() {
   try {
-    if (fs.existsSync(INVITES_FILE)) {
-      inviteData = JSON.parse(fs.readFileSync(INVITES_FILE, 'utf8')) || {};
+    if (!fs.existsSync(INVITES_FILE)) {
+      inviteData = {};
+      saveData();
+      return;
+    }
+
+    const raw = fs.readFileSync(INVITES_FILE, 'utf8').trim();
+    inviteData = raw ? JSON.parse(raw) : {};
+
+    if (!inviteData || typeof inviteData !== 'object' || Array.isArray(inviteData)) {
+      inviteData = {};
     }
   } catch (error) {
     console.error('ERROR AL CARGAR invites.json:', error);
@@ -20,7 +31,10 @@ function loadData() {
 
 function saveData() {
   try {
-    fs.writeFileSync(INVITES_FILE, JSON.stringify(inviteData, null, 2));
+    // Escritura atómica para evitar que un reinicio deje el archivo vacío/corrupto.
+    const tempFile = `${INVITES_FILE}.tmp`;
+    fs.writeFileSync(tempFile, JSON.stringify(inviteData, null, 2), 'utf8');
+    fs.renameSync(tempFile, INVITES_FILE);
   } catch (error) {
     console.error('ERROR AL GUARDAR invites.json:', error);
   }
@@ -30,6 +44,10 @@ function getGuildData(guildId) {
   if (!inviteData[guildId]) {
     inviteData[guildId] = { users: {}, joinedBy: {} };
   }
+
+  if (!inviteData[guildId].users) inviteData[guildId].users = {};
+  if (!inviteData[guildId].joinedBy) inviteData[guildId].joinedBy = {};
+
   return inviteData[guildId];
 }
 
@@ -120,7 +138,7 @@ function install(client) {
       await refreshGuildInvites(guild);
     }
 
-    console.log('✅ Sistema de invitaciones cargado.');
+    console.log(`✅ Sistema de invitaciones cargado. Datos guardados en: ${INVITES_FILE}`);
   });
 
   // NO borrar los listeners existentes: bienvenida y despedida deben seguir funcionando.
