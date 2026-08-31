@@ -22,11 +22,28 @@ function duracionAMs(texto) {
 }
 
 function crearEmbedSorteo(sorteo, terminado = false, ganadorIds = []) {
-  return new EmbedBuilder()
+  const embed = new EmbedBuilder()
     .setColor(terminado ? '#2b2d31' : '#5865F2')
     .setTitle(terminado ? '🎉 SORTEO FINALIZADO' : '🎉 SORTEO')
-    .setDescription(`🎁 **Premio:** ${sorteo.premio}\n🏆 **Ganadores:** ${sorteo.ganadores}\n👥 **Participantes:** ${sorteo.participantes.length}\n\n${terminado ? (ganadorIds.length ? `🏆 **Ganador${ganadorIds.length === 1 ? '' : 'es'}:** ${ganadorIds.map(id => `<@${id}>`).join(', ')}` : '❌ No hubo suficientes participantes para elegir ganadores.') : `⏰ **Termina:** <t:${Math.floor(sorteo.fin / 1000)}:R>\n\n¡Pulsa el botón para participar!`}`)
     .setFooter({ text: `ID del sorteo: ${sorteo.id}` });
+
+  if (terminado) {
+    embed.setDescription(
+      `🎁 **${sorteo.premio}**\n\n` +
+      `🏆 **Ganador${ganadorIds.length === 1 ? '' : 'es'}:** ${ganadorIds.length ? ganadorIds.map(id => `<@${id}>`).join(', ') : 'Ninguno'}\n` +
+      `👥 **Participantes:** ${sorteo.participantes.length}`
+    );
+  } else {
+    embed.setDescription(
+      `🎁 **${sorteo.premio}**\n\n` +
+      `🏆 **${sorteo.ganadores}** ganador${sorteo.ganadores === 1 ? '' : 'es'}     ` +
+      `👥 **${sorteo.participantes.length}** participante${sorteo.participantes.length === 1 ? '' : 's'}\n\n` +
+      `⏰ **Termina:** <t:${Math.floor(sorteo.fin / 1000)}:R>\n\n` +
+      `¡Pulsa el botón **🎉 Participar** para entrar!`
+    );
+  }
+
+  return embed;
 }
 
 function crearBotonParticipar(sorteo) {
