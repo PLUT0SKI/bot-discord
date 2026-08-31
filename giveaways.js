@@ -88,6 +88,8 @@ async function finalizarSorteo(client, id) {
     ganadores.push(disponibles.splice(Math.floor(Math.random() * disponibles.length), 1)[0]);
   }
 
+  sorteo.ultimoGanadores = ganadores;
+
   try {
     const canal = await editarMensajeSorteo(client, sorteo, crearEmbedSorteo(sorteo, true, ganadores));
     if (ganadores.length) {
