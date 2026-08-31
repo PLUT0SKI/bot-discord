@@ -29,9 +29,9 @@ function crearEmbedSorteo(sorteo, terminado = false, ganadorIds = []) {
 
   if (terminado) {
     embed.addFields(
-    { name: '🎁 Premio:', value: `**\`${sorteo.premio}\`**`, inline: true },
-    { name: '🏆 Ganadores:', value: ganadorIds.length ? ganadorIds.map(id => `<@${id}>`).join(', ') : '`Ninguno`', inline: true }
-    { name: '👥 Participantes:', value: `**\`${sorteo.participantes.length}\`**`, inline: true },
+      { name: '🎁 Premio:', value: `**\`${sorteo.premio}\`**`, inline: true },
+      { name: '🏆 Ganadores:', value: ganadorIds.length ? ganadorIds.map(id => `<@${id}>`).join(', ') : '`Ninguno`', inline: true },
+      { name: '👥 Participantes:', value: `**\`${sorteo.participantes.length}\`**`, inline: true }
     );
     return embed;
   }
