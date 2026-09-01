@@ -1,4 +1,5 @@
 const { EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, ButtonBuilder, ButtonStyle, PermissionsBitField, ChannelType } = require('discord.js');
+const { verificarAcceso } = require('../utils/commandAccess');
 
 const TICKET_CATEGORY_ID = '1357832792699834548';
 const TICKET_STAFF_ROLE_ID = '1543794671195529246';
@@ -7,6 +8,7 @@ module.exports = (client) => {
   client.on('interactionCreate', async (interaction) => {
     try {
       if (interaction.isChatInputCommand() && interaction.commandName === 'tickets') {
+        if (!await verificarAcceso(interaction)) return;
         const embed = new EmbedBuilder().setColor('#2b2d31').setTitle('TICKETS').setDescription(
           '**🛒 Comprar**\nAbre un ticket privado para realizar tu compra. Nuestro equipo te ayudará durante todo el proceso.\n\n' +
           '**🛠️ Dudas / Soporte**\n¿Tienes alguna duda, problema o necesitas ayuda? Abre un ticket y estaremos encantados de ayudarte.\n\n' +
