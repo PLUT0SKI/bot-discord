@@ -13,22 +13,22 @@ const COMANDOS = [
   {
     categoria: '🎉 Sorteos',
     comandos: [
-      ['`/sorteo`', 'Abre el formulario para crear un sorteo.', '🛡️ Gestionar servidor'],
-      ['`/reroll`', 'Elige un nuevo ganador de un sorteo finalizado.', '🛡️ Gestionar servidor']
+      ['`/sorteo`', 'Abre el formulario para crear un sorteo.'],
+      ['`/reroll`', 'Elige un nuevo ganador de un sorteo finalizado.']
     ]
   },
   {
     categoria: '🛠️ Administración',
     comandos: [
-      ['`/clear`', 'Elimina mensajes del canal.', '🛡️ Gestionar mensajes'],
-      ['`/embed`', 'Abre el creador de embeds personalizados.', '🛡️ Gestionar mensajes'],
+      ['`/clear`', 'Elimina mensajes del canal.'],
+      ['`/embed`', 'Abre el creador de embeds personalizados.'],
       ['`/addreaction`', 'Configura una reacción para asignar un rol.'],
       ['`/setlogs`', 'Configura el canal donde se enviarán los logs.']
     ]
   },
   {
     categoria: '📋 Información',
-    comandos: [['`/comandos`', 'Muestra esta lista de comandos y sus permisos.']]
+    comandos: [['`/comandos`', 'Muestra esta lista de comandos.']]
   }
 ];
 
@@ -39,14 +39,14 @@ module.exports = (client) => {
 
     const embed = new EmbedBuilder()
       .setTitle('📋 Comandos disponibles')
-      .setDescription('Aquí tienes los comandos disponibles, una descripción corta y los permisos necesarios para utilizarlos.')
+      .setDescription('Aquí tienes los comandos disponibles y una descripción corta de lo que hacen.')
       .setColor('#5865F2')
       .setFooter({ text: 'Sistema de comandos' })
       .setTimestamp();
 
     for (const grupo of COMANDOS) {
       const texto = grupo.comandos
-        .map(([comando, descripcion, permiso]) => permiso ? `${comando} — ${descripcion}\n${permiso}` : `${comando} — ${descripcion}`)
+        .map(([comando, descripcion]) => `${comando} — ${descripcion}`)
         .join('\n\n');
 
       embed.addFields({ name: grupo.categoria, value: texto });
