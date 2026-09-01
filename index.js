@@ -29,8 +29,8 @@ const client = new Client({
 require('./systems/welcomeGoodbye')(client);
 require('./systems/tickets')(client);
 require('./systems/payments')(client);
-require('./systems/logsModeration')(client);
-require('./systems/clear')(client);
+const moderation = require('./systems/logsModeration')(client);
+require('./systems/clear')(client, moderation);
 require('./systems/reactionRoles')(client);
 require('./systems/reactionRoleCommand')(client);
 require('./systems/embeds')(client);
