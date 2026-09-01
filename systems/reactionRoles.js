@@ -13,28 +13,6 @@ function guardarReactionRoles() {
 function getEmojiKey(reaction) { return reaction.emoji.id ? `custom:${reaction.emoji.id}` : `unicode:${reaction.emoji.name}`; }
 
 module.exports = client => {
-  client.on('interactionCreate', async interaction => {
-    if (!interaction.isChatInputCommand() || interaction.commandName !== 'addreaction') return;
-    try {
-      const mensajeId = interaction.options.getString('mensaje');
-      const emojiInput = interaction.options.getString('emoji');
-      const rol = interaction.options.getRole('rol');
-      const canal = interaction.channel;
-      if (!canal || !rol) return interaction.reply({ content: '❌ Datos inválidos.', ephemeral: true });
-      let mensaje;
-      try { mensaje = await canal.messages.fetch(mensajeId); }
-      catch { return interaction.reply({ content: '❌ No encontré ese mensaje en este canal.', ephemeral: true }); }
-      const customEmoji = emojiInput.match(/^<a?:([a-zA-Z0-9_]+):(\d+)>$/);
-      const reactionEmoji = customEmoji ? customEmoji[2] : emojiInput;
-      const emojiKey = customEmoji ? `custom:${customEmoji[2]}` : `unicode:${emojiInput}`;
-      try { await mensaje.react(reactionEmoji); }
-      catch { return interaction.reply({ content: '❌ No pude agregar esa reacción.', ephemeral: true }); }
-      reactionRoles[`${mensajeId}:${emojiKey}`] = { roleId: rol.id, guildId: interaction.guild.id, channelId: canal.id, messageId: mensajeId, emoji: emojiInput };
-      guardarReactionRoles();
-      return interaction.reply({ content: `✅ **Reacción configurada correctamente.**\n\n👤 **Rol:** <@&${rol.id}>\n😀 **Emoji:** ${emojiInput}\n💬 **Mensaje:** ${mensaje.url}`, ephemeral: true });
-    } catch (error) { console.error('ERROR EN /ADDREACTION:', error); }
-  });
-
   client.on('messageReactionAdd', async (reaction, user) => {
     try {
       if (user.bot) return;
