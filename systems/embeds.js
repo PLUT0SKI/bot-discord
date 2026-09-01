@@ -65,7 +65,7 @@ module.exports = client => {
           embed_image: ['embed_modal_image', 'Imagen', 'URL de la imagen', 'https://ejemplo.com/imagen.png', TextInputStyle.Short, false, 2048]
         };
         if (specs[o]) return interaction.showModal(textModal(...specs[o]));
-        if (o === 'embed_color') return interaction.showModal(textModal('embed_modal_color', 'Cambiar color', 'Color HEX', '#ff0000', TextInputStyle.Short, true, 7).addComponents ? textModal('embed_modal_color', 'Cambiar color', 'Color HEX', '#ff0000', TextInputStyle.Short, true, 7).components?.[0] : undefined);
+        if (o === 'embed_color') return interaction.showModal(textModal('embed_modal_color', 'Cambiar color', 'Color HEX', '#ff0000', TextInputStyle.Short, true, 7));
         if (o === 'embed_field') {
           const m = new ModalBuilder().setCustomId('embed_modal_field').setTitle('Agregar campo').addComponents(
             new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('embed_field_name').setLabel('Nombre del campo').setPlaceholder('Ejemplo: Precio').setStyle(TextInputStyle.Short).setRequired(true).setMaxLength(256)),
