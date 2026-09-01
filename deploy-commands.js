@@ -30,66 +30,68 @@ const commands = [
     .toJSON()
 ];
 
-if (!DISCORD_TOKEN) {
-  console.error('❌ NO SE ENCONTRO DISCORD_TOKEN.');
-  process.exit(1);
+function normalizarComando(command) {
+  return {
+    type: command.type ?? 1,
+    name: command.name,
+    description: command.description ?? '',
+    options: command.options ?? [],
+    default_member_permissions: command.default_member_permissions ?? null,
+    dm_permission: command.dm_permission ?? true,
+    nsfw: command.nsfw ?? false
+  };
 }
 
-const rest = new REST({ version: '10' }).setToken(DISCORD_TOKEN);
+function comandosSonIguales(actuales) {
+  const esperados = commands.map(normalizarComando);
+  const existentes = actuales
+    .filter(command => command.type === 1)
+    .map(normalizarComando);
 
-(async () => {
-  try {
-    console.log('🔄 Registrando comandos nuevos...');
+  if (existentes.length !== esperados.length) return false;
 
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 30000);
+  const ordenar = lista => lista.sort((a, b) => a.name.localeCompare(b.name));
+  return JSON.stringify(ordenar(existentes)) === JSON.stringify(ordenar(esperados));
+}
 
-    let response;
-    try {
-      response = await fetch(
-        `https://discord.com/api/v10/applications/${CLIENT_ID}/guilds/${GUILD_ID}/commands`,
-        {
-          method: 'PUT',
-          headers: {
-            'Authorization': `Bot ${DISCORD_TOKEN}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(commands),
-          signal: controller.signal
-        }
-      );
-    } finally {
-      clearTimeout(timeout);
-    }
-
-    const responseText = await response.text();
-
-    if (!response.ok) {
-      throw new Error(`Discord HTTP ${response.status}: ${responseText}`);
-    }
-
-    console.log('');
-    console.log('======================================');
-    console.log('✅ COMANDOS REGISTRADOS CORRECTAMENTE');
-    console.log('======================================');
-    console.log('✅ /tickets');
-    console.log('✅ /pagos');
-    console.log('✅ /addreaction');
-    console.log('✅ /setlogs');
-    console.log('✅ /clear');
-    console.log('✅ /embed');
-    console.log('✅ /sorteo');
-    console.log('✅ /reroll');
-    console.log('======================================');
-  } catch (error) {
-    console.error('');
-    console.error('❌ ERROR AL REGISTRAR COMANDOS:');
-    if (error.name === 'AbortError') {
-      console.error('❌ Discord no respondió después de 30 segundos.');
-      console.error('❌ El problema está en la conexión entre el contenedor y la API de Discord.');
-    } else {
-      console.error(error);
-    }
-    process.exitCode = 1;
+async function syncCommands() {
+  if (!DISCORD_TOKEN) {
+    throw new Error('NO SE ENCONTRO DISCORD_TOKEN.');
   }
-})();
+
+  const rest = new REST({ version: '10' }).setToken(DISCORD_TOKEN);
+
+  console.log('🔎 Comprobando comandos de Discord...');
+
+  const actuales = await rest.get(
+    Routes.applicationGuildCommands(CLIENT_ID, GUILD_ID)
+  );
+
+  if (comandosSonIguales(actuales)) {
+    console.log('✅ Los comandos ya están actualizados. No se modificó nada.');
+    return false;
+  }
+
+  console.log('🔄 Cambios detectados. Actualizando comandos...');
+
+  await rest.put(
+    Routes.applicationGuildCommands(CLIENT_ID, GUILD_ID),
+    { body: commands }
+  );
+
+  console.log('✅ Comandos actualizados correctamente.');
+  return true;
+}
+
+module.exports = { syncCommands, commands };
+
+if (require.main === module) {
+  syncCommands()
+    .then(() => process.exit(0))
+    .catch(error => {
+      console.error('');
+      console.error('❌ ERROR AL REGISTRAR COMANDOS:');
+      console.error(error);
+      process.exit(1);
+    });
+}
