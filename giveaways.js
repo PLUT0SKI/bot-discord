@@ -21,19 +21,6 @@ function duracionAMs(texto) {
   return Number.isSafeInteger(duracion) && duracion >= 5000 ? duracion : null;
 }
 
-function tiempoTranscurrido(timestamp) {
-  const segundos = Math.max(0, Math.floor((Date.now() - timestamp) / 1000));
-  if (segundos < 60) return segundos <= 1 ? 'hace unos segundos' : `hace ${segundos} segundos`;
-  const minutos = Math.floor(segundos / 60);
-  if (minutos < 60) return `hace ${minutos} ${minutos === 1 ? 'minuto' : 'minutos'}`;
-  const horas = Math.floor(minutos / 60);
-  if (horas < 24) return `hace ${horas} ${horas === 1 ? 'hora' : 'horas'}`;
-  const dias = Math.floor(horas / 24);
-  if (dias < 7) return `hace ${dias} ${dias === 1 ? 'día' : 'días'}`;
-  const semanas = Math.floor(dias / 7);
-  return `hace ${semanas} ${semanas === 1 ? 'semana' : 'semanas'}`;
-}
-
 function crearEmbedSorteo(sorteo, terminado = false, ganadorIds = []) {
   const embed = new EmbedBuilder()
     .setColor(terminado ? '#2b2d31' : '#5865F2')
@@ -46,7 +33,7 @@ function crearEmbedSorteo(sorteo, terminado = false, ganadorIds = []) {
       { name: '🎁 Premio:', value: `**\`${sorteo.premio}\`**`, inline: true },
       { name: '👥 Participantes:', value: `**\`${sorteo.participantes.length}\`**`, inline: true },
       { name: '🏆 Ganadores:', value: ganadorIds.length ? ganadorIds.map(id => `<@${id}>`).join(', ') : '`Ninguno`', inline: true },
-      { name: '⏰ Terminó:', value: tiempoTranscurrido(terminoEn), inline: false }
+      { name: '⏰ Terminó:', value: `<t:${Math.floor(terminoEn / 1000)}:R>`, inline: false }
     );
     return embed;
   }
