@@ -18,6 +18,10 @@ const COMANDOS = [
     ]
   },
   {
+    categoria: '📨 Invitaciones',
+    comandos: [['`/invites`', 'Consulta cuántas invitaciones tiene un usuario.']]
+  },
+  {
     categoria: '🛠️ Administración',
     comandos: [
       ['`/clear`', 'Elimina mensajes del canal.'],
