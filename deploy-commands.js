@@ -27,11 +27,6 @@ const commands = [
     .setName('reroll')
     .setDescription('Elige un nuevo ganador de un sorteo finalizado')
     .addStringOption(option => option.setName('id').setDescription('ID del sorteo').setRequired(true))
-    .toJSON(),
-  new SlashCommandBuilder()
-    .setName('cancelarsorteo')
-    .setDescription('Cancela un sorteo activo')
-    .addStringOption(option => option.setName('id').setDescription('ID del sorteo').setRequired(true))
     .toJSON()
 ];
 
@@ -85,7 +80,6 @@ const rest = new REST({ version: '10' }).setToken(DISCORD_TOKEN);
     console.log('✅ /embed');
     console.log('✅ /sorteo');
     console.log('✅ /reroll');
-    console.log('✅ /cancelarsorteo');
     console.log('======================================');
   } catch (error) {
     console.error('');
