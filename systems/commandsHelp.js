@@ -18,6 +18,10 @@ const COMANDOS = [
     ]
   },
   {
+    categoria: '💡 Sugerencias',
+    comandos: [['`/sugerencias`', 'Muestra el panel para enviar sugerencias.']]
+  },
+  {
     categoria: '🛠️ Administración',
     comandos: [
       ['`/clear`', 'Elimina mensajes del canal.'],
