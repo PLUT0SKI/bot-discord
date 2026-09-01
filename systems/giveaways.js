@@ -30,7 +30,7 @@ function crearEmbedSorteo(sorteo, terminado = false, ganadorIds = []) {
 
   if (terminado) {
     const terminoEn = Number(sorteo.terminoEn) || Date.now();
-    embed.setDescription('El sorteo ah finalizado muchas gracias por participar.');
+    embed.setDescription('El sorteo ha finalizado muchas gracias por participar.');
     embed.addFields(
       { name: '🎁 Premio:', value: `**\`${sorteo.premio}\`**\n\u200b`, inline: true },
       { name: '🏆 Ganadores:', value: `${ganadorIds.length ? ganadorIds.map(id => `<@${id}>`).join(', ') : '`Ninguno`'}\n\u200b`, inline: true },
@@ -157,7 +157,7 @@ function iniciarSistemaSorteos(client) {
         const inicio = Date.now();
         const id = `${inicio}_${interaction.user.id}`;
         const sorteo = { id, guildId: interaction.guild.id, canalId: canal.id, mensajeId: null, creadorId: interaction.user.id, premio, requisito, ganadores, participantes: [], inicio, fin: inicio + duracion, finalizado: false, ultimoGanadores: [] };
-        const mensaje = await canal.send({ embeds: [crearEmbedSorteo(sorteo)], components: [crearBotonParticipar(sorteo)] });
+        const mensaje = await canal.send({ content: '@everyone', allowedMentions: { parse: ['everyone'] }, embeds: [crearEmbedSorteo(sorteo)], components: [crearBotonParticipar(sorteo)] });
         sorteo.mensajeId = mensaje.id;
         giveaways[id] = sorteo;
         guardarSorteos();
