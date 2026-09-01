@@ -1,5 +1,6 @@
 const { EmbedBuilder, PermissionsBitField, ChannelType } = require('discord.js');
 const fs = require('fs');
+const { verificarAcceso } = require('../utils/commandAccess');
 
 const LOGS_FILE = './logsConfig.json';
 let logsConfig = {};
@@ -143,6 +144,7 @@ module.exports = (client) => {
   client.on('interactionCreate', async (interaction) => {
     if (!interaction.isChatInputCommand() || interaction.commandName !== 'setlogs') return;
     try {
+      if (!await verificarAcceso(interaction)) return;
       const canal = interaction.options.getChannel('canal');
       if (!canal || canal.type !== ChannelType.GuildText) return interaction.reply({ content: '❌ Selecciona un canal de texto.', ephemeral: true });
       const permisos = canal.permissionsFor(interaction.guild.members.me);
