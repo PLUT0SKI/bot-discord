@@ -28,6 +28,7 @@ const commands = [
     .setDescription('Elige un nuevo ganador de un sorteo finalizado')
     .addStringOption(option => option.setName('id').setDescription('ID del sorteo').setRequired(true))
     .toJSON(),
+  new SlashCommandBuilder().setName('sugerencias').setDescription('Muestra el panel para enviar sugerencias').toJSON(),
   new SlashCommandBuilder().setName('comandos').setDescription('Muestra todos los comandos disponibles, su función y quién puede usarlos').toJSON()
 ];
 
