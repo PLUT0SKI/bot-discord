@@ -29,18 +29,21 @@ function crearEmbedSorteo(sorteo, terminado = false, ganadorIds = []) {
 
   if (terminado) {
     const terminoEn = Number(sorteo.terminoEn) || Date.now();
+    embed.setDescription('El sorteo ah finalizado muchas gracias por participar.');
     embed.addFields(
       { name: '🎁 Premio:', value: `**\`${sorteo.premio}\`**`, inline: true },
-      { name: '👥 Participantes:', value: `**\`${sorteo.participantes.length}\`**`, inline: true },
       { name: '🏆 Ganadores:', value: ganadorIds.length ? ganadorIds.map(id => `<@${id}>`).join(', ') : '`Ninguno`', inline: true },
+      { name: '👥 Participantes:', value: `**\`${sorteo.participantes.length}\`**`, inline: true },
       { name: '⏰ Terminó:', value: `<t:${Math.floor(terminoEn / 1000)}:R>`, inline: false }
     );
+    embed.addFields({ name: '\u200b', value: '**¡No olvides participar en los próximos sorteos!**', inline: false });
     return embed;
   }
 
   const restante = sorteo.fin - Date.now();
   const aviso = restante <= 10 * 60 * 1000 ? '⚠️ **¡El sorteo terminara pronto!**' : '';
 
+  embed.setDescription('Pulsa el botón **🎉 Participar** para entrar al sorteo.');
   embed.addFields(
     { name: '🎁 Premio:', value: `**\`${sorteo.premio}\`**\n\u200b`, inline: true },
     { name: '🏆 Ganadores:', value: `**\`${sorteo.ganadores}\`**\n\u200b`, inline: true },
@@ -57,7 +60,6 @@ function crearEmbedSorteo(sorteo, terminado = false, ganadorIds = []) {
     embed.addFields({ name: '\u200b', value: aviso, inline: false });
   }
 
-  embed.setDescription('Pulsa el botón **🎉 Participar** para entrar al sorteo.');
   return embed;
 }
 
