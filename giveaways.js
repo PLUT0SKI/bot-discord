@@ -31,9 +31,9 @@ function crearEmbedSorteo(sorteo, terminado = false, ganadorIds = []) {
     const terminoEn = Number(sorteo.terminoEn) || Date.now();
     embed.setDescription('El sorteo ah finalizado muchas gracias por participar.');
     embed.addFields(
-      { name: '🎁 Premio:', value: `**\`${sorteo.premio}\`**`, inline: true },
-      { name: '🏆 Ganadores:', value: ganadorIds.length ? ganadorIds.map(id => `<@${id}>`).join(', ') : '`Ninguno`', inline: true },
-      { name: '👥 Participantes:', value: `**\`${sorteo.participantes.length}\`**`, inline: true },
+      { name: '🎁 Premio:', value: `**\`${sorteo.premio}\`**\n\u200b`, inline: true },
+      { name: '🏆 Ganadores:', value: `${ganadorIds.length ? ganadorIds.map(id => `<@${id}>`).join(', ') : '`Ninguno`'}\n\u200b`, inline: true },
+      { name: '👥 Participantes:', value: `**\`${sorteo.participantes.length}\`**\n\u200b`, inline: true },
       { name: '⏰ Terminó:', value: `<t:${Math.floor(terminoEn / 1000)}:R>`, inline: false }
     );
     embed.addFields({ name: '\u200b', value: '**¡No olvides participar en los próximos sorteos!**', inline: false });
