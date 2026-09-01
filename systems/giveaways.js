@@ -1,12 +1,13 @@
 const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ChannelType, PermissionsBitField, ModalBuilder, TextInputBuilder, TextInputStyle } = require('discord.js');
 const fs = require('fs');
+const { verificarAcceso } = require('../utils/commandAccess');
 
 const GIVEAWAYS_FILE = './giveaways.json';
 let giveaways = {};
 
 if (fs.existsSync(GIVEAWAYS_FILE)) {
   try { giveaways = JSON.parse(fs.readFileSync(GIVEAWAYS_FILE, 'utf8')); }
-  catch (error) { console.error('ERROR AL CARGAR giveaways.json:', error); giveaways = {}; }
+  catch (error) { console.error('ERROR AL CARGAR giveaways.json:', error); }
 }
 
 function guardarSorteos() {
@@ -50,12 +51,8 @@ function crearEmbedSorteo(sorteo, terminado = false, ganadorIds = []) {
     { name: '👥 Participantes:', value: `**\`${sorteo.participantes.length}\`**\n\u200b`, inline: true }
   );
 
-  if (sorteo.requisito) {
-    embed.addFields({ name: '📋 Requisito:', value: `${sorteo.requisito}\n\u200b`, inline: false });
-  }
-
+  if (sorteo.requisito) embed.addFields({ name: '📋 Requisito:', value: `${sorteo.requisito}\n\u200b`, inline: false });
   embed.addFields({ name: '⏰ Termina:', value: `<t:${Math.floor(sorteo.fin / 1000)}:R>`, inline: false });
-
   if (aviso) embed.addFields({ name: '\u200b', value: aviso, inline: false });
   return embed;
 }
@@ -136,14 +133,17 @@ function iniciarSistemaSorteos(client) {
   client.on('interactionCreate', async interaction => {
     try {
       if (interaction.isChatInputCommand() && interaction.commandName === 'sorteo') {
+        if (!await verificarAcceso(interaction)) return;
         if (!interaction.memberPermissions.has(PermissionsBitField.Flags.ManageGuild)) return interaction.reply({ content: '❌ No tienes permisos para crear sorteos.', ephemeral: true });
         return interaction.showModal(crearModalSorteo());
       }
       if (interaction.isChatInputCommand() && interaction.commandName === 'reroll') {
+        if (!await verificarAcceso(interaction)) return;
         if (!interaction.memberPermissions.has(PermissionsBitField.Flags.ManageGuild)) return interaction.reply({ content: '❌ No tienes permisos para hacer re-rolls.', ephemeral: true });
         return rerollSorteo(client, interaction.options.getString('id'), interaction);
       }
       if (interaction.isModalSubmit() && interaction.customId === 'giveaway_create_modal') {
+        if (!await verificarAcceso(interaction)) return;
         if (!interaction.memberPermissions.has(PermissionsBitField.Flags.ManageGuild)) return interaction.reply({ content: '❌ No tienes permisos para crear sorteos.', ephemeral: true });
         const premio = interaction.fields.getTextInputValue('premio').trim();
         const duracionTexto = interaction.fields.getTextInputValue('duracion').trim();
