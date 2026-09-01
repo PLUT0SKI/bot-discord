@@ -1,3 +1,4 @@
+const { EmbedBuilder } = require('discord.js');
 const fs = require('fs');
 const path = require('path');
 
@@ -98,8 +99,7 @@ module.exports = (client) => {
         new Map(invites.map(invite => [invite.code, invite.uses ?? 0]))
       );
 
-      // Si Discord no permite determinar el invitador (por ejemplo, algunos
-      // casos especiales como enlaces de servidor), no inventamos un usuario.
+      // Si Discord no permite determinar el invitador, no inventamos un usuario.
       if (!usedInvite || !usedInvite.inviter) return;
 
       const inviter = usedInvite.inviter;
@@ -151,10 +151,14 @@ module.exports = (client) => {
       const user = interaction.options.getUser('usuario') ?? interaction.user;
       const userData = obtenerInvites(guildData, user.id);
 
-      await interaction.reply({
-        content: `**${user} tiene __${userData.invites}__ invitaciones.**`,
-        ephemeral: true
-      });
+      const embed = new EmbedBuilder()
+        .setTitle('📨 Invitaciones')
+        .setDescription(`${user} tiene **${userData.invites}** invitaciones.`)
+        .setColor('#5865F2')
+        .setFooter({ text: 'Sistema de invitaciones' })
+        .setTimestamp();
+
+      await interaction.reply({ embeds: [embed], ephemeral: true });
     } catch (error) {
       console.error('❌ Error ejecutando /invites:', error);
 
