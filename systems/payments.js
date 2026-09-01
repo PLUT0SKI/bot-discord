@@ -1,4 +1,5 @@
 const { EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, ModalBuilder, TextInputBuilder, TextInputStyle } = require('discord.js');
+const { verificarAcceso } = require('../utils/commandAccess');
 
 const PRECIO_ROBUX = 200;
 const PRECIO_TRANSFERENCIA = 100;
@@ -11,6 +12,7 @@ module.exports = (client) => {
   client.on('interactionCreate', async (interaction) => {
     try {
       if (interaction.isChatInputCommand() && interaction.commandName === 'pagos') {
+        if (!await verificarAcceso(interaction)) return;
         const embed = new EmbedBuilder().setColor('#2b2d31').setTitle('MÉTODOS DE PAGO').setDescription(
           'Selecciona el método de pago que quieras utilizar.\n\n🪙 **Robux**\n🏦 **Transferencia**\n💵 **Depósito**'
         ).setFooter({ text: 'El precio se mostrará al completar tu pedido' }).setTimestamp();
