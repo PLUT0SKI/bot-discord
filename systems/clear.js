@@ -1,6 +1,6 @@
 const { PermissionsBitField, ChannelType } = require('discord.js');
 
-module.exports = client => {
+module.exports = (client, moderation) => {
   client.on('interactionCreate', async interaction => {
     if (!interaction.isChatInputCommand() || interaction.commandName !== 'clear') return;
     try {
@@ -17,10 +17,18 @@ module.exports = client => {
         const recientes = mensajes.filter(m => Date.now() - m.createdTimestamp < 14 * 24 * 60 * 60 * 1000);
         const antiguos = mensajes.filter(m => Date.now() - m.createdTimestamp >= 14 * 24 * 60 * 60 * 1000);
         if (recientes.size) {
+          for (const m of recientes.values()) moderation?.marcarEliminadoPorClear(m.id);
           try { total += (await canal.bulkDelete(recientes, true)).size; }
-          catch { for (const m of recientes.values()) { try { await m.delete(); total++; } catch { errores++; } } }
+          catch {
+            for (const m of recientes.values()) {
+              try { await m.delete(); total++; } catch { moderation?.marcarEliminadoPorClear(m.id); errores++; }
+            }
+          }
         }
-        for (const m of antiguos.values()) { try { await m.delete(); total++; } catch { errores++; } }
+        for (const m of antiguos.values()) {
+          try { moderation?.marcarEliminadoPorClear(m.id); await m.delete(); total++; }
+          catch { moderation?.marcarEliminadoPorClear(m.id); errores++; }
+        }
         await new Promise(resolve => setTimeout(resolve, 250));
       }
       await interaction.editReply({ content: `✅ **Canal vaciado correctamente.**\n\n🗑️ Mensajes eliminados: **${total}**${errores ? `\n⚠️ No se pudieron eliminar: **${errores}**` : ''}` });
