@@ -39,15 +39,15 @@ function crearEmbedSorteo(sorteo, terminado = false, ganadorIds = []) {
   }
 
   const restante = sorteo.fin - Date.now();
-  const aviso = restante <= 10 * 60 * 1000 ? '\n⚠️ **¡El sorteo terminara pronto!**' : '';
+  const aviso = restante <= 10 * 60 * 1000 ? '⚠️ **¡El sorteo terminara pronto!**' : '';
   embed.addFields(
     { name: '🎁 Premio:', value: `**\`${sorteo.premio}\`**`, inline: true },
     { name: '🏆 Ganadores:', value: `**\`${sorteo.ganadores}\`**`, inline: true },
     { name: '👥 Participantes:', value: `**\`${sorteo.participantes.length}\`**`, inline: true }
   );
-  embed.addFields({ name: '⏰ Termina:', value: `<t:${Math.floor(sorteo.fin / 1000)}:R>`, inline: false });
   if (sorteo.requisito) embed.addFields({ name: '📋 Requisito:', value: sorteo.requisito, inline: false });
-  if (aviso) embed.addFields({ name: '\u200b', value: aviso.trim(), inline: false });
+  embed.addFields({ name: '⏰ Termina:', value: `<t:${Math.floor(sorteo.fin / 1000)}:R>`, inline: false });
+  if (aviso) embed.addFields({ name: '\u200b', value: aviso, inline: false });
   embed.setDescription('Pulsa el botón **🎉 Participar** para entrar al sorteo.');
   return embed;
 }
