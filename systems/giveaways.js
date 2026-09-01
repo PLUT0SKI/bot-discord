@@ -72,10 +72,12 @@ function crearModalSorteo() {
 
 function obtenerSorteo(id) { return giveaways[id] || null; }
 
-async function editarMensajeSorteo(client, sorteo, embed, components = []) {
+async function editarMensajeSorteo(client, sorteo, embed, components = [], content = undefined) {
   const canal = await client.channels.fetch(sorteo.canalId);
   const mensaje = await canal.messages.fetch(sorteo.mensajeId);
-  await mensaje.edit({ embeds: [embed], components });
+  const datosMensaje = { embeds: [embed], components };
+  if (content !== undefined) datosMensaje.content = content;
+  await mensaje.edit(datosMensaje);
   return canal;
 }
 
@@ -91,7 +93,13 @@ async function finalizarSorteo(client, id) {
   while (ganadores.length < cantidad) ganadores.push(disponibles.splice(Math.floor(Math.random() * disponibles.length), 1)[0]);
   sorteo.ultimoGanadores = ganadores;
   try {
-    const canal = await editarMensajeSorteo(client, sorteo, crearEmbedSorteo(sorteo, true, ganadores));
+    const canal = await editarMensajeSorteo(
+      client,
+      sorteo,
+      crearEmbedSorteo(sorteo, true, ganadores),
+      [],
+      '@everyone'
+    );
     if (ganadores.length) await canal.send(`🎉 ¡Felicidades ${ganadores.map(id => `<@${id}>`).join(', ')}! Ganaste **${sorteo.premio}**. Abre un <#1357832842561978505> para reclamar tu premio.`);
     else await canal.send(`❌ El sorteo de **${sorteo.premio}** terminó sin suficientes participantes.`);
   } catch (error) { console.error(`ERROR AL FINALIZAR EL SORTEO ${id}:`, error); }
@@ -115,7 +123,7 @@ async function rerollSorteo(client, id, interaction) {
   try {
     const canal = await client.channels.fetch(sorteo.canalId);
     const mensaje = await canal.messages.fetch(sorteo.mensajeId);
-    await mensaje.edit({ embeds: [crearEmbedSorteo(sorteo, true, ganadores)], components: [] });
+    await mensaje.edit({ embeds: [crearEmbedSorteo(sorteo, true, ganadores)], components: [], content: '@everyone' });
     await canal.send(`🔄 **Re-roll del sorteo:** ${ganadores.map(id => `<@${id}>`).join(', ')} ${ganadores.length === 1 ? 'ha sido elegido' : 'han sido elegidos'} como nuevo${ganadores.length === 1 ? '' : 's'} ganador${ganadores.length === 1 ? '' : 'es'} de **${sorteo.premio}**.`);
   } catch (error) { console.error(`ERROR AL HACER REROLL DEL SORTEO ${id}:`, error); return interaction.reply({ content: '❌ No pude actualizar el sorteo.', ephemeral: true }); }
   guardarSorteos();
