@@ -1,4 +1,5 @@
 const { EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, ModalBuilder, TextInputBuilder, TextInputStyle, PermissionsBitField } = require('discord.js');
+const { verificarAcceso } = require('../utils/commandAccess');
 
 const builders = new Map();
 const key = i => `${i.guild.id}:${i.user.id}`;
@@ -51,6 +52,7 @@ module.exports = client => {
   client.on('interactionCreate', async interaction => {
     try {
       if (interaction.isChatInputCommand() && interaction.commandName === 'embed') {
+        if (!await verificarAcceso(interaction)) return;
         if (!interaction.memberPermissions.has(PermissionsBitField.Flags.ManageMessages)) return interaction.reply({ content: '❌ Necesitas el permiso **Gestionar mensajes** para usar este comando.', ephemeral: true });
         builders.set(key(interaction), { title: '', description: '', color: '#2b2d31', footer: '', thumbnail: '', image: '', fields: [], lastActivity: Date.now() });
         return interaction.reply({ embeds: [panel(getData(interaction))], components: [menu()], ephemeral: true });
