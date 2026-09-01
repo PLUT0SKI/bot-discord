@@ -22,8 +22,6 @@ const client = new Client({
 // ==========================================
 // SISTEMAS
 // Cada sistema tiene su propio archivo.
-// giveaways.js y commandSync.js se cargan
-// desde package.json antes de index.js.
 // ==========================================
 
 require('./systems/welcomeGoodbye')(client);
@@ -34,6 +32,7 @@ require('./systems/clear')(client, moderation);
 require('./systems/reactionRoles')(client);
 require('./systems/reactionRoleCommand')(client);
 require('./systems/embeds')(client);
+require('./systems/giveaways')(client);
 
 // ==========================================
 // BOT ENCENDIDO
