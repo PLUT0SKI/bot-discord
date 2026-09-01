@@ -4,6 +4,7 @@ const path = require('path');
 
 const DATA_FILE = path.join(__dirname, '..', 'invites.json');
 const INVITE_CHANNEL_ID = '1543837870106869831';
+const INVITES_ROLE_ID = '1357832740149399635';
 
 function cargarDatos() {
   try {
@@ -48,8 +49,6 @@ function obtenerInvites(guildData, userId) {
 }
 
 module.exports = (client) => {
-  // Guardamos una copia de los usos actuales de las invitaciones para poder
-  // detectar cuál aumentó cuando entra un nuevo miembro.
   const inviteCache = new Map();
 
   client.once('ready', async () => {
@@ -99,7 +98,6 @@ module.exports = (client) => {
         new Map(invites.map(invite => [invite.code, invite.uses ?? 0]))
       );
 
-      // Si Discord no permite determinar el invitador, no inventamos un usuario.
       if (!usedInvite || !usedInvite.inviter) return;
 
       const inviter = usedInvite.inviter;
@@ -147,6 +145,14 @@ module.exports = (client) => {
     if (!interaction.isChatInputCommand() || interaction.commandName !== 'invites') return;
 
     try {
+      if (!interaction.member || !interaction.member.roles.cache.has(INVITES_ROLE_ID)) {
+        await interaction.reply({
+          content: '❌ No tienes permiso para usar este comando.',
+          ephemeral: true
+        });
+        return;
+      }
+
       const guildData = obtenerGuild(interaction.guildId);
       const user = interaction.options.getUser('usuario') ?? interaction.user;
       const userData = obtenerInvites(guildData, user.id);
