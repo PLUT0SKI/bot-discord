@@ -28,7 +28,7 @@ function crearEmbedSorteo(sorteo, terminado = false, ganadorIds = []) {
     .setFooter({ text: `ID del sorteo: ${sorteo.id}` });
 
   if (terminado) {
-    const terminoEn = sorteo.terminoEn || Date.now();
+    const terminoEn = Number(sorteo.terminoEn) || Date.now();
     embed.addFields(
       { name: '🎁 Premio:', value: `**\`${sorteo.premio}\`**`, inline: true },
       { name: '👥 Participantes:', value: `**\`${sorteo.participantes.length}\`**`, inline: true },
@@ -74,8 +74,9 @@ async function editarMensajeSorteo(client, sorteo, embed, components = []) {
 async function finalizarSorteo(client, id) {
   const sorteo = obtenerSorteo(id);
   if (!sorteo || sorteo.finalizado) return null;
+  const terminoEn = Date.now();
   sorteo.finalizado = true;
-  sorteo.terminoEn = Date.now();
+  sorteo.terminoEn = terminoEn;
   const disponibles = [...new Set(sorteo.participantes)];
   const ganadores = [];
   const cantidad = Math.min(sorteo.ganadores, disponibles.length);
@@ -117,9 +118,10 @@ async function cancelarSorteo(client, id, interaction) {
   const sorteo = obtenerSorteo(id);
   if (!sorteo) return interaction.reply({ content: '❌ No encontré un sorteo con ese ID.', ephemeral: true });
   if (sorteo.finalizado) return interaction.reply({ content: '❌ Ese sorteo ya terminó.', ephemeral: true });
+  const terminoEn = Date.now();
   sorteo.finalizado = true;
   sorteo.cancelado = true;
-  sorteo.terminoEn = Date.now();
+  sorteo.terminoEn = terminoEn;
   try {
     const canal = await editarMensajeSorteo(client, sorteo, new EmbedBuilder().setColor('#2b2d31').setTitle('🛑 SORTEO CANCELADO').setDescription(`🎁 **${sorteo.premio}**\n\n❌ Este sorteo fue cancelado por un administrador.`).addFields({ name: '👥 Participantes', value: `**\`${sorteo.participantes.length}\`**`, inline: true }).setFooter({ text: `ID del sorteo: ${sorteo.id}` }));
     await canal.send(`🛑 El sorteo de **${sorteo.premio}** fue cancelado.`);
