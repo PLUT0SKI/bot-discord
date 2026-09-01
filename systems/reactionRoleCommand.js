@@ -1,10 +1,12 @@
 const fs = require('fs');
+const { verificarAcceso } = require('../utils/commandAccess');
 const REACTION_FILE = './reactionRoles.json';
 
 module.exports = client => {
   client.on('interactionCreate', async interaction => {
     if (!interaction.isChatInputCommand() || interaction.commandName !== 'addreaction') return;
     try {
+      if (!await verificarAcceso(interaction)) return;
       let configs = {};
       if (fs.existsSync(REACTION_FILE)) configs = JSON.parse(fs.readFileSync(REACTION_FILE, 'utf8'));
       const mensajeId = interaction.options.getString('mensaje');
