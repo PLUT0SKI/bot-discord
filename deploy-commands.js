@@ -28,6 +28,11 @@ const commands = [
     .setDescription('Elige un nuevo ganador de un sorteo finalizado')
     .addStringOption(option => option.setName('id').setDescription('ID del sorteo').setRequired(true))
     .toJSON(),
+  new SlashCommandBuilder()
+    .setName('invites')
+    .setDescription('Consulta cuántas invitaciones tiene un usuario')
+    .addUserOption(option => option.setName('usuario').setDescription('Usuario que quieres consultar').setRequired(false))
+    .toJSON(),
   new SlashCommandBuilder().setName('comandos').setDescription('Muestra todos los comandos disponibles, su función y quién puede usarlos').toJSON()
 ];
 
