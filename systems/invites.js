@@ -48,6 +48,26 @@ function obtenerInvites(guildData, userId) {
   return guildData.users[userId];
 }
 
+function reconstruirInvitaciones(guild, invites) {
+  const guildData = obtenerGuild(guild.id);
+  const totales = {};
+
+  for (const invite of invites.values()) {
+    if (!invite.inviter || !invite.uses) continue;
+    totales[invite.inviter.id] = (totales[invite.inviter.id] || 0) + invite.uses;
+  }
+
+  // Discord conserva el contador de usos de las invitaciones. Al reiniciar,
+  // reconstruimos los totales desde Discord en lugar de depender de la memoria
+  // del proceso o de un archivo que pueda desaparecer al recrearse el contenedor.
+  for (const [userId, total] of Object.entries(totales)) {
+    const userData = obtenerInvites(guildData, userId);
+    userData.invites = total;
+  }
+
+  guardarDatos();
+}
+
 module.exports = (client) => {
   const inviteCache = new Map();
 
@@ -55,10 +75,15 @@ module.exports = (client) => {
     for (const guild of client.guilds.cache.values()) {
       try {
         const invites = await guild.invites.fetch();
+
+        reconstruirInvitaciones(guild, invites);
+
         inviteCache.set(
           guild.id,
           new Map(invites.map(invite => [invite.code, invite.uses ?? 0]))
         );
+
+        console.log(`✅ Invitaciones sincronizadas en ${guild.name}.`);
       } catch (error) {
         console.error(`❌ No se pudieron cargar las invitaciones de ${guild.name}:`, error.message);
       }
@@ -104,7 +129,13 @@ module.exports = (client) => {
       const guildData = obtenerGuild(member.guild.id);
       const inviterData = obtenerInvites(guildData, inviter.id);
 
-      inviterData.invites += 1;
+      // Usamos el contador real de Discord. Esto evita que un reinicio provoque
+      // que el bot empiece otra vez desde cero.
+      const totalInvites = [...invites.values()]
+        .filter(invite => invite.inviter?.id === inviter.id)
+        .reduce((total, invite) => total + (invite.uses ?? 0), 0);
+
+      inviterData.invites = totalInvites;
       inviterData.joined += 1;
       guildData.invitedBy[member.id] = inviter.id;
       guardarDatos();
@@ -117,27 +148,6 @@ module.exports = (client) => {
       );
     } catch (error) {
       console.error('❌ Error procesando una invitación:', error);
-    }
-  });
-
-  client.on('guildMemberRemove', member => {
-    try {
-      const guildData = datos.guilds[member.guild.id];
-      if (!guildData) return;
-
-      const inviterId = guildData.invitedBy[member.id];
-      if (!inviterId) return;
-
-      const inviterData = guildData.users[inviterId];
-      if (inviterData) {
-        inviterData.invites = Math.max(0, inviterData.invites - 1);
-        inviterData.left += 1;
-      }
-
-      delete guildData.invitedBy[member.id];
-      guardarDatos();
-    } catch (error) {
-      console.error('❌ Error actualizando invitaciones al salir un miembro:', error);
     }
   });
 
