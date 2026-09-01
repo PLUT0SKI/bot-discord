@@ -27,7 +27,8 @@ const commands = [
     .setName('reroll')
     .setDescription('Elige un nuevo ganador de un sorteo finalizado')
     .addStringOption(option => option.setName('id').setDescription('ID del sorteo').setRequired(true))
-    .toJSON()
+    .toJSON(),
+  new SlashCommandBuilder().setName('comandos').setDescription('Muestra todos los comandos disponibles, su función y quién puede usarlos').toJSON()
 ];
 
 function normalizarComando(command) {
