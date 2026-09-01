@@ -46,6 +46,7 @@ function crearEmbedSorteo(sorteo, terminado = false, ganadorIds = []) {
     { name: '👥 Participantes:', value: `**\`${sorteo.participantes.length}\`**`, inline: true }
   );
   embed.addFields({ name: '⏰ Termina:', value: `<t:${Math.floor(sorteo.fin / 1000)}:R>${aviso}`, inline: false });
+  if (sorteo.requisito) embed.addFields({ name: '📋 Requisito:', value: sorteo.requisito, inline: false });
   embed.setDescription('Pulsa el botón **🎉 Participar** para entrar al sorteo.');
   return embed;
 }
@@ -58,7 +59,8 @@ function crearModalSorteo() {
   return new ModalBuilder().setCustomId('giveaway_create_modal').setTitle('🎉 Crear sorteo').addComponents(
     new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('premio').setLabel('Premio').setPlaceholder('Ejemplo: 1000 Robux').setStyle(TextInputStyle.Short).setRequired(true).setMaxLength(100)),
     new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('duracion').setLabel('Duración').setPlaceholder('Ejemplo: 30m, 2h, 1d o 1w').setStyle(TextInputStyle.Short).setRequired(true).setMaxLength(20)),
-    new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('ganadores').setLabel('Número de ganadores').setPlaceholder('Ejemplo: 1').setStyle(TextInputStyle.Short).setRequired(true).setMaxLength(2))
+    new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('ganadores').setLabel('Número de ganadores').setPlaceholder('Ejemplo: 1').setStyle(TextInputStyle.Short).setRequired(true).setMaxLength(2)),
+    new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('requisito').setLabel('Requisito (opcional)').setPlaceholder('Déjalo vacío si no hay requisito').setStyle(TextInputStyle.Paragraph).setRequired(false).setMaxLength(500))
   );
 }
 
@@ -137,6 +139,7 @@ function iniciarSistemaSorteos(client) {
         const premio = interaction.fields.getTextInputValue('premio').trim();
         const duracionTexto = interaction.fields.getTextInputValue('duracion').trim();
         const ganadores = Number(interaction.fields.getTextInputValue('ganadores').trim());
+        const requisito = interaction.fields.getTextInputValue('requisito').trim();
         const duracion = duracionAMs(duracionTexto);
         if (!duracion) return interaction.reply({ content: '❌ Duración inválida. Usa `30m`, `2h`, `1d` o `1w`.', ephemeral: true });
         if (!Number.isInteger(ganadores) || ganadores < 1 || ganadores > 50) return interaction.reply({ content: '❌ El número de ganadores debe estar entre 1 y 50.', ephemeral: true });
@@ -144,7 +147,7 @@ function iniciarSistemaSorteos(client) {
         if (!canal || ![ChannelType.GuildText, ChannelType.GuildAnnouncement].includes(canal.type)) return interaction.reply({ content: '❌ Este comando debe utilizarse en un canal de texto.', ephemeral: true });
         const inicio = Date.now();
         const id = `${inicio}_${interaction.user.id}`;
-        const sorteo = { id, guildId: interaction.guild.id, canalId: canal.id, mensajeId: null, creadorId: interaction.user.id, premio, ganadores, participantes: [], inicio, fin: inicio + duracion, finalizado: false, ultimoGanadores: [] };
+        const sorteo = { id, guildId: interaction.guild.id, canalId: canal.id, mensajeId: null, creadorId: interaction.user.id, premio, requisito, ganadores, participantes: [], inicio, fin: inicio + duracion, finalizado: false, ultimoGanadores: [] };
         const mensaje = await canal.send({ embeds: [crearEmbedSorteo(sorteo)], components: [crearBotonParticipar(sorteo)] });
         sorteo.mensajeId = mensaje.id;
         giveaways[id] = sorteo;
