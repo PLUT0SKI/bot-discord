@@ -4,37 +4,31 @@ const { verificarAcceso } = require('../utils/commandAccess');
 const COMANDOS = [
   {
     categoria: '🎫 Tickets',
-    comandos: [
-      ['`/tickets`', 'Muestra el panel para abrir un ticket.', '👥 Roles autorizados']
-    ]
+    comandos: [['`/tickets`', 'Muestra el panel para abrir un ticket.']]
   },
   {
     categoria: '💳 Pagos',
-    comandos: [
-      ['`/pagos`', 'Muestra los métodos de pago disponibles.', '👥 Roles autorizados']
-    ]
+    comandos: [['`/pagos`', 'Muestra los métodos de pago disponibles.']]
   },
   {
     categoria: '🎉 Sorteos',
     comandos: [
-      ['`/sorteo`', 'Abre el formulario para crear un sorteo.', '👥 Roles autorizados + Gestionar servidor'],
-      ['`/reroll`', 'Elige un nuevo ganador de un sorteo finalizado.', '👥 Roles autorizados + Gestionar servidor']
+      ['`/sorteo`', 'Abre el formulario para crear un sorteo.', '🛡️ Gestionar servidor'],
+      ['`/reroll`', 'Elige un nuevo ganador de un sorteo finalizado.', '🛡️ Gestionar servidor']
     ]
   },
   {
     categoria: '🛠️ Administración',
     comandos: [
-      ['`/clear`', 'Elimina mensajes del canal.', '👥 Roles autorizados + Gestionar mensajes'],
-      ['`/embed`', 'Abre el creador de embeds personalizados.', '👥 Roles autorizados + Gestionar mensajes'],
-      ['`/addreaction`', 'Configura una reacción para asignar un rol.', '👥 Roles autorizados'],
-      ['`/setlogs`', 'Configura el canal donde se enviarán los logs.', '👥 Roles autorizados']
+      ['`/clear`', 'Elimina mensajes del canal.', '🛡️ Gestionar mensajes'],
+      ['`/embed`', 'Abre el creador de embeds personalizados.', '🛡️ Gestionar mensajes'],
+      ['`/addreaction`', 'Configura una reacción para asignar un rol.'],
+      ['`/setlogs`', 'Configura el canal donde se enviarán los logs.']
     ]
   },
   {
     categoria: '📋 Información',
-    comandos: [
-      ['`/comandos`', 'Muestra esta lista de comandos y sus permisos.', '👥 Roles autorizados']
-    ]
+    comandos: [['`/comandos`', 'Muestra esta lista de comandos y sus permisos.']]
   }
 ];
 
@@ -52,7 +46,7 @@ module.exports = (client) => {
 
     for (const grupo of COMANDOS) {
       const texto = grupo.comandos
-        .map(([comando, descripcion, permiso]) => `${comando} — ${descripcion}\n${permiso}`)
+        .map(([comando, descripcion, permiso]) => permiso ? `${comando} — ${descripcion}\n${permiso}` : `${comando} — ${descripcion}`)
         .join('\n\n');
 
       embed.addFields({ name: grupo.categoria, value: texto });
