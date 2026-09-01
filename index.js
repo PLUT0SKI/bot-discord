@@ -33,7 +33,6 @@ require('./systems/reactionRoles')(client);
 require('./systems/reactionRoleCommand')(client);
 require('./systems/embeds')(client);
 require('./systems/giveaways')(client);
-require('./systems/suggestions')(client);
 require('./systems/commandsHelp')(client);
 
 // ==========================================
