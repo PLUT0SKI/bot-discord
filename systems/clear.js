@@ -1,9 +1,11 @@
 const { PermissionsBitField, ChannelType } = require('discord.js');
+const { verificarAcceso } = require('../utils/commandAccess');
 
 module.exports = (client, moderation) => {
   client.on('interactionCreate', async interaction => {
     if (!interaction.isChatInputCommand() || interaction.commandName !== 'clear') return;
     try {
+      if (!await verificarAcceso(interaction)) return;
       if (!interaction.memberPermissions.has(PermissionsBitField.Flags.ManageMessages)) return interaction.reply({ content: '❌ No tienes permiso para usar este comando.', ephemeral: true });
       const canal = interaction.channel;
       if (!canal || canal.type !== ChannelType.GuildText) return interaction.reply({ content: '❌ Este comando solo funciona en canales de texto.', ephemeral: true });
