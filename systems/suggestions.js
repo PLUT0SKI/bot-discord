@@ -1,3 +1,4 @@
+const fs = require('fs');
 const {
   ActionRowBuilder,
   ButtonBuilder,
@@ -9,7 +10,85 @@ const {
 } = require('discord.js');
 const { verificarAcceso } = require('../utils/commandAccess');
 
+const SUGGESTION_FILE = './suggestions.json';
 const SUGGESTION_COLOR = '#5865F2';
+let suggestions = {};
+
+function cargarSugerencias() {
+  try {
+    if (fs.existsSync(SUGGESTION_FILE)) {
+      suggestions = JSON.parse(fs.readFileSync(SUGGESTION_FILE, 'utf8'));
+    } else {
+      suggestions = {};
+    }
+  } catch (error) {
+    console.error('ERROR AL CARGAR suggestions.json:', error);
+    suggestions = {};
+  }
+}
+
+function guardarSugerencias() {
+  try {
+    fs.writeFileSync(SUGGESTION_FILE, JSON.stringify(suggestions, null, 2));
+  } catch (error) {
+    console.error('ERROR AL GUARDAR SUGERENCIAS:', error);
+  }
+}
+
+function crearEmbed(sugerencia) {
+  const estados = {
+    pendiente: '🟡 Pendiente',
+    aceptada: '🟢 Aceptada',
+    rechazada: '🔴 Rechazada'
+  };
+
+  return new EmbedBuilder()
+    .setTitle('💡 Nueva sugerencia')
+    .setDescription(sugerencia.text)
+    .addFields(
+      { name: '👤 Autor', value: `<@${sugerencia.authorId}>`, inline: true },
+      { name: '📊 Votos', value: `👍 ${sugerencia.upvotes.length}  •  👎 ${sugerencia.downvotes.length}`, inline: true },
+      { name: '📌 Estado', value: estados[sugerencia.status] || estados.pendiente, inline: true }
+    )
+    .setColor(SUGGESTION_COLOR)
+    .setFooter({ text: `Sugerencia #${sugerencia.id}` })
+    .setTimestamp(new Date(sugerencia.createdAt));
+}
+
+function crearBotones(sugerencia) {
+  const activa = sugerencia.status === 'pendiente';
+
+  return [
+    new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setCustomId(`suggestion_upvote:${sugerencia.id}`)
+        .setLabel(String(sugerencia.upvotes.length))
+        .setEmoji('👍')
+        .setStyle(ButtonStyle.Success)
+        .setDisabled(!activa),
+      new ButtonBuilder()
+        .setCustomId(`suggestion_downvote:${sugerencia.id}`)
+        .setLabel(String(sugerencia.downvotes.length))
+        .setEmoji('👎')
+        .setStyle(ButtonStyle.Danger)
+        .setDisabled(!activa),
+      new ButtonBuilder()
+        .setCustomId(`suggestion_accept:${sugerencia.id}`)
+        .setLabel('Aceptar')
+        .setEmoji('✅')
+        .setStyle(ButtonStyle.Primary)
+        .setDisabled(!activa),
+      new ButtonBuilder()
+        .setCustomId(`suggestion_reject:${sugerencia.id}`)
+        .setLabel('Rechazar')
+        .setEmoji('❌')
+        .setStyle(ButtonStyle.Secondary)
+        .setDisabled(!activa)
+    )
+  ];
+}
+
+cargarSugerencias();
 
 module.exports = client => {
   client.on('interactionCreate', async interaction => {
@@ -57,34 +136,80 @@ module.exports = client => {
 
       if (interaction.isModalSubmit() && interaction.customId === 'suggestion_modal') {
         const suggestion = interaction.fields.getTextInputValue('suggestion_text').trim();
+        const id = String(Date.now());
 
-        const embed = new EmbedBuilder()
-          .setTitle('💡 Nueva sugerencia')
-          .setDescription(suggestion)
-          .addFields({
-            name: '👤 Autor',
-            value: `${interaction.user} (${interaction.user.tag})`,
-            inline: false
-          })
-          .setColor(SUGGESTION_COLOR)
-          .setFooter({ text: `ID del usuario: ${interaction.user.id}` })
-          .setTimestamp();
+        suggestions[id] = {
+          id,
+          guildId: interaction.guildId,
+          channelId: interaction.channelId,
+          messageId: null,
+          authorId: interaction.user.id,
+          text: suggestion,
+          upvotes: [],
+          downvotes: [],
+          status: 'pendiente',
+          createdAt: new Date().toISOString()
+        };
 
-        const row = new ActionRowBuilder().addComponents(
-          new ButtonBuilder()
-            .setCustomId('suggestion_upvote')
-            .setLabel('0')
-            .setEmoji('👍')
-            .setStyle(ButtonStyle.Success),
-          new ButtonBuilder()
-            .setCustomId('suggestion_downvote')
-            .setLabel('0')
-            .setEmoji('👎')
-            .setStyle(ButtonStyle.Danger)
-        );
+        const message = await interaction.channel.send({
+          embeds: [crearEmbed(suggestions[id])],
+          components: crearBotones(suggestions[id])
+        });
+
+        suggestions[id].messageId = message.id;
+        guardarSugerencias();
 
         await interaction.reply({ content: '✅ Tu sugerencia fue enviada correctamente.', ephemeral: true });
-        await interaction.channel.send({ embeds: [embed], components: [row] });
+        return;
+      }
+
+      if (!interaction.isButton()) return;
+
+      const [action, id] = interaction.customId.split(':');
+      if (!id || !action.startsWith('suggestion_')) return;
+
+      const suggestion = suggestions[id];
+      if (!suggestion) {
+        await interaction.reply({ content: '❌ Esta sugerencia ya no existe.', ephemeral: true });
+        return;
+      }
+
+      if (action === 'suggestion_upvote' || action === 'suggestion_downvote') {
+        if (suggestion.status !== 'pendiente') {
+          await interaction.reply({ content: '❌ Esta sugerencia ya fue revisada.', ephemeral: true });
+          return;
+        }
+
+        const userId = interaction.user.id;
+        suggestion.upvotes = suggestion.upvotes.filter(id => id !== userId);
+        suggestion.downvotes = suggestion.downvotes.filter(id => id !== userId);
+
+        const votos = action === 'suggestion_upvote' ? suggestion.upvotes : suggestion.downvotes;
+        votos.push(userId);
+        guardarSugerencias();
+
+        await interaction.update({
+          embeds: [crearEmbed(suggestion)],
+          components: crearBotones(suggestion)
+        });
+        return;
+      }
+
+      if (action === 'suggestion_accept' || action === 'suggestion_reject') {
+        if (!(await verificarAcceso(interaction))) return;
+
+        if (suggestion.status !== 'pendiente') {
+          await interaction.reply({ content: '❌ Esta sugerencia ya fue revisada.', ephemeral: true });
+          return;
+        }
+
+        suggestion.status = action === 'suggestion_accept' ? 'aceptada' : 'rechazada';
+        guardarSugerencias();
+
+        await interaction.update({
+          embeds: [crearEmbed(suggestion)],
+          components: crearBotones(suggestion)
+        });
       }
     } catch (error) {
       console.error('ERROR EN SISTEMA DE SUGERENCIAS:', error);
