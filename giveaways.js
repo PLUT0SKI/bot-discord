@@ -114,22 +114,6 @@ async function rerollSorteo(client, id, interaction) {
   return interaction.reply({ content: '✅ Re-roll realizado correctamente.', ephemeral: true });
 }
 
-async function cancelarSorteo(client, id, interaction) {
-  const sorteo = obtenerSorteo(id);
-  if (!sorteo) return interaction.reply({ content: '❌ No encontré un sorteo con ese ID.', ephemeral: true });
-  if (sorteo.finalizado) return interaction.reply({ content: '❌ Ese sorteo ya terminó.', ephemeral: true });
-  const terminoEn = Date.now();
-  sorteo.finalizado = true;
-  sorteo.cancelado = true;
-  sorteo.terminoEn = terminoEn;
-  try {
-    const canal = await editarMensajeSorteo(client, sorteo, new EmbedBuilder().setColor('#2b2d31').setTitle('🛑 SORTEO CANCELADO').setDescription(`🎁 **${sorteo.premio}**\n\n❌ Este sorteo fue cancelado por un administrador.`).addFields({ name: '👥 Participantes', value: `**\`${sorteo.participantes.length}\`**`, inline: true }).setFooter({ text: `ID del sorteo: ${sorteo.id}` }));
-    await canal.send(`🛑 El sorteo de **${sorteo.premio}** fue cancelado.`);
-  } catch (error) { console.error(`ERROR AL CANCELAR EL SORTEO ${id}:`, error); return interaction.reply({ content: '❌ No pude actualizar el sorteo.', ephemeral: true }); }
-  guardarSorteos();
-  return interaction.reply({ content: '✅ Sorteo cancelado correctamente.', ephemeral: true });
-}
-
 function programarSorteo(client, sorteo) {
   const restante = sorteo.fin - Date.now();
   if (restante <= 0) return finalizarSorteo(client, sorteo.id);
@@ -147,10 +131,6 @@ function iniciarSistemaSorteos(client) {
       if (interaction.isChatInputCommand() && interaction.commandName === 'reroll') {
         if (!interaction.memberPermissions.has(PermissionsBitField.Flags.ManageGuild)) return interaction.reply({ content: '❌ No tienes permisos para hacer re-rolls.', ephemeral: true });
         return rerollSorteo(client, interaction.options.getString('id'), interaction);
-      }
-      if (interaction.isChatInputCommand() && interaction.commandName === 'cancelarsorteo') {
-        if (!interaction.memberPermissions.has(PermissionsBitField.Flags.ManageGuild)) return interaction.reply({ content: '❌ No tienes permisos para cancelar sorteos.', ephemeral: true });
-        return cancelarSorteo(client, interaction.options.getString('id'), interaction);
       }
       if (interaction.isModalSubmit() && interaction.customId === 'giveaway_create_modal') {
         if (!interaction.memberPermissions.has(PermissionsBitField.Flags.ManageGuild)) return interaction.reply({ content: '❌ No tienes permisos para crear sorteos.', ephemeral: true });
