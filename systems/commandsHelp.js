@@ -22,6 +22,10 @@ const COMANDOS = [
     comandos: [['`/invites`', 'Consulta cuántas invitaciones tiene un usuario.']]
   },
   {
+    categoria: '🔎 Nombres',
+    comandos: [['`/name`', 'Genera nombres de usuario de 3 caracteres que no aparecen en este servidor.']]
+  },
+  {
     categoria: '🛠️ Administración',
     comandos: [
       ['`/clear`', 'Elimina mensajes del canal.'],
