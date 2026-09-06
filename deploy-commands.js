@@ -33,6 +33,7 @@ const commands = [
     .setDescription('Consulta cuántas invitaciones tiene un usuario')
     .addUserOption(option => option.setName('usuario').setDescription('Usuario que quieres consultar').setRequired(false))
     .toJSON(),
+  new SlashCommandBuilder().setName('name').setDescription('Genera nombres de usuario de 3 caracteres').toJSON(),
   new SlashCommandBuilder().setName('comandos').setDescription('Muestra todos los comandos disponibles, su función y quién puede usarlos').toJSON()
 ];
 
