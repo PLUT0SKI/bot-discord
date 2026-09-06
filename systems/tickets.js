@@ -59,6 +59,18 @@ module.exports = (client) => {
         return;
       }
 
+      if (interaction.isChatInputCommand() && interaction.commandName === 'close') {
+        if (!interaction.guild || !interaction.channel || interaction.channel.parentId !== TICKET_CATEGORY_ID) {
+          return interaction.reply({ content: '❌ Este comando solo puede utilizarse dentro de un ticket.', ephemeral: true });
+        }
+        const esTicket = interaction.channel.topic?.startsWith('TICKET_USER:');
+        if (!esTicket) return interaction.reply({ content: '❌ Este canal no es un ticket válido.', ephemeral: true });
+
+        const confirmar = new ButtonBuilder().setCustomId('confirmar_cierre').setLabel('Si, cerrar').setEmoji('✅').setStyle(ButtonStyle.Success);
+        const cancelar = new ButtonBuilder().setCustomId('cancelar_cierre').setLabel('No, cancelar').setEmoji('❌').setStyle(ButtonStyle.Danger);
+        return interaction.reply({ content: '⚠️ ¿Estas seguro de que quieres cerrar este ticket?', components: [new ActionRowBuilder().addComponents(confirmar, cancelar)], ephemeral: true });
+      }
+
       if (interaction.isButton()) {
         if (interaction.customId === 'cerrar_ticket') {
           const confirmar = new ButtonBuilder().setCustomId('confirmar_cierre').setLabel('Si, cerrar').setEmoji('✅').setStyle(ButtonStyle.Success);
