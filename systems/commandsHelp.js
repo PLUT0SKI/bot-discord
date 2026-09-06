@@ -4,7 +4,10 @@ const { verificarAcceso } = require('../utils/commandAccess');
 const COMANDOS = [
   {
     categoria: '🎫 Tickets',
-    comandos: [['`/tickets`', 'Muestra el panel para abrir un ticket.']]
+    comandos: [
+      ['`/tickets`', 'Muestra el panel para abrir un ticket.'],
+      ['`/close`', 'Cierra el ticket actual después de confirmar.']
+    ]
   },
   {
     categoria: '💳 Pagos',
@@ -32,7 +35,7 @@ const COMANDOS = [
   },
   {
     categoria: '📋 Información',
-    comandos: [['`/comandos`', 'Muestra esta lista de comandos.']]
+    comandos: [['`/comandos`', 'Muestra todos los comandos disponibles.']]
   }
 ];
 
