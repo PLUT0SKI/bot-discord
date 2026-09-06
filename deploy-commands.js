@@ -11,6 +11,7 @@ const GUILD_ID = '1216948563834175488';
 
 const commands = [
   new SlashCommandBuilder().setName('tickets').setDescription('Muestra el panel de tickets').toJSON(),
+  new SlashCommandBuilder().setName('close').setDescription('Cierra el ticket actual').toJSON(),
   new SlashCommandBuilder().setName('pagos').setDescription('Muestra el panel de métodos de pago').toJSON(),
   new SlashCommandBuilder()
     .setName('addreaction').setDescription('Configura una reacción para dar un rol')
