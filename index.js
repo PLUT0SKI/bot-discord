@@ -34,6 +34,7 @@ require('./systems/reactionRoleCommand')(client);
 require('./systems/embeds')(client);
 require('./systems/giveaways')(client);
 require('./systems/invites')(client);
+require('./systems/name')(client);
 require('./systems/commandsHelp')(client);
 
 // ==========================================
