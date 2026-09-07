@@ -1,4 +1,4 @@
-const { EmbedBuilder, ChannelType } = require('discord.js');
+const { EmbedBuilder, ChannelType, PermissionsBitField } = require('discord.js');
 const fs = require('fs');
 const { verificarAcceso } = require('../utils/commandAccess');
 
@@ -20,9 +20,21 @@ module.exports = (client) => {
 
       const canal = interaction.options.getChannel('canal');
 
-      if (!canal || ![ChannelType.GuildText, ChannelType.GuildAnnouncement].includes(canal.type)) {
+      if (!canal || canal.type !== ChannelType.GuildText) {
         return await interaction.reply({
           content: '❌ Debes seleccionar un canal de texto válido.',
+          ephemeral: true
+        });
+      }
+
+      const botMember = interaction.guild.members.me;
+      const permisos = canal.permissionsFor(botMember);
+
+      if (!permisos?.has(PermissionsBitField.Flags.ViewChannel) ||
+          !permisos.has(PermissionsBitField.Flags.SendMessages) ||
+          !permisos.has(PermissionsBitField.Flags.EmbedLinks)) {
+        return await interaction.reply({
+          content: '❌ No puedo enviar logs a ese canal. Necesito **Ver canal**, **Enviar mensajes** y **Insertar enlaces**.',
           ephemeral: true
         });
       }
@@ -41,9 +53,10 @@ module.exports = (client) => {
       fs.writeFileSync(LOGS_FILE, JSON.stringify(logsConfig, null, 2));
 
       const embed = new EmbedBuilder()
-        .setColor('#00cc66')
-        .setTitle('✅ Logs configurados')
-        .setDescription(`El canal de logs ahora es <#${canal.id}>.`)
+        .setColor('#00ff88')
+        .setTitle('⚙️ Sistema de logs configurado')
+        .setDescription('El canal de logs fue configurado correctamente.')
+        .addFields({ name: '📋 Canal', value: `<#${canal.id}>` })
         .setFooter({ text: 'Sistema de logs' })
         .setTimestamp();
 
