@@ -47,9 +47,9 @@ function crearLogModeracion({ titulo, descripcion, color, usuario, moderador, ex
     .setTitle(titulo)
     .setDescription(descripcion)
     .addFields(
-      { name: '👤 Usuario', value: `<@${usuario.id}> \`${usuario.tag}\``, inline: false },
+      { name: '👤 Usuario', value: `<@${usuario.id}>`, inline: false },
       { name: '🆔 ID', value: `\`${usuario.id}\``, inline: true },
-      { name: '🛡️ Moderador', value: moderador ? `<@${moderador.id}> \`${moderador.tag}\`` : 'No identificado', inline: true },
+      { name: '🛡️ Moderador', value: moderador ? `<@${moderador.id}>` : 'No identificado', inline: true },
       ...extra,
       { name: '📅 Fecha', value: `<t:${Math.floor(Date.now() / 1000)}:F>`, inline: false }
     )
@@ -264,16 +264,6 @@ module.exports = (client) => {
       logsConfig[interaction.guild.id] = canal.id;
       guardarLogsConfig();
       await interaction.reply({ embeds: [new EmbedBuilder().setColor('#00ff88').setTitle('⚙️ Sistema de logs configurado').setDescription('El canal de logs fue configurado correctamente.').addFields({ name: '📋 Canal', value: `<#${canal.id}>` }).setTimestamp()], ephemeral: true });
-    } catch (error) { console.error('ERROR EN /SETLOGS:', error); }
+    } catch (error) { console.error('ERROR AL CONFIGURAR LOGS:', error); }
   });
-
-  setInterval(() => {
-    if (mensajesEliminadosPorBot.size > 1000) mensajesEliminadosPorBot.clear();
-    if (mensajesEliminadosPorClear.size > 5000) mensajesEliminadosPorClear.clear();
-  }, 60000);
-
-  return {
-    marcarEliminadoPorClear: (id) => mensajesEliminadosPorClear.add(id),
-    marcarEliminadoPorBot: (id) => mensajesEliminadosPorBot.add(id)
-  };
 };
