@@ -82,9 +82,43 @@ module.exports = (client) => {
           EmbedLinks: true
         });
 
-        await interaction.reply({
-          content: `┃<@${usuario.id}> fue agregado a este ticket\n┃ Por: <@${interaction.user.id}>\n┃ Ya puede ver y participar en este ticket.`
-        });
+        const addEmbed = new EmbedBuilder()
+          .setColor('#2b2d31')
+          .setDescription(`┃<@${usuario.id}> fue agregado a este ticket\n┃ Por: <@${interaction.user.id}>\n┃ Ya puede ver y participar en este ticket.`)
+          .setTimestamp();
+
+        await interaction.reply({ embeds: [addEmbed] });
+        return;
+      }
+
+      if (interaction.isChatInputCommand() && interaction.commandName === 'remove') {
+        if (!interaction.guild || !interaction.channel || interaction.channel.parentId !== TICKET_CATEGORY_ID) {
+          return interaction.reply({ content: '❌ Este comando solo puede utilizarse dentro de un ticket.', ephemeral: true });
+        }
+        const esTicket = interaction.channel.topic?.startsWith('TICKET_USER:');
+        if (!esTicket) return interaction.reply({ content: '❌ Este canal no es un ticket válido.', ephemeral: true });
+
+        const usuario = interaction.options.getUser('usuario', true);
+        const miembro = await interaction.guild.members.fetch(usuario.id).catch(() => null);
+        if (!miembro) return interaction.reply({ content: '❌ No se encontró al usuario en este servidor.', ephemeral: true });
+        if (miembro.user.bot) return interaction.reply({ content: '❌ No puedes sacar bots del ticket.', ephemeral: true });
+
+        const ticketOwnerId = interaction.channel.topic.match(/^TICKET_USER:(\d+)/)?.[1];
+        if (usuario.id === ticketOwnerId) {
+          return interaction.reply({ content: '❌ No puedes sacar al creador del ticket. Usa /close para cerrar el ticket.', ephemeral: true });
+        }
+        if (!interaction.channel.permissionsFor(miembro)?.has(PermissionsBitField.Flags.ViewChannel)) {
+          return interaction.reply({ content: '⚠️ Ese usuario no tiene acceso a este ticket.', ephemeral: true });
+        }
+
+        await interaction.channel.permissionOverwrites.delete(usuario.id).catch(() => {});
+
+        const removeEmbed = new EmbedBuilder()
+          .setColor('#2b2d31')
+          .setDescription(`┃<@${usuario.id}> fue removido de este ticket\n┃ Por: <@${interaction.user.id}>\n┃ Ya no puede ver ni participar en este ticket.`)
+          .setTimestamp();
+
+        await interaction.reply({ embeds: [removeEmbed] });
         return;
       }
 
