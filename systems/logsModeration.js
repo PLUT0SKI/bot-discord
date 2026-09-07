@@ -58,15 +58,28 @@ function crearEmbedModeracion({ titulo, descripcion, color, usuario, moderador, 
   return embed;
 }
 
+// Discord puede tardar unos instantes en registrar una acción en los Audit Logs.
+// Por eso se intenta varias veces y se compara con targetId, que es más fiable que entry.target.id.
 async function obtenerModerador(guild, tipo, targetId) {
-  try {
-    const logs = await guild.fetchAuditLogs({ type: tipo, limit: 6 });
-    const entrada = logs.entries.find(entry => entry.target?.id === targetId && Date.now() - entry.createdTimestamp < 10000);
-    return entrada || null;
-  } catch (error) {
-    console.error('ERROR AL OBTENER AUDIT LOG:', error);
-    return null;
+  for (let intento = 0; intento < 5; intento++) {
+    try {
+      const logs = await guild.fetchAuditLogs({ type: tipo, limit: 10 });
+      const entrada = logs.entries.find(entry =>
+        entry.targetId === targetId &&
+        Date.now() - entry.createdTimestamp < 15000
+      );
+
+      if (entrada) return entrada;
+    } catch (error) {
+      console.error(`ERROR AL OBTENER AUDIT LOG (INTENTO ${intento + 1}):`, error);
+    }
+
+    if (intento < 4) {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    }
   }
+
+  return null;
 }
 
 async function enviarLogSpam(member, cantidad, canal) {
@@ -82,6 +95,7 @@ async function enviarLogSpam(member, cantidad, canal) {
     ).setThumbnail(member.user.displayAvatarURL({ size: 256 })).setFooter({ text: 'Sistema de seguridad' }).setTimestamp();
   await enviarLog(member.guild, embed);
 }
+
 async function enviarLogLink(member, link, canal) {
   const embed = new EmbedBuilder().setColor('#ff0000').setTitle('🚨 Link dudoso detectado')
     .setDescription('Un usuario envió un enlace no permitido. El mensaje fue eliminado automáticamente.')
@@ -190,7 +204,9 @@ module.exports = (client) => {
   client.on('guildMemberRemove', async (member) => {
     try {
       const entrada = await obtenerModerador(member.guild, AuditLogEvent.MemberKick, member.id);
+      // Si no existe una entrada de kick reciente, fue una salida normal y no se registra como expulsión.
       if (!entrada) return;
+
       const embed = crearEmbedModeracion({
         titulo: '👢 Usuario expulsado',
         descripcion: 'Un usuario fue expulsado del servidor.',
@@ -203,7 +219,7 @@ module.exports = (client) => {
     } catch (error) { console.error('ERROR AL ENVIAR LOG DE EXPULSIÓN:', error); }
   });
 
-  // Log de silencios / timeouts
+  // Log de silencios / timeouts y cambios de roles
   client.on('guildMemberUpdate', async (oldMember, newMember) => {
     try {
       if (oldMember.communicationDisabledUntilTimestamp !== newMember.communicationDisabledUntilTimestamp) {
