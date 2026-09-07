@@ -194,7 +194,7 @@ module.exports = (client) => {
           const embed = crearLogModeracion({
             titulo: '➕ Rol agregado',
             descripcion: 'Se agregó un rol a un usuario.',
-            color: '#00cc66',
+            color: '#50C878',
             usuario: newMember.user,
             moderador,
             extra: [{ name: '🎭 Rol', value: `<@&${role.id}>`, inline: true }]
@@ -205,7 +205,7 @@ module.exports = (client) => {
           const embed = crearLogModeracion({
             titulo: '➖ Rol removido',
             descripcion: 'Se removió un rol de un usuario.',
-            color: '#ff5555',
+            color: '#ff0000',
             usuario: newMember.user,
             moderador,
             extra: [{ name: '🎭 Rol', value: `<@&${role.id}>`, inline: true }]
