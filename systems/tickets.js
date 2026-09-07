@@ -82,8 +82,11 @@ module.exports = (client) => {
           EmbedLinks: true
         });
 
-        await interaction.reply({ content: `✅ <@${usuario.id}> fue agregado correctamente al ticket.` });
-        await interaction.channel.send(`👋 <@${usuario.id}> fue agregado a este ticket por <@${interaction.user.id}>.`);
+        const embed = new EmbedBuilder()
+          .setColor('#2b2d31')
+          .setDescription(`👋 **<@${usuario.id}>** fue agregado a este ticket por **<@${interaction.user.id}>**.`)
+          .setTimestamp();
+        await interaction.reply({ embeds: [embed] });
         return;
       }
 
