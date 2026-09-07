@@ -185,7 +185,6 @@ module.exports = (client) => {
     } catch (error) { console.error('ERROR EN DETECTOR DE SPAM/LINKS:', error); }
   });
 
-  // Log de baneos
   client.on('guildBanAdd', async (ban) => {
     try {
       const entrada = await obtenerModerador(ban.guild, AuditLogEvent.MemberBanAdd, ban.user.id);
@@ -202,16 +201,12 @@ module.exports = (client) => {
     } catch (error) { console.error('ERROR AL ENVIAR LOG DE BANEO:', error); }
   });
 
-  // Log de expulsiones mediante el evento del Audit Log.
-  // Esto evita depender de guildMemberRemove + una consulta posterior, que puede perder la entrada de kick por timing.
   client.on('guildAuditLogEntryCreate', async (entrada, guild) => {
     try {
       if (entrada.action !== AuditLogEvent.MemberKick) return;
       if (!entrada.targetId) return;
-
       const usuario = entrada.target || await client.users.fetch(entrada.targetId).catch(() => null);
       if (!usuario) return;
-
       const embed = crearEmbedModeracion({
         titulo: '👢 Usuario expulsado',
         descripcion: 'Un usuario fue expulsado del servidor.',
@@ -221,31 +216,43 @@ module.exports = (client) => {
         motivo: entrada.reason || 'Sin motivo especificado',
         motivoInline: true
       });
-
       await enviarLog(guild, embed);
-    } catch (error) {
-      console.error('ERROR AL ENVIAR LOG DE EXPULSIÓN:', error);
-    }
+    } catch (error) { console.error('ERROR AL ENVIAR LOG DE EXPULSIÓN:', error); }
   });
 
-  // Log de silencios / timeouts y cambios de roles
   client.on('guildMemberUpdate', async (oldMember, newMember) => {
     try {
-      if (oldMember.communicationDisabledUntilTimestamp !== newMember.communicationDisabledUntilTimestamp) {
-        const silenciado = newMember.communicationDisabledUntilTimestamp && newMember.communicationDisabledUntilTimestamp > Date.now();
-        const entrada = await obtenerModerador(newMember.guild, AuditLogEvent.MemberUpdate, newMember.id);
-        const embed = crearEmbedModeracion({
-          titulo: silenciado ? '🔇 Usuario silenciado' : '🔊 Silencio retirado',
-          descripcion: silenciado ? 'Un usuario fue silenciado en el servidor.' : 'El silencio de un usuario fue retirado.',
-          color: silenciado ? '#ffcc00' : '#00cc66',
-          usuario: newMember.user,
-          moderador: entrada?.executor,
-          motivo: entrada?.reason || 'Sin motivo especificado',
-          motivoInline: !silenciado,
-          extraNombre: silenciado ? '⏱️ Duración' : null,
-          extraValor: silenciado ? `<t:${Math.floor(newMember.communicationDisabledUntilTimestamp / 1000)}:R>` : null
-        });
-        await enviarLog(newMember.guild, embed);
+      const oldTimeout = oldMember.communicationDisabledUntilTimestamp || null;
+      const newTimeout = newMember.communicationDisabledUntilTimestamp || null;
+
+      if (oldTimeout !== newTimeout) {
+        const ahora = Date.now();
+        const fueSilenciado = newTimeout !== null && newTimeout > ahora;
+        const fueDesilenciado = oldTimeout !== null && newTimeout === null;
+
+        if (fueSilenciado || fueDesilenciado) {
+          let entrada = null;
+          try {
+            entrada = await obtenerModerador(newMember.guild, AuditLogEvent.MemberUpdate, newMember.id);
+          } catch (error) {
+            console.error('ERROR AL BUSCAR MODERADOR DEL TIMEOUT:', error);
+          }
+
+          const motivo = entrada?.reason || 'Sin motivo especificado';
+          const embed = crearEmbedModeracion({
+            titulo: fueSilenciado ? '🔇 Usuario silenciado' : '🔊 Silencio retirado',
+            descripcion: fueSilenciado ? 'Un usuario fue silenciado en el servidor.' : 'El silencio de un usuario fue retirado.',
+            color: fueSilenciado ? '#ffcc00' : '#00cc66',
+            usuario: newMember.user,
+            moderador: entrada?.executor,
+            motivo,
+            motivoInline: fueDesilenciado,
+            extraNombre: fueSilenciado ? '⏱️ Duración' : null,
+            extraValor: fueSilenciado ? `<t:${Math.floor(newTimeout / 1000)}:R>` : null
+          });
+
+          await enviarLog(newMember.guild, embed);
+        }
       }
 
       const oldRoles = new Set(oldMember.roles.cache.keys());
