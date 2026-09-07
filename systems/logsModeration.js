@@ -47,9 +47,9 @@ function crearLogModeracion({ titulo, descripcion, color, usuario, moderador, ex
     .setTitle(titulo)
     .setDescription(descripcion)
     .addFields(
-      { name: '👤 Usuario', value: `<@${usuario.id}> \\`${usuario.tag}\\``, inline: false },
-      { name: '🆔 ID', value: `\\`${usuario.id}\\``, inline: true },
-      { name: '🛡️ Moderador', value: moderador ? `<@${moderador.id}> \\`${moderador.tag}\\`` : 'No identificado', inline: true },
+      { name: '👤 Usuario', value: `<@${usuario.id}> \`${usuario.tag}\``, inline: false },
+      { name: '🆔 ID', value: `\`${usuario.id}\``, inline: true },
+      { name: '🛡️ Moderador', value: moderador ? `<@${moderador.id}> \`${moderador.tag}\`` : 'No identificado', inline: true },
       ...extra,
       { name: '📅 Fecha', value: `<t:${Math.floor(Date.now() / 1000)}:F>`, inline: false }
     )
@@ -74,23 +74,24 @@ async function enviarLogSpam(member, cantidad, canal) {
   const embed = new EmbedBuilder().setColor('#ff0000').setTitle('🚨 Spam detectado')
     .setDescription('Un usuario fue silenciado automáticamente por enviar demasiados mensajes en poco tiempo.')
     .addFields(
-      { name: '👤 Usuario', value: `<@${member.id}> \\`${member.user.tag}\\``, inline: false },
-      { name: '🆔 ID', value: `\\`${member.id}\\``, inline: true },
-      { name: '📨 Mensajes', value: `\\`${cantidad}\\``, inline: true },
+      { name: '👤 Usuario', value: `<@${member.id}> \`${member.user.tag}\``, inline: false },
+      { name: '🆔 ID', value: `\`${member.id}\``, inline: true },
+      { name: '📨 Mensajes', value: `\`${cantidad}\``, inline: true },
       { name: '⏱️ Silenciado', value: '`60 segundos`', inline: true },
       { name: '📍 Canal', value: canal ? `<#${canal.id}>` : 'No disponible', inline: true },
       { name: '📅 Fecha', value: `<t:${Math.floor(Date.now() / 1000)}:F>`, inline: false }
     ).setThumbnail(member.user.displayAvatarURL({ size: 256 })).setFooter({ text: 'Sistema de seguridad' }).setTimestamp();
   await enviarLog(member.guild, embed);
 }
+
 async function enviarLogLink(member, link, canal) {
   const embed = new EmbedBuilder().setColor('#ff0000').setTitle('🚨 Link dudoso detectado')
     .setDescription('Un usuario envió un enlace no permitido. El mensaje fue eliminado automáticamente.')
     .addFields(
-      { name: '👤 Usuario', value: `<@${member.id}> \\`${member.user.tag}\\``, inline: false },
-      { name: '🆔 ID', value: `\\`${member.id}\\``, inline: true },
+      { name: '👤 Usuario', value: `<@${member.id}> \`${member.user.tag}\``, inline: false },
+      { name: '🆔 ID', value: `\`${member.id}\``, inline: true },
       { name: '📍 Canal', value: canal ? `<#${canal.id}>` : 'No disponible', inline: true },
-      { name: '🔗 Link eliminado', value: `\\`\\`\\`${link.slice(0, 1000)}\\`\\`\\``, inline: false },
+      { name: '🔗 Link eliminado', value: `\`\`\`${link.slice(0, 1000)}\`\`\``, inline: false },
       { name: '📅 Fecha', value: `<t:${Math.floor(Date.now() / 1000)}:F>`, inline: false }
     ).setThumbnail(member.user.displayAvatarURL({ size: 256 })).setFooter({ text: 'Sistema de seguridad' }).setTimestamp();
   await enviarLog(member.guild, embed);
@@ -106,10 +107,10 @@ module.exports = (client) => {
       const embed = new EmbedBuilder().setColor('#ff0000').setTitle('🗑️ Mensaje eliminado')
         .setDescription('Un mensaje fue eliminado de un canal.')
         .addFields(
-          { name: '👤 Usuario', value: `<@${message.author.id}> \\`${message.author.tag}\\``, inline: false },
-          { name: '🆔 ID', value: `\\`${message.author.id}\\``, inline: true },
+          { name: '👤 Usuario', value: `<@${message.author.id}> \`${message.author.tag}\``, inline: false },
+          { name: '🆔 ID', value: `\`${message.author.id}\``, inline: true },
           { name: '📍 Canal', value: `<#${message.channel.id}>`, inline: true },
-          { name: '💬 Mensaje', value: `\\`\\`\\`${contenido.slice(0, 1000)}\\`\\`\\``, inline: false },
+          { name: '💬 Mensaje', value: `\`\`\`${contenido.slice(0, 1000)}\`\`\``, inline: false },
           { name: '📅 Fecha', value: `<t:${Math.floor(Date.now() / 1000)}:F>`, inline: false }
         ).setThumbnail(message.author.displayAvatarURL({ size: 256 })).setFooter({ text: 'Sistema de seguridad' }).setTimestamp();
       await enviarLog(message.guild, embed);
@@ -123,18 +124,17 @@ module.exports = (client) => {
       const nuevo = newMessage.content?.trim() || '*Sin contenido*';
       const embed = new EmbedBuilder().setColor('#ffaa00').setTitle('✏️ Mensaje editado').setDescription('Un usuario editó un mensaje.')
         .addFields(
-          { name: '👤 Usuario', value: `<@${newMessage.author.id}> \\`${newMessage.author.tag}\\``, inline: false },
-          { name: '🆔 ID', value: `\\`${newMessage.author.id}\\``, inline: true },
+          { name: '👤 Usuario', value: `<@${newMessage.author.id}> \`${newMessage.author.tag}\``, inline: false },
+          { name: '🆔 ID', value: `\`${newMessage.author.id}\``, inline: true },
           { name: '📍 Canal', value: `<#${newMessage.channel.id}>`, inline: true },
-          { name: '📝 Antes', value: `\\`\\`\\`${anterior.slice(0, 1000)}\\`\\`\\``, inline: false },
-          { name: '✏️ Después', value: `\\`\\`\\`${nuevo.slice(0, 1000)}\\`\\`\\``, inline: false },
+          { name: '📝 Antes', value: `\`\`\`${anterior.slice(0, 1000)}\`\`\``, inline: false },
+          { name: '✏️ Después', value: `\`\`\`${nuevo.slice(0, 1000)}\`\`\``, inline: false },
           { name: '📅 Fecha', value: `<t:${Math.floor(Date.now() / 1000)}:F>`, inline: false }
         ).setThumbnail(newMessage.author.displayAvatarURL({ size: 256 })).setFooter({ text: 'Sistema de seguridad' }).setTimestamp();
       await enviarLog(newMessage.guild, embed);
     } catch (error) { console.error('ERROR AL ENVIAR LOG DE MENSAJE EDITADO:', error); }
   });
 
-  // Expulsiones: diferencia una expulsión mediante Audit Logs de una salida voluntaria.
   client.on('guildMemberRemove', async (member) => {
     try {
       const moderador = await obtenerModerador(member.guild, AuditLogEvent.MemberKick, member.id);
@@ -150,7 +150,6 @@ module.exports = (client) => {
     } catch (error) { console.error('ERROR AL ENVIAR LOG DE EXPULSIÓN:', error); }
   });
 
-  // Baneos y desbaneos.
   client.on('guildBanAdd', async (ban) => {
     try {
       const moderador = await obtenerModerador(ban.guild, AuditLogEvent.MemberBanAdd, ban.user.id);
@@ -165,7 +164,6 @@ module.exports = (client) => {
     } catch (error) { console.error('ERROR AL ENVIAR LOG DE BANEO:', error); }
   });
 
-  // Silencios (timeouts) y cambios de roles.
   client.on('guildMemberUpdate', async (oldMember, newMember) => {
     try {
       const oldTimeout = oldMember.communicationDisabledUntilTimestamp;
@@ -199,7 +197,7 @@ module.exports = (client) => {
             color: '#00cc66',
             usuario: newMember.user,
             moderador,
-            extra: [{ name: '🎭 Rol', value: `<@&${role.id}> \\`${role.name}\\``, inline: true }]
+            extra: [{ name: '🎭 Rol', value: `<@&${role.id}> \`${role.name}\``, inline: true }]
           });
           await enviarLog(newMember.guild, embed);
         }
@@ -210,7 +208,7 @@ module.exports = (client) => {
             color: '#ff5555',
             usuario: newMember.user,
             moderador,
-            extra: [{ name: '🎭 Rol', value: `<@&${role.id}> \\`${role.name}\\``, inline: true }]
+            extra: [{ name: '🎭 Rol', value: `<@&${role.id}> \`${role.name}\``, inline: true }]
           });
           await enviarLog(newMember.guild, embed);
         }
