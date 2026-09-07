@@ -83,6 +83,7 @@ module.exports = (client) => {
         });
 
         const addEmbed = new EmbedBuilder()
+          .setTitle('/ADD')
           .setColor('#50C878')
           .setDescription(`┃<@${usuario.id}> fue agregado a este ticket\n┃ Por: <@${interaction.user.id}>\n┃ Ya puede ver y escribir en este ticket.`)
           .setTimestamp();
@@ -114,6 +115,7 @@ module.exports = (client) => {
         await interaction.channel.permissionOverwrites.delete(usuario.id).catch(() => {});
 
         const removeEmbed = new EmbedBuilder()
+          .setTitle('/REMOVE')
           .setColor('#B22222')
           .setDescription(`┃<@${usuario.id}> fue removido de este ticket\n┃ Por: <@${interaction.user.id}>\n┃ Ya no puede ver ni escribir en este ticket.`)
           .setTimestamp();
