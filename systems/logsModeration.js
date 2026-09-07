@@ -1,4 +1,4 @@
-const { EmbedBuilder, PermissionsBitField } = require('discord.js');
+const { EmbedBuilder, PermissionsBitField, AuditLogEvent } = require('discord.js');
 const fs = require('fs');
 
 const LOGS_FILE = './logsConfig.json';
@@ -35,6 +35,40 @@ async function enviarLog(guild, embed) {
   if (!canal) return;
   await canal.send({ embeds: [embed] }).catch(() => {});
 }
+
+function crearEmbedModeracion({ titulo, descripcion, color, usuario, moderador, motivo, extraNombre, extraValor }) {
+  const embed = new EmbedBuilder()
+    .setColor(color)
+    .setTitle(titulo)
+    .setDescription(descripcion)
+    .addFields(
+      { name: '👤 Usuario', value: `<@${usuario.id}> \`${usuario.tag}\``, inline: false },
+      { name: '🆔 ID', value: `\`${usuario.id}\``, inline: true },
+      { name: '👮 Moderador', value: moderador ? `<@${moderador.id}> \`${moderador.tag}\`` : 'No identificado', inline: true }
+    );
+
+  if (extraNombre && extraValor) embed.addFields({ name: extraNombre, value: extraValor, inline: true });
+  if (motivo) embed.addFields({ name: '📝 Motivo', value: motivo.slice(0, 1024), inline: false });
+
+  embed.addFields({ name: '📅 Fecha', value: `<t:${Math.floor(Date.now() / 1000)}:F>`, inline: false })
+    .setThumbnail(usuario.displayAvatarURL({ size: 256 }))
+    .setFooter({ text: 'Sistema de seguridad' })
+    .setTimestamp();
+
+  return embed;
+}
+
+async function obtenerModerador(guild, tipo, targetId) {
+  try {
+    const logs = await guild.fetchAuditLogs({ type: tipo, limit: 6 });
+    const entrada = logs.entries.find(entry => entry.target?.id === targetId && Date.now() - entry.createdTimestamp < 10000);
+    return entrada || null;
+  } catch (error) {
+    console.error('ERROR AL OBTENER AUDIT LOG:', error);
+    return null;
+  }
+}
+
 async function enviarLogSpam(member, cantidad, canal) {
   const embed = new EmbedBuilder().setColor('#ff0000').setTitle('🚨 Spam detectado')
     .setDescription('Un usuario fue silenciado automáticamente por enviar demasiados mensajes en poco tiempo.')
@@ -134,6 +168,101 @@ module.exports = (client) => {
         } catch (error) { data.silenciado = false; console.error('ERROR AL SILENCIAR USUARIO:', error); }
       }
     } catch (error) { console.error('ERROR EN DETECTOR DE SPAM/LINKS:', error); }
+  });
+
+  // Log de baneos
+  client.on('guildBanAdd', async (ban) => {
+    try {
+      const entrada = await obtenerModerador(ban.guild, AuditLogEvent.MemberBanAdd, ban.user.id);
+      const embed = crearEmbedModeracion({
+        titulo: '🔨 Usuario baneado',
+        descripcion: 'Un usuario fue baneado del servidor.',
+        color: '#ff0000',
+        usuario: ban.user,
+        moderador: entrada?.executor,
+        motivo: entrada?.reason || 'Sin motivo especificado'
+      });
+      await enviarLog(ban.guild, embed);
+    } catch (error) { console.error('ERROR AL ENVIAR LOG DE BANEO:', error); }
+  });
+
+  // Log de expulsiones
+  client.on('guildMemberRemove', async (member) => {
+    try {
+      const entrada = await obtenerModerador(member.guild, AuditLogEvent.MemberKick, member.id);
+      if (!entrada) return;
+      const embed = crearEmbedModeracion({
+        titulo: '👢 Usuario expulsado',
+        descripcion: 'Un usuario fue expulsado del servidor.',
+        color: '#ff9900',
+        usuario: member.user,
+        moderador: entrada.executor,
+        motivo: entrada.reason || 'Sin motivo especificado'
+      });
+      await enviarLog(member.guild, embed);
+    } catch (error) { console.error('ERROR AL ENVIAR LOG DE EXPULSIÓN:', error); }
+  });
+
+  // Log de silencios / timeouts
+  client.on('guildMemberUpdate', async (oldMember, newMember) => {
+    try {
+      if (oldMember.communicationDisabledUntilTimestamp !== newMember.communicationDisabledUntilTimestamp) {
+        const silenciado = newMember.communicationDisabledUntilTimestamp && newMember.communicationDisabledUntilTimestamp > Date.now();
+        const entrada = await obtenerModerador(newMember.guild, AuditLogEvent.MemberUpdate, newMember.id);
+        const embed = crearEmbedModeracion({
+          titulo: silenciado ? '🔇 Usuario silenciado' : '🔊 Silencio retirado',
+          descripcion: silenciado ? 'Un usuario fue silenciado en el servidor.' : 'El silencio de un usuario fue retirado.',
+          color: silenciado ? '#ffcc00' : '#00cc66',
+          usuario: newMember.user,
+          moderador: entrada?.executor,
+          motivo: entrada?.reason || 'Sin motivo especificado',
+          extraNombre: silenciado ? '⏱️ Duración' : null,
+          extraValor: silenciado ? `<t:${Math.floor(newMember.communicationDisabledUntilTimestamp / 1000)}:R>` : null
+        });
+        await enviarLog(newMember.guild, embed);
+      }
+
+      const oldRoles = new Set(oldMember.roles.cache.keys());
+      const newRoles = new Set(newMember.roles.cache.keys());
+      const agregados = [...newRoles].filter(id => !oldRoles.has(id));
+      const retirados = [...oldRoles].filter(id => !newRoles.has(id));
+
+      for (const roleId of agregados) {
+        if (roleId === newMember.guild.id) continue;
+        const rol = newMember.guild.roles.cache.get(roleId);
+        if (!rol) continue;
+        const entrada = await obtenerModerador(newMember.guild, AuditLogEvent.MemberRoleUpdate, newMember.id);
+        const embed = crearEmbedModeracion({
+          titulo: '➕ Rol agregado',
+          descripcion: 'Se agregó un rol a un usuario.',
+          color: '#00cc66',
+          usuario: newMember.user,
+          moderador: entrada?.executor,
+          motivo: entrada?.reason || 'Sin motivo especificado',
+          extraNombre: '🏷️ Rol',
+          extraValor: `<@&${rol.id}> \`${rol.name.slice(0, 900)}\``
+        });
+        await enviarLog(newMember.guild, embed);
+      }
+
+      for (const roleId of retirados) {
+        if (roleId === newMember.guild.id) continue;
+        const rol = newMember.guild.roles.cache.get(roleId) || oldMember.guild.roles.cache.get(roleId);
+        if (!rol) continue;
+        const entrada = await obtenerModerador(newMember.guild, AuditLogEvent.MemberRoleUpdate, newMember.id);
+        const embed = crearEmbedModeracion({
+          titulo: '➖ Rol retirado',
+          descripcion: 'Se retiró un rol a un usuario.',
+          color: '#ff9900',
+          usuario: newMember.user,
+          moderador: entrada?.executor,
+          motivo: entrada?.reason || 'Sin motivo especificado',
+          extraNombre: '🏷️ Rol',
+          extraValor: `<@&${rol.id}> \`${rol.name.slice(0, 900)}\``
+        });
+        await enviarLog(newMember.guild, embed);
+      }
+    } catch (error) { console.error('ERROR AL ENVIAR LOG DE MODERACIÓN:', error); }
   });
 
   setInterval(() => {
