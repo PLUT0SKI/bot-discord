@@ -42,9 +42,9 @@ function crearEmbedModeracion({ titulo, descripcion, color, usuario, moderador, 
     .setTitle(titulo)
     .setDescription(descripcion)
     .addFields(
-      { name: '👤 Usuario', value: `<@${usuario.id}> \`${usuario.tag}\``, inline: false },
+      { name: '👤 Usuario', value: `<@${usuario.id}>`, inline: false },
       { name: '🆔 ID', value: `\`${usuario.id}\``, inline: true },
-      { name: '👮 Moderador', value: moderador ? `<@${moderador.id}> \`${moderador.tag}\`` : 'No identificado', inline: true }
+      { name: '👮 Moderador', value: moderador ? `<@${moderador.id}>` : 'No identificado', inline: true }
     );
 
   if (motivoInline) {
@@ -87,7 +87,7 @@ async function enviarLogSpam(member, cantidad, canal) {
   const embed = new EmbedBuilder().setColor('#ff0000').setTitle('🚨 Spam detectado')
     .setDescription('Un usuario fue silenciado automáticamente por enviar demasiados mensajes en poco tiempo.')
     .addFields(
-      { name: '👤 Usuario', value: `<@${member.id}> \`${member.user.tag}\``, inline: false },
+      { name: '👤 Usuario', value: `<@${member.id}>`, inline: false },
       { name: '🆔 ID', value: `\`${member.id}\``, inline: true },
       { name: '📨 Mensajes', value: `\`${cantidad}\``, inline: true },
       { name: '⏱️ Silenciado', value: '`60 segundos`', inline: true },
@@ -101,7 +101,7 @@ async function enviarLogLink(member, link, canal) {
   const embed = new EmbedBuilder().setColor('#ff0000').setTitle('🚨 Link dudoso detectado')
     .setDescription('Un usuario envió un enlace no permitido. El mensaje fue eliminado automáticamente.')
     .addFields(
-      { name: '👤 Usuario', value: `<@${member.id}> \`${member.user.tag}\``, inline: false },
+      { name: '👤 Usuario', value: `<@${member.id}>`, inline: false },
       { name: '🆔 ID', value: `\`${member.id}\``, inline: true },
       { name: '📍 Canal', value: canal ? `<#${canal.id}>` : 'No disponible', inline: true },
       { name: '🔗 Link eliminado', value: `\`\`\`${link.slice(0, 1000)}\`\`\``, inline: false },
@@ -120,7 +120,7 @@ module.exports = (client) => {
       const embed = new EmbedBuilder().setColor('#ff0000').setTitle('🗑️ Mensaje eliminado')
         .setDescription('Un mensaje fue eliminado de un canal.')
         .addFields(
-          { name: '👤 Usuario', value: `<@${message.author.id}> \`${message.author.tag}\``, inline: false },
+          { name: '👤 Usuario', value: `<@${message.author.id}>`, inline: false },
           { name: '🆔 ID', value: `\`${message.author.id}\``, inline: true },
           { name: '📍 Canal', value: `<#${message.channel.id}>`, inline: true },
           { name: '💬 Mensaje', value: `\`\`\`${contenido.slice(0, 1000)}\`\`\``, inline: false },
@@ -137,7 +137,7 @@ module.exports = (client) => {
       const nuevo = newMessage.content?.trim() || '*Sin contenido*';
       const embed = new EmbedBuilder().setColor('#ffaa00').setTitle('✏️ Mensaje editado').setDescription('Un usuario editó un mensaje.')
         .addFields(
-          { name: '👤 Usuario', value: `<@${newMessage.author.id}> \`${newMessage.author.tag}\``, inline: false },
+          { name: '👤 Usuario', value: `<@${newMessage.author.id}>`, inline: false },
           { name: '🆔 ID', value: `\`${newMessage.author.id}\``, inline: true },
           { name: '📍 Canal', value: `<#${newMessage.channel.id}>`, inline: true },
           { name: '📝 Antes', value: `\`\`\`${anterior.slice(0, 1000)}\`\`\``, inline: false },
@@ -273,7 +273,7 @@ module.exports = (client) => {
           moderador: entrada?.executor,
           motivo: entrada?.reason || 'Sin motivo especificado',
           extraNombre: '🏷️ Rol',
-          extraValor: `<@&${rol.id}> \`${rol.name.slice(0, 900)}\``
+          extraValor: `<@&${rol.id}>`
         });
         await enviarLog(newMember.guild, embed);
       }
@@ -291,7 +291,7 @@ module.exports = (client) => {
           moderador: entrada?.executor,
           motivo: entrada?.reason || 'Sin motivo especificado',
           extraNombre: '🏷️ Rol',
-          extraValor: `<@&${rol.id}> \`${rol.name.slice(0, 900)}\``
+          extraValor: `<@&${rol.id}>`
         });
         await enviarLog(newMember.guild, embed);
       }
