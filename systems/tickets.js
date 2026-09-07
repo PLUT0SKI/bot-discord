@@ -82,11 +82,9 @@ module.exports = (client) => {
           EmbedLinks: true
         });
 
-        const embed = new EmbedBuilder()
-          .setColor('#2b2d31')
-          .setDescription(`👋 **<@${usuario.id}>** fue agregado a este ticket por **<@${interaction.user.id}>**.`)
-          .setTimestamp();
-        await interaction.reply({ embeds: [embed] });
+        await interaction.reply({
+          content: `┃<@${usuario.id}> fue agregado a este ticket\n┃ Por: <@${interaction.user.id}>\n┃ Ya puede ver y participar en este ticket.`
+        });
         return;
       }
 
