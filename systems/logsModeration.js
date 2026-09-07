@@ -1,16 +1,11 @@
-const { EmbedBuilder, PermissionsBitField, ChannelType } = require('discord.js');
+const { EmbedBuilder, PermissionsBitField } = require('discord.js');
 const fs = require('fs');
-const { verificarAcceso } = require('../utils/commandAccess');
 
 const LOGS_FILE = './logsConfig.json';
 let logsConfig = {};
 if (fs.existsSync(LOGS_FILE)) {
   try { logsConfig = JSON.parse(fs.readFileSync(LOGS_FILE, 'utf8')); console.log('CONFIGURACIÓN DE LOGS CARGADA.'); }
   catch (error) { console.error('ERROR AL CARGAR logsConfig.json:', error); }
-}
-function guardarLogsConfig() {
-  try { fs.writeFileSync(LOGS_FILE, JSON.stringify(logsConfig, null, 2)); }
-  catch (error) { console.error('ERROR AL GUARDAR CONFIGURACIÓN DE LOGS:', error); }
 }
 
 const spamUsers = new Map();
@@ -139,20 +134,6 @@ module.exports = (client) => {
         } catch (error) { data.silenciado = false; console.error('ERROR AL SILENCIAR USUARIO:', error); }
       }
     } catch (error) { console.error('ERROR EN DETECTOR DE SPAM/LINKS:', error); }
-  });
-
-  client.on('interactionCreate', async (interaction) => {
-    if (!interaction.isChatInputCommand() || interaction.commandName !== 'setlogs') return;
-    try {
-      if (!await verificarAcceso(interaction)) return;
-      const canal = interaction.options.getChannel('canal');
-      if (!canal || canal.type !== ChannelType.GuildText) return interaction.reply({ content: '❌ Selecciona un canal de texto.', ephemeral: true });
-      const permisos = canal.permissionsFor(interaction.guild.members.me);
-      if (!permisos?.has(PermissionsBitField.Flags.ViewChannel) || !permisos.has(PermissionsBitField.Flags.SendMessages) || !permisos.has(PermissionsBitField.Flags.EmbedLinks)) return interaction.reply({ content: '❌ No puedo enviar logs a ese canal. Necesito **Ver canal**, **Enviar mensajes** y **Insertar enlaces**.', ephemeral: true });
-      logsConfig[interaction.guild.id] = canal.id;
-      guardarLogsConfig();
-      await interaction.reply({ embeds: [new EmbedBuilder().setColor('#00ff88').setTitle('⚙️ Sistema de logs configurado').setDescription('El canal de logs fue configurado correctamente.').addFields({ name: '📋 Canal', value: `<#${canal.id}>` }).setTimestamp()], ephemeral: true });
-    } catch (error) { console.error('ERROR EN /SETLOGS:', error); }
   });
 
   setInterval(() => {
