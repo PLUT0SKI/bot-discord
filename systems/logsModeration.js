@@ -36,7 +36,7 @@ async function enviarLog(guild, embed) {
   await canal.send({ embeds: [embed] }).catch(error => console.error('ERROR AL ENVIAR LOG:', error));
 }
 
-function crearEmbedModeracion({ titulo, descripcion, color, usuario, moderador, motivo, extraNombre, extraValor }) {
+function crearEmbedModeracion({ titulo, descripcion, color, usuario, moderador, motivo, extraNombre, extraValor, motivoInline = false }) {
   const embed = new EmbedBuilder()
     .setColor(color)
     .setTitle(titulo)
@@ -47,8 +47,16 @@ function crearEmbedModeracion({ titulo, descripcion, color, usuario, moderador, 
       { name: '👮 Moderador', value: moderador ? `<@${moderador.id}> \`${moderador.tag}\`` : 'No identificado', inline: true }
     );
 
+  if (motivoInline) {
+    embed.addFields({
+      name: '📝 Motivo',
+      value: (motivo || 'Sin motivo especificado').slice(0, 1024),
+      inline: true
+    });
+  }
+
   if (extraNombre && extraValor) embed.addFields({ name: extraNombre, value: extraValor, inline: true });
-  if (motivo) embed.addFields({ name: '📝 Motivo', value: motivo.slice(0, 1024), inline: false });
+  if (motivo && !motivoInline) embed.addFields({ name: '📝 Motivo', value: motivo.slice(0, 1024), inline: false });
 
   embed.addFields({ name: '📅 Fecha', value: `<t:${Math.floor(Date.now() / 1000)}:F>`, inline: false })
     .setThumbnail(usuario.displayAvatarURL({ size: 256 }))
@@ -187,7 +195,8 @@ module.exports = (client) => {
         color: '#ff0000',
         usuario: ban.user,
         moderador: entrada?.executor,
-        motivo: entrada?.reason || 'Sin motivo especificado'
+        motivo: entrada?.reason || 'Sin motivo especificado',
+        motivoInline: true
       });
       await enviarLog(ban.guild, embed);
     } catch (error) { console.error('ERROR AL ENVIAR LOG DE BANEO:', error); }
@@ -209,7 +218,8 @@ module.exports = (client) => {
         color: '#ff9900',
         usuario,
         moderador: entrada.executor,
-        motivo: entrada.reason || 'Sin motivo especificado'
+        motivo: entrada.reason || 'Sin motivo especificado',
+        motivoInline: true
       });
 
       await enviarLog(guild, embed);
@@ -231,6 +241,7 @@ module.exports = (client) => {
           usuario: newMember.user,
           moderador: entrada?.executor,
           motivo: entrada?.reason || 'Sin motivo especificado',
+          motivoInline: !silenciado,
           extraNombre: silenciado ? '⏱️ Duración' : null,
           extraValor: silenciado ? `<t:${Math.floor(newMember.communicationDisabledUntilTimestamp / 1000)}:R>` : null
         });
