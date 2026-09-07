@@ -83,8 +83,8 @@ module.exports = (client) => {
         });
 
         const addEmbed = new EmbedBuilder()
-          .setColor('#2b2d31')
-          .setDescription(`┃<@${usuario.id}> fue agregado a este ticket\n┃ Por: <@${interaction.user.id}>\n┃ Ya puede ver y participar en este ticket.`)
+          .setColor('#50C878')
+          .setDescription(`┃<@${usuario.id}> fue agregado a este ticket\n┃ Por: <@${interaction.user.id}>\n┃ Ya puede ver y escribir en este ticket.`)
           .setTimestamp();
 
         await interaction.reply({ embeds: [addEmbed] });
@@ -114,8 +114,8 @@ module.exports = (client) => {
         await interaction.channel.permissionOverwrites.delete(usuario.id).catch(() => {});
 
         const removeEmbed = new EmbedBuilder()
-          .setColor('#2b2d31')
-          .setDescription(`┃<@${usuario.id}> fue removido de este ticket\n┃ Por: <@${interaction.user.id}>\n┃ Ya no puede ver ni participar en este ticket.`)
+          .setColor('#B22222')
+          .setDescription(`┃<@${usuario.id}> fue removido de este ticket\n┃ Por: <@${interaction.user.id}>\n┃ Ya no puede ver ni escribir en este ticket.`)
           .setTimestamp();
 
         await interaction.reply({ embeds: [removeEmbed] });
