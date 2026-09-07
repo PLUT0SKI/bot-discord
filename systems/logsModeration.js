@@ -70,6 +70,34 @@ async function obtenerModerador(guild, tipo, targetId) {
   } catch { return null; }
 }
 
+async function obtenerDatosTimeout(guild, targetId) {
+  try {
+    const logs = await guild.fetchAuditLogs({ type: AuditLogEvent.MemberUpdate, limit: 10 });
+    const entrada = logs.entries.find(entry =>
+      entry.target?.id === targetId &&
+      Date.now() - entry.createdTimestamp < 10000 &&
+      entry.changes?.some(change => change.key === 'communication_disabled_until')
+    );
+    if (!entrada) return { moderador: null, motivo: null };
+    return { moderador: entrada.executor || null, motivo: entrada.reason || null };
+  } catch { return { moderador: null, motivo: null }; }
+}
+
+function formatearDuracion(ms) {
+  if (!ms || ms <= 0) return '0 segundos';
+  const totalSegundos = Math.ceil(ms / 1000);
+  const dias = Math.floor(totalSegundos / 86400);
+  const horas = Math.floor((totalSegundos % 86400) / 3600);
+  const minutos = Math.floor((totalSegundos % 3600) / 60);
+  const segundos = totalSegundos % 60;
+  const partes = [];
+  if (dias) partes.push(`${dias} día${dias !== 1 ? 's' : ''}`);
+  if (horas) partes.push(`${horas} hora${horas !== 1 ? 's' : ''}`);
+  if (minutos) partes.push(`${minutos} minuto${minutos !== 1 ? 's' : ''}`);
+  if (segundos && partes.length < 2) partes.push(`${segundos} segundo${segundos !== 1 ? 's' : ''}`);
+  return partes.join(' ') || '0 segundos';
+}
+
 async function enviarLogSpam(member, cantidad, canal) {
   const embed = new EmbedBuilder().setColor('#ff0000').setTitle('🚨 Spam detectado')
     .setDescription('Un usuario fue silenciado automáticamente por enviar demasiados mensajes en poco tiempo.')
@@ -139,13 +167,7 @@ module.exports = (client) => {
     try {
       const moderador = await obtenerModerador(member.guild, AuditLogEvent.MemberKick, member.id);
       if (!moderador) return;
-      const embed = crearLogModeracion({
-        titulo: '👢 Usuario expulsado',
-        descripcion: 'Un usuario fue expulsado del servidor.',
-        color: '#ff9500',
-        usuario: member.user,
-        moderador
-      });
+      const embed = crearLogModeracion({ titulo: '👢 Usuario expulsado', descripcion: 'Un usuario fue expulsado del servidor.', color: '#ff9500', usuario: member.user, moderador });
       await enviarLog(member.guild, embed);
     } catch (error) { console.error('ERROR AL ENVIAR LOG DE EXPULSIÓN:', error); }
   });
@@ -153,13 +175,7 @@ module.exports = (client) => {
   client.on('guildBanAdd', async (ban) => {
     try {
       const moderador = await obtenerModerador(ban.guild, AuditLogEvent.MemberBanAdd, ban.user.id);
-      const embed = crearLogModeracion({
-        titulo: '🔨 Usuario baneado',
-        descripcion: 'Un usuario fue baneado del servidor.',
-        color: '#ff0000',
-        usuario: ban.user,
-        moderador
-      });
+      const embed = crearLogModeracion({ titulo: '🔨 Usuario baneado', descripcion: 'Un usuario fue baneado del servidor.', color: '#ff0000', usuario: ban.user, moderador });
       await enviarLog(ban.guild, embed);
     } catch (error) { console.error('ERROR AL ENVIAR LOG DE BANEO:', error); }
   });
@@ -171,14 +187,21 @@ module.exports = (client) => {
 
       if (oldTimeout !== newTimeout) {
         const esMute = newTimeout && newTimeout > Date.now();
-        const moderador = await obtenerModerador(newMember.guild, AuditLogEvent.MemberUpdate, newMember.id);
+        const datos = await obtenerDatosTimeout(newMember.guild, newMember.id);
+        const extra = [];
+
+        if (esMute) {
+          extra.push({ name: '⏱️ Duración', value: `\`${formatearDuracion(newTimeout - Date.now())}\``, inline: true });
+          extra.push({ name: '📝 Motivo', value: `\`${datos.motivo || 'No especificado'}\``, inline: false });
+        }
+
         const embed = crearLogModeracion({
           titulo: esMute ? '🔇 Usuario silenciado' : '🔊 Silencio retirado',
           descripcion: esMute ? 'Un usuario recibió un silencio (timeout).' : 'El silencio de un usuario fue retirado.',
           color: esMute ? '#ffcc00' : '#00cc66',
           usuario: newMember.user,
-          moderador,
-          extra: esMute ? [{ name: '⏱️ Duración', value: `<t:${Math.floor(newTimeout / 1000)}:F>`, inline: true }] : []
+          moderador: datos.moderador,
+          extra
         });
         await enviarLog(newMember.guild, embed);
       }
@@ -191,25 +214,11 @@ module.exports = (client) => {
       if (agregados.size || quitados.size) {
         const moderador = await obtenerModerador(newMember.guild, AuditLogEvent.MemberRoleUpdate, newMember.id);
         for (const role of agregados.values()) {
-          const embed = crearLogModeracion({
-            titulo: '➕ Rol agregado',
-            descripcion: 'Se agregó un rol a un usuario.',
-            color: '#50C878',
-            usuario: newMember.user,
-            moderador,
-            extra: [{ name: '🎭 Rol', value: `<@&${role.id}>`, inline: true }]
-          });
+          const embed = crearLogModeracion({ titulo: '➕ Rol agregado', descripcion: 'Se agregó un rol a un usuario.', color: '#50C878', usuario: newMember.user, moderador, extra: [{ name: '🎭 Rol', value: `<@&${role.id}>`, inline: true }] });
           await enviarLog(newMember.guild, embed);
         }
         for (const role of quitados.values()) {
-          const embed = crearLogModeracion({
-            titulo: '➖ Rol removido',
-            descripcion: 'Se removió un rol de un usuario.',
-            color: '#ff0000',
-            usuario: newMember.user,
-            moderador,
-            extra: [{ name: '🎭 Rol', value: `<@&${role.id}>`, inline: true }]
-          });
+          const embed = crearLogModeracion({ titulo: '➖ Rol removido', descripcion: 'Se removió un rol de un usuario.', color: '#ff0000', usuario: newMember.user, moderador, extra: [{ name: '🎭 Rol', value: `<@&${role.id}>`, inline: true }] });
           await enviarLog(newMember.guild, embed);
         }
       }
