@@ -28,6 +28,7 @@ require('./systems/welcomeGoodbye')(client);
 require('./systems/tickets')(client);
 require('./systems/payments')(client);
 const moderation = require('./systems/logsModeration')(client);
+require('./systems/setLogs')(client);
 require('./systems/clear')(client, moderation);
 require('./systems/reactionRoles')(client);
 require('./systems/reactionRoleCommand')(client);
