@@ -59,6 +59,34 @@ module.exports = (client) => {
         return;
       }
 
+      if (interaction.isChatInputCommand() && interaction.commandName === 'add') {
+        if (!interaction.guild || !interaction.channel || interaction.channel.parentId !== TICKET_CATEGORY_ID) {
+          return interaction.reply({ content: '❌ Este comando solo puede utilizarse dentro de un ticket.', ephemeral: true });
+        }
+        const esTicket = interaction.channel.topic?.startsWith('TICKET_USER:');
+        if (!esTicket) return interaction.reply({ content: '❌ Este canal no es un ticket válido.', ephemeral: true });
+
+        const usuario = interaction.options.getUser('usuario', true);
+        const miembro = await interaction.guild.members.fetch(usuario.id).catch(() => null);
+        if (!miembro) return interaction.reply({ content: '❌ No se encontró al usuario en este servidor.', ephemeral: true });
+        if (miembro.user.bot) return interaction.reply({ content: '❌ No puedes agregar bots al ticket.', ephemeral: true });
+        if (interaction.channel.permissionsFor(miembro)?.has(PermissionsBitField.Flags.ViewChannel)) {
+          return interaction.reply({ content: '⚠️ Ese usuario ya tiene acceso a este ticket.', ephemeral: true });
+        }
+
+        await interaction.channel.permissionOverwrites.edit(usuario.id, {
+          ViewChannel: true,
+          SendMessages: true,
+          ReadMessageHistory: true,
+          AttachFiles: true,
+          EmbedLinks: true
+        });
+
+        await interaction.reply({ content: `✅ <@${usuario.id}> fue agregado correctamente al ticket.` });
+        await interaction.channel.send(`👋 <@${usuario.id}> fue agregado a este ticket por <@${interaction.user.id}>.`);
+        return;
+      }
+
       if (interaction.isChatInputCommand() && interaction.commandName === 'close') {
         if (!interaction.guild || !interaction.channel || interaction.channel.parentId !== TICKET_CATEGORY_ID) {
           return interaction.reply({ content: '❌ Este comando solo puede utilizarse dentro de un ticket.', ephemeral: true });
