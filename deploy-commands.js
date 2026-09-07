@@ -17,6 +17,11 @@ const commands = [
     .setDescription('Agrega un usuario al ticket actual')
     .addUserOption(option => option.setName('usuario').setDescription('Usuario que quieres agregar al ticket').setRequired(true))
     .toJSON(),
+  new SlashCommandBuilder()
+    .setName('remove')
+    .setDescription('Saca un usuario del ticket actual')
+    .addUserOption(option => option.setName('usuario').setDescription('Usuario que quieres sacar del ticket').setRequired(true))
+    .toJSON(),
   new SlashCommandBuilder().setName('pagos').setDescription('Muestra el panel de métodos de pago').toJSON(),
   new SlashCommandBuilder()
     .setName('addreaction').setDescription('Configura una reacción para dar un rol')
