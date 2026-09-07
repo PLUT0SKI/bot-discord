@@ -197,7 +197,7 @@ module.exports = (client) => {
             color: '#00cc66',
             usuario: newMember.user,
             moderador,
-            extra: [{ name: '🎭 Rol', value: `<@&${role.id}> \`${role.name}\``, inline: true }]
+            extra: [{ name: '🎭 Rol', value: `<@&${role.id}>`, inline: true }]
           });
           await enviarLog(newMember.guild, embed);
         }
@@ -208,7 +208,7 @@ module.exports = (client) => {
             color: '#ff5555',
             usuario: newMember.user,
             moderador,
-            extra: [{ name: '🎭 Rol', value: `<@&${role.id}> \`${role.name}\``, inline: true }]
+            extra: [{ name: '🎭 Rol', value: `<@&${role.id}>`, inline: true }]
           });
           await enviarLog(newMember.guild, embed);
         }
