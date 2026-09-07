@@ -255,24 +255,109 @@ module.exports = (client) => {
               catch { mensajesEliminadosPorBot.delete(item.message?.id); }
             }
             await enviarLogSpam(message.member, spamMessages.length, message.channel);
-            setTimeout(() => { const u = spamUsers.get(message.member.id); if (u) { u.silenciado = false; u.mensajes = []; } }, MUTE_TIME);
-          } else data.silenciado = false;
-        } catch (error) { data.silenciado = false; console.error('ERROR AL SILENCIAR USUARIO:', error); }
+            setTimeout(() => { const u = spamUsers.get(message.member.id); if (u) { u.silenciado = false; u.mensajes = []; } }, MUTE_TIME + 5000);
+          }
+        } catch (error) { console.error('ERROR AL APLICAR SILENCIO POR SPAM:', error); }
       }
-    } catch (error) { console.error('ERROR EN DETECTOR DE SPAM/LINKS:', error); }
+    } catch (error) { console.error('ERROR EN SISTEMA DE SEGURIDAD:', error); }
   });
 
-  client.on('interactionCreate', async (interaction) => {
-    if (!interaction.isChatInputCommand() || interaction.commandName !== 'setlogs') return;
+  client.on('messageDeleteBulk', async (messages) => {
     try {
-      if (!await verificarAcceso(interaction)) return;
-      const canal = interaction.options.getChannel('canal');
-      if (!canal || canal.type !== ChannelType.GuildText) return interaction.reply({ content: '❌ Selecciona un canal de texto.', ephemeral: true });
-      const permisos = canal.permissionsFor(interaction.guild.members.me);
-      if (!permisos?.has(PermissionsBitField.Flags.ViewChannel) || !permisos.has(PermissionsBitField.Flags.SendMessages) || !permisos.has(PermissionsBitField.Flags.EmbedLinks)) return interaction.reply({ content: '❌ No puedo enviar logs a ese canal. Necesito **Ver canal**, **Enviar mensajes** y **Insertar enlaces**.', ephemeral: true });
-      logsConfig[interaction.guild.id] = canal.id;
-      guardarLogsConfig();
-      await interaction.reply({ embeds: [new EmbedBuilder().setColor('#00ff88').setTitle('⚙️ Sistema de logs configurado').setDescription('El canal de logs fue configurado correctamente.').addFields({ name: '📋 Canal', value: `<#${canal.id}>` }).setTimestamp()], ephemeral: true });
-    } catch (error) { console.error('ERROR AL CONFIGURAR LOGS:', error); }
+      for (const message of messages.values()) mensajesEliminadosPorClear.add(message.id);
+    } catch {}
+  });
+
+  client.on('channelDelete', async (channel) => {
+    try {
+      if (!channel.guild) return;
+      const moderador = await obtenerModerador(channel.guild, AuditLogEvent.ChannelDelete, channel.id);
+      if (!moderador) return;
+      const embed = new EmbedBuilder().setColor('#ff0000').setTitle('🗑️ Canal eliminado').setDescription('Un canal fue eliminado del servidor.').addFields(
+        { name: '📁 Canal', value: `\`${channel.name}\``, inline: true },
+        { name: '🆔 ID', value: `\`${channel.id}\``, inline: true },
+        { name: '🛡️ Moderador', value: `<@${moderador.id}> \`${moderador.tag}\``, inline: false },
+        { name: '📅 Fecha', value: `<t:${Math.floor(Date.now() / 1000)}:F>`, inline: false }
+      ).setFooter({ text: 'Sistema de moderación' }).setTimestamp();
+      await enviarLog(channel.guild, embed);
+    } catch (error) { console.error('ERROR AL ENVIAR LOG DE CANAL ELIMINADO:', error); }
+  });
+
+  client.on('channelCreate', async (channel) => {
+    try {
+      if (!channel.guild) return;
+      const moderador = await obtenerModerador(channel.guild, AuditLogEvent.ChannelCreate, channel.id);
+      if (!moderador) return;
+      const embed = new EmbedBuilder().setColor('#50C878').setTitle('📁 Canal creado').setDescription('Un canal fue creado en el servidor.').addFields(
+        { name: '📁 Canal', value: `<#${channel.id}>`, inline: true },
+        { name: '🆔 ID', value: `\`${channel.id}\``, inline: true },
+        { name: '🛡️ Moderador', value: `<@${moderador.id}> \`${moderador.tag}\``, inline: false },
+        { name: '📅 Fecha', value: `<t:${Math.floor(Date.now() / 1000)}:F>`, inline: false }
+      ).setFooter({ text: 'Sistema de moderación' }).setTimestamp();
+      await enviarLog(channel.guild, embed);
+    } catch (error) { console.error('ERROR AL ENVIAR LOG DE CANAL CREADO:', error); }
+  });
+
+  client.on('roleCreate', async (role) => {
+    try {
+      const moderador = await obtenerModerador(role.guild, AuditLogEvent.RoleCreate, role.id);
+      if (!moderador) return;
+      const embed = new EmbedBuilder().setColor('#50C878').setTitle('🎭 Rol creado').setDescription('Un rol fue creado en el servidor.').addFields(
+        { name: '🎭 Rol', value: `<@&${role.id}> \`${role.name}\``, inline: false },
+        { name: '🆔 ID', value: `\`${role.id}\``, inline: true },
+        { name: '🛡️ Moderador', value: `<@${moderador.id}> \`${moderador.tag}\``, inline: true },
+        { name: '📅 Fecha', value: `<t:${Math.floor(Date.now() / 1000)}:F>`, inline: false }
+      ).setFooter({ text: 'Sistema de moderación' }).setTimestamp();
+      await enviarLog(role.guild, embed);
+    } catch (error) { console.error('ERROR AL ENVIAR LOG DE ROL CREADO:', error); }
+  });
+
+  client.on('roleDelete', async (role) => {
+    try {
+      const moderador = await obtenerModerador(role.guild, AuditLogEvent.RoleDelete, role.id);
+      if (!moderador) return;
+      const embed = new EmbedBuilder().setColor('#ff0000').setTitle('🗑️ Rol eliminado').setDescription('Un rol fue eliminado del servidor.').addFields(
+        { name: '🎭 Rol', value: `\`${role.name}\``, inline: false },
+        { name: '🆔 ID', value: `\`${role.id}\``, inline: true },
+        { name: '🛡️ Moderador', value: `<@${moderador.id}> \`${moderador.tag}\``, inline: true },
+        { name: '📅 Fecha', value: `<t:${Math.floor(Date.now() / 1000)}:F>`, inline: false }
+      ).setFooter({ text: 'Sistema de moderación' }).setTimestamp();
+      await enviarLog(role.guild, embed);
+    } catch (error) { console.error('ERROR AL ENVIAR LOG DE ROL ELIMINADO:', error); }
+  });
+
+  client.on('guildMemberAdd', async (member) => {
+    try {
+      const embed = new EmbedBuilder().setColor('#50C878').setTitle('📥 Usuario entró').setDescription('Un usuario se unió al servidor.').addFields(
+        { name: '👤 Usuario', value: `<@${member.id}> \`${member.user.tag}\``, inline: false },
+        { name: '🆔 ID', value: `\`${member.id}\``, inline: true },
+        { name: '📅 Fecha', value: `<t:${Math.floor(Date.now() / 1000)}:F>`, inline: false }
+      ).setThumbnail(member.user.displayAvatarURL({ size: 256 })).setFooter({ text: 'Sistema de moderación' }).setTimestamp();
+      await enviarLog(member.guild, embed);
+    } catch (error) { console.error('ERROR AL ENVIAR LOG DE ENTRADA:', error); }
+  });
+
+  client.on('guildMemberRemove', async (member) => {
+    try {
+      const moderador = await obtenerModerador(member.guild, AuditLogEvent.MemberKick, member.id);
+      if (moderador) return;
+      const embed = new EmbedBuilder().setColor('#ff0000').setTitle('📤 Usuario salió').setDescription('Un usuario salió del servidor.').addFields(
+        { name: '👤 Usuario', value: `<@${member.id}> \`${member.user.tag}\``, inline: false },
+        { name: '🆔 ID', value: `\`${member.id}\``, inline: true },
+        { name: '📅 Fecha', value: `<t:${Math.floor(Date.now() / 1000)}:F>`, inline: false }
+      ).setThumbnail(member.user.displayAvatarURL({ size: 256 })).setFooter({ text: 'Sistema de moderación' }).setTimestamp();
+      await enviarLog(member.guild, embed);
+    } catch (error) { console.error('ERROR AL ENVIAR LOG DE SALIDA:', error); }
+  });
+
+  client.on('guildBanRemove', async (ban) => {
+    try {
+      const embed = new EmbedBuilder().setColor('#00cc66').setTitle('🔊 Baneo retirado').setDescription('El baneo de un usuario fue retirado.').addFields(
+        { name: '👤 Usuario', value: `<@${ban.user.id}> \`${ban.user.tag}\``, inline: false },
+        { name: '🆔 ID', value: `\`${ban.user.id}\``, inline: true },
+        { name: '📅 Fecha', value: `<t:${Math.floor(Date.now() / 1000)}:F>`, inline: false }
+      ).setThumbnail(ban.user.displayAvatarURL({ size: 256 })).setFooter({ text: 'Sistema de moderación' }).setTimestamp();
+      await enviarLog(ban.guild, embed);
+    } catch (error) { console.error('ERROR AL ENVIAR LOG DE DESBANEO:', error); }
   });
 };
