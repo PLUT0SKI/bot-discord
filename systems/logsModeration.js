@@ -50,7 +50,7 @@ function crearEmbedModeracion({ titulo, descripcion, color, usuario, moderador, 
   if (motivoInline) {
     embed.addFields({
       name: '📝 Motivo',
-      value: (motivo || 'Sin motivo especificado').slice(0, 1024),
+      value: `\`${(motivo || 'Sin motivo especificado').slice(0, 1020)}\``,
       inline: true
     });
   }
@@ -295,6 +295,6 @@ module.exports = (client) => {
         });
         await enviarLog(newMember.guild, embed);
       }
-    } catch (error) { console.error('ERROR AL ENVIAR LOG DE ACTUALIZACIÓN DE MIEMBRO:', error); }
+    } catch (error) { console.error('ERROR AL PROCESAR LOG DE ACTUALIZACIÓN DE MIEMBRO:', error); }
   });
 };
