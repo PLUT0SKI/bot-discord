@@ -7,6 +7,7 @@ const COMANDOS = [
     comandos: [
       ['`/tickets`', 'Muestra el panel para abrir un ticket.'],
       ['`/add`', 'Agrega un usuario al ticket actual.'],
+      ['`/remove`', 'Sacar un usuario del ticket actual.'],
       ['`/close`', 'Cierra el ticket actual después de confirmar.']
     ]
   },
