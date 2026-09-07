@@ -47,9 +47,9 @@ function crearLogModeracion({ titulo, descripcion, color, usuario, moderador, ex
     .setTitle(titulo)
     .setDescription(descripcion)
     .addFields(
-      { name: '👤 Usuario', value: `<@${usuario.id}>`, inline: false },
+      { name: '👤 Usuario', value: `<@${usuario.id}> \`${usuario.tag}\``, inline: false },
       { name: '🆔 ID', value: `\`${usuario.id}\``, inline: true },
-      { name: '🛡️ Moderador', value: moderador ? `<@${moderador.id}>` : 'No identificado', inline: true },
+      { name: '🛡️ Moderador', value: moderador ? `<@${moderador.id}> \`${moderador.tag}\`` : 'No identificado', inline: true },
       ...extra,
       { name: '📅 Fecha', value: `<t:${Math.floor(Date.now() / 1000)}:F>`, inline: false }
     )
