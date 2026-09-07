@@ -33,7 +33,7 @@ async function enviarLog(guild, embed) {
   if (!id) return;
   const canal = guild.channels.cache.get(id);
   if (!canal) return;
-  await canal.send({ embeds: [embed] }).catch(() => {});
+  await canal.send({ embeds: [embed] }).catch(error => console.error('ERROR AL ENVIAR LOG:', error));
 }
 
 function crearEmbedModeracion({ titulo, descripcion, color, usuario, moderador, motivo, extraNombre, extraValor }) {
@@ -58,8 +58,6 @@ function crearEmbedModeracion({ titulo, descripcion, color, usuario, moderador, 
   return embed;
 }
 
-// Discord puede tardar unos instantes en registrar una acción en los Audit Logs.
-// Por eso se intenta varias veces y se compara con targetId, que es más fiable que entry.target.id.
 async function obtenerModerador(guild, tipo, targetId) {
   for (let intento = 0; intento < 5; intento++) {
     try {
@@ -68,17 +66,12 @@ async function obtenerModerador(guild, tipo, targetId) {
         entry.targetId === targetId &&
         Date.now() - entry.createdTimestamp < 15000
       );
-
       if (entrada) return entrada;
     } catch (error) {
       console.error(`ERROR AL OBTENER AUDIT LOG (INTENTO ${intento + 1}):`, error);
     }
-
-    if (intento < 4) {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-    }
+    if (intento < 4) await new Promise(resolve => setTimeout(resolve, 1000));
   }
-
   return null;
 }
 
@@ -200,23 +193,29 @@ module.exports = (client) => {
     } catch (error) { console.error('ERROR AL ENVIAR LOG DE BANEO:', error); }
   });
 
-  // Log de expulsiones
-  client.on('guildMemberRemove', async (member) => {
+  // Log de expulsiones mediante el evento del Audit Log.
+  // Esto evita depender de guildMemberRemove + una consulta posterior, que puede perder la entrada de kick por timing.
+  client.on('guildAuditLogEntryCreate', async (entrada, guild) => {
     try {
-      const entrada = await obtenerModerador(member.guild, AuditLogEvent.MemberKick, member.id);
-      // Si no existe una entrada de kick reciente, fue una salida normal y no se registra como expulsión.
-      if (!entrada) return;
+      if (entrada.action !== AuditLogEvent.MemberKick) return;
+      if (!entrada.targetId) return;
+
+      const usuario = entrada.target || await client.users.fetch(entrada.targetId).catch(() => null);
+      if (!usuario) return;
 
       const embed = crearEmbedModeracion({
         titulo: '👢 Usuario expulsado',
         descripcion: 'Un usuario fue expulsado del servidor.',
         color: '#ff9900',
-        usuario: member.user,
+        usuario,
         moderador: entrada.executor,
         motivo: entrada.reason || 'Sin motivo especificado'
       });
-      await enviarLog(member.guild, embed);
-    } catch (error) { console.error('ERROR AL ENVIAR LOG DE EXPULSIÓN:', error); }
+
+      await enviarLog(guild, embed);
+    } catch (error) {
+      console.error('ERROR AL ENVIAR LOG DE EXPULSIÓN:', error);
+    }
   });
 
   // Log de silencios / timeouts y cambios de roles
@@ -278,16 +277,6 @@ module.exports = (client) => {
         });
         await enviarLog(newMember.guild, embed);
       }
-    } catch (error) { console.error('ERROR AL ENVIAR LOG DE MODERACIÓN:', error); }
+    } catch (error) { console.error('ERROR AL ENVIAR LOG DE ACTUALIZACIÓN DE MIEMBRO:', error); }
   });
-
-  setInterval(() => {
-    if (mensajesEliminadosPorBot.size > 1000) mensajesEliminadosPorBot.clear();
-    if (mensajesEliminadosPorClear.size > 5000) mensajesEliminadosPorClear.clear();
-  }, 60000);
-
-  return {
-    marcarEliminadoPorClear: (id) => mensajesEliminadosPorClear.add(id),
-    marcarEliminadoPorBot: (id) => mensajesEliminadosPorBot.add(id)
-  };
 };
