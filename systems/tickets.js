@@ -60,6 +60,7 @@ module.exports = (client) => {
       }
 
       if (interaction.isChatInputCommand() && interaction.commandName === 'add') {
+        if (!await verificarAcceso(interaction)) return;
         if (!interaction.guild || !interaction.channel || interaction.channel.parentId !== TICKET_CATEGORY_ID) {
           return interaction.reply({ content: '❌ Este comando solo puede utilizarse dentro de un ticket.', ephemeral: true });
         }
@@ -93,6 +94,7 @@ module.exports = (client) => {
       }
 
       if (interaction.isChatInputCommand() && interaction.commandName === 'remove') {
+        if (!await verificarAcceso(interaction)) return;
         if (!interaction.guild || !interaction.channel || interaction.channel.parentId !== TICKET_CATEGORY_ID) {
           return interaction.reply({ content: '❌ Este comando solo puede utilizarse dentro de un ticket.', ephemeral: true });
         }
@@ -125,6 +127,7 @@ module.exports = (client) => {
       }
 
       if (interaction.isChatInputCommand() && interaction.commandName === 'close') {
+        if (!await verificarAcceso(interaction)) return;
         if (!interaction.guild || !interaction.channel || interaction.channel.parentId !== TICKET_CATEGORY_ID) {
           return interaction.reply({ content: '❌ Este comando solo puede utilizarse dentro de un ticket.', ephemeral: true });
         }
