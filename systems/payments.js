@@ -31,6 +31,7 @@ module.exports = (client) => {
         .setColor('#2b2d31')
         .setTitle('MÉTODOS DE PAGO')
         .setDescription(
+          'Aceptamos los siguientes métodos de pago:\n\n' +
           '<:remitly:1547413850683609178> **Remitly**\n' +
           'Pagos internacionales de forma rápida y segura.\n\n' +
 
@@ -38,7 +39,7 @@ module.exports = (client) => {
           'Realiza tu pago en cualquier sucursal OXXO.\n\n' +
 
           '<:transfe:1547413933290160148> **Transferencia bancaria**\n' +
-          'Transferencias nacionales desde cualquier banco.'
+          'Transferencias nacionales desde cualquier banco.\n\n'
         )
         .setFooter({
           text: 'Abre ticket para comenzar tu pedido'
