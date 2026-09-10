@@ -12,23 +12,23 @@ function tieneAcceso(interaction) {
   const roles = interaction.member?.roles?.cache;
   if (!roles) return false;
 
-  // Este rol solo puede usar /comandos y /invites.
+  // El rol de comandos solo puede usar /comandos y /invites.
   if (roles.has(COMANDOS_ROLE_ID)) {
     return interaction.commandName === 'comandos' || interaction.commandName === 'invites';
   }
 
   // Todos los demás comandos requieren uno de los roles autorizados.
-  return interaction.commandName !== 'comandos' && interaction.commandName !== 'invites'
-    ? [...roles.keys()].some(roleId => ALLOWED_ROLE_IDS.has(roleId))
-    : false;
+  return [...roles.keys()].some(roleId => ALLOWED_ROLE_IDS.has(roleId));
 }
 
 async function verificarAcceso(interaction) {
   if (tieneAcceso(interaction)) return true;
+
   await interaction.reply({
     content: '❌ No tienes permiso para usar este comando.',
     ephemeral: true
   });
+
   return false;
 }
 
