@@ -10,9 +10,8 @@ module.exports = (client) => {
         .setColor('#2b2d31')
         .setTitle('💳 MÉTODOS DE PAGO')
         .setDescription(
-          'Aceptamos los siguientes métodos de pago:\n' +
+          'Aceptamos los siguientes métodos de pago:\n\n' +
                         
-          '━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n' +
 
           '<:remitly:1547413850683609178> **REMITLY**\n' +
           '> Pagos internacionales de forma rápida y segura.\n' +
@@ -26,7 +25,7 @@ module.exports = (client) => {
 
           '<:transfe:1547413933290160148> **TRANSFERENCIA BANCARIA**\n' +
           '> Realiza una transferencia directamente desde tu banco.\n' +
-          '> Disponible para pagos nacionales.\n' +
+          '> Disponible para pagos nacionales.\n\n' +
 
           '━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n'
         )
