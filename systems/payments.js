@@ -27,7 +27,7 @@ module.exports = (client) => {
           '> Realiza una transferencia directamente desde tu banco.\n' +
           '> Disponible para pagos nacionales.\n\n' +
 
-          '━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n'
+          '━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n'+
 
           '<:buy:1547419630472011807> **¿QUIERES REALIZAR UNA COMPRA?**\n' +
           '> Abre un <#1357832842561978505> y nuestro equipo te proporcionará los datos necesarios para completar tu pago.' +
