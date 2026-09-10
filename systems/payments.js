@@ -34,7 +34,7 @@ module.exports = (client) => {
       });
 
       await interaction.reply({
-        content: '\u200b',
+        content: '✅ Embed de métodos de pago enviado.',
         ephemeral: true
       });
 
