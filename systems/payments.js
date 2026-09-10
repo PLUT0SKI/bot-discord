@@ -9,10 +9,10 @@ module.exports = (client) => {
       const embed = new EmbedBuilder()
         .setColor('#2b2d31')
         .setTitle('💳 MÉTODOS DE PAGO')
-        .setDescription(
-          'Selecciona el método de pago que prefieras para realizar tu compra.\n' +
-          'Todos los pagos son procesados de forma segura.\n\n' +
-
+        .setDescription( +
+          'Todos los pagos son procesados de forma segura.\n' +
+                        
+          '━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n' +
 
           '<:remitly:1547413850683609178> **REMITLY**\n' +
           '> Pagos internacionales de forma rápida y segura.\n' +
@@ -26,9 +26,9 @@ module.exports = (client) => {
 
           '<:transfe:1547413933290160148> **TRANSFERENCIA BANCARIA**\n' +
           '> Realiza una transferencia directamente desde tu banco.\n' +
-          '> Disponible para pagos nacionales.\n\n' +
+          '> Disponible para pagos nacionales.\n' +
 
-          '━━━━━━━━━━━━━━━━━━━━━━━━━━'
+          '━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n'
         )
         .addFields({
           name: '<:buy:1547419630472011807> ¿QUIERES REALIZAR UN PAGO?',
