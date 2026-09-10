@@ -12,16 +12,7 @@ function build(d) {
   const e = new EmbedBuilder().setColor(d.color || '#2b2d31');
   if (d.title) e.setTitle(d.title);
   if (d.description) e.setDescription(d.description);
-  if (d.footer) {
-    const hora = new Date().toLocaleTimeString('en-US', {
-      timeZone: 'America/Mexico_City',
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true
-    });
-    const footer = d.footer.replace(/\{\{hora\}\}/gi, hora);
-    e.setFooter({ text: footer });
-  }
+  if (d.footer) e.setFooter({ text: d.footer });
   if (d.thumbnail) e.setThumbnail(d.thumbnail);
   if (d.image) e.setImage(d.image);
   if (d.fields.length) e.addFields(d.fields);
