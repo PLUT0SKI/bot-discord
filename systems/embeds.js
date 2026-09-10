@@ -13,8 +13,13 @@ function build(d) {
   if (d.title) e.setTitle(d.title);
   if (d.description) e.setDescription(d.description);
   if (d.footer) {
-    const timestamp = Math.floor(Date.now() / 1000);
-    const footer = d.footer.replace(/\{\{hora\}\}/gi, `<t:${timestamp}:t>`);
+    const hora = new Date().toLocaleTimeString('en-US', {
+      timeZone: 'America/Mexico_City',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    });
+    const footer = d.footer.replace(/\{\{hora\}\}/gi, hora);
     e.setFooter({ text: footer });
   }
   if (d.thumbnail) e.setThumbnail(d.thumbnail);
