@@ -12,13 +12,17 @@ function tieneAcceso(interaction) {
   const roles = interaction.member?.roles?.cache;
   if (!roles) return false;
 
+  // Los roles autorizados tienen acceso a todos los comandos.
+  if ([...roles.keys()].some(roleId => ALLOWED_ROLE_IDS.has(roleId))) {
+    return true;
+  }
+
   // El rol de comandos solo puede usar /comandos y /invites.
   if (roles.has(COMANDOS_ROLE_ID)) {
     return interaction.commandName === 'comandos' || interaction.commandName === 'invites';
   }
 
-  // Todos los demás comandos requieren uno de los roles autorizados.
-  return [...roles.keys()].some(roleId => ALLOWED_ROLE_IDS.has(roleId));
+  return false;
 }
 
 async function verificarAcceso(interaction) {
