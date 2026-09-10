@@ -9,8 +9,8 @@ module.exports = (client) => {
       const embed = new EmbedBuilder()
         .setColor('#2b2d31')
         .setTitle('💳 MÉTODOS DE PAGO')
-        .setDescription( +
-          'Todos los pagos son procesados de forma segura.\n' +
+        .setDescription(
+          'Aceptamos los siguientes métodos de pago:\n' +
                         
           '━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n' +
 
