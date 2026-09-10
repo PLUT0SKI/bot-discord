@@ -13,19 +13,16 @@ module.exports = (client) => {
           'Selecciona el método de pago que prefieras para realizar tu compra.\n' +
           'Todos los pagos son procesados de forma segura.\n\n' +
 
-          '━━━━━━━━━━━━━━━━━━━━━━━━━━\n' +
 
           '<:remitly:1547413850683609178> **REMITLY**\n' +
           '> Pagos internacionales de forma rápida y segura.\n' +
           '> Ideal para pagos realizados desde otro país.\n\n' +
 
-          '━━━━━━━━━━━━━━━━━━━━━━━━━━\n' +
 
           '<:oxxo:1547413887400288256> **DEPÓSITO EN OXXO**\n' +
           '> Realiza tu pago en efectivo desde cualquier sucursal OXXO.\n' +
           '> Disponible para pagos dentro de México.\n\n' +
 
-          '━━━━━━━━━━━━━━━━━━━━━━━━━━\n' +
 
           '<:transfe:1547413933290160148> **TRANSFERENCIA BANCARIA**\n' +
           '> Realiza una transferencia directamente desde tu banco.\n' +
