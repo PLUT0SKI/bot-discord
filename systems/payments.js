@@ -36,7 +36,7 @@ module.exports = (client) => {
         .addFields({
           name: '<:buy:1547419630472011807> ¿QUIERES REALIZAR UN PAGO?',
           value:
-            '> Abre un **ticket** y nuestro equipo te proporcionará los datos necesarios para completar tu pago.'
+            '> Abre un <#1357832842561978505> y nuestro equipo te proporcionará los datos necesarios para completar tu pago.'
         })
         .setFooter({
           text: 'Zutaniza • Tu tienda de confianza'
