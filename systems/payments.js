@@ -1,5 +1,10 @@
 const { EmbedBuilder } = require('discord.js');
-const { verificarAcceso } = require('../utils/commandAccess');
+
+const ROLES_AUTORIZADOS = [
+  '1357832734596141249',
+  '1379927998500966610',
+  '1543794671195529246'
+];
 
 module.exports = (client) => {
   client.on('interactionCreate', async (interaction) => {
@@ -7,7 +12,20 @@ module.exports = (client) => {
       if (!interaction.isChatInputCommand()) return;
       if (interaction.commandName !== 'pagos') return;
 
-      if (!await verificarAcceso(interaction)) return;
+      if (!interaction.guild) return;
+
+      const miembro = await interaction.guild.members.fetch(interaction.user.id);
+
+      const tienePermiso = ROLES_AUTORIZADOS.some(roleId =>
+        miembro.roles.cache.has(roleId)
+      );
+
+      if (!tienePermiso) {
+        return await interaction.reply({
+          content: '❌ No tienes permiso para usar este comando.',
+          ephemeral: true
+        });
+      }
 
       const embed = new EmbedBuilder()
         .setColor('#2b2d31')
