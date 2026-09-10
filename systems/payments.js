@@ -1,10 +1,5 @@
 const { EmbedBuilder } = require('discord.js');
-
-const ROLES_AUTORIZADOS = [
-  '1357832734596141249',
-  '1379927998500966610',
-  '1543794671195529246'
-];
+const { verificarAcceso } = require('../utils/commandAccess');
 
 module.exports = (client) => {
   client.on('interactionCreate', async (interaction) => {
@@ -12,37 +7,42 @@ module.exports = (client) => {
       if (!interaction.isChatInputCommand()) return;
       if (interaction.commandName !== 'pagos') return;
 
-      if (!interaction.guild) return;
-
-      const miembro = await interaction.guild.members.fetch(interaction.user.id);
-
-      const tienePermiso = ROLES_AUTORIZADOS.some(roleId =>
-        miembro.roles.cache.has(roleId)
-      );
-
-      if (!tienePermiso) {
-        return await interaction.reply({
-          content: '❌ No tienes permiso para usar este comando.',
-          ephemeral: true
-        });
-      }
+      if (!await verificarAcceso(interaction)) return;
 
       const embed = new EmbedBuilder()
         .setColor('#2b2d31')
-        .setTitle('MÉTODOS DE PAGO')
+        .setTitle('💳 MÉTODOS DE PAGO')
         .setDescription(
-          'Aceptamos los siguientes métodos de pago:\n\n' +
-          '<:remitly:1547413850683609178> **Remitly**\n' +
-          'Pagos internacionales de forma rápida y segura.\n\n' +
+          'Selecciona el método de pago que prefieras para realizar tu compra.\n' +
+          'Todos los pagos son procesados de forma segura.\n\n' +
 
-          '<:oxxo:1547413887400288256> **Depósito en OXXO**\n' +
-          'Realiza tu pago en cualquier sucursal OXXO.\n\n' +
+          '━━━━━━━━━━━━━━━━━━━━━━━━━━\n' +
 
-          '<:transfe:1547413933290160148> **Transferencia bancaria**\n' +
-          'Transferencias nacionales desde cualquier banco.\n\n'
+          '<:remitly:1547413850683609178> **REM ITLY**\n' +
+          '> Pagos internacionales de forma rápida y segura.\n' +
+          '> Ideal para pagos realizados desde otro país.\n\n' +
+
+          '━━━━━━━━━━━━━━━━━━━━━━━━━━\n' +
+
+          '<:oxxo:1547413887400288256> **DEPÓSITO EN OXXO**\n' +
+          '> Realiza tu pago en efectivo desde cualquier sucursal OXXO.\n' +
+          '> Disponible para pagos dentro de México.\n\n' +
+
+          '━━━━━━━━━━━━━━━━━━━━━━━━━━\n' +
+
+          '<:transfe:1547413933290160148> **TRANSFERENCIA BANCARIA**\n' +
+          '> Realiza una transferencia directamente desde tu banco.\n' +
+          '> Disponible para pagos nacionales.\n\n' +
+
+          '━━━━━━━━━━━━━━━━━━━━━━━━━━'
         )
+        .addFields({
+          name: '📩 ¿QUIERES REALIZAR UN PAGO?',
+          value:
+            '> Abre un **ticket** y nuestro equipo te proporcionará los datos necesarios para completar tu pago.'
+        })
         .setFooter({
-          text: 'Abre ticket para comenzar tu pedido'
+          text: 'Gracias por confiar en nosotros'
         })
         .setTimestamp();
 
