@@ -1,13 +1,10 @@
 const { EmbedBuilder } = require('discord.js');
-const { verificarAcceso } = require('../utils/commandAccess');
 
 module.exports = (client) => {
   client.on('interactionCreate', async (interaction) => {
     try {
       if (!interaction.isChatInputCommand()) return;
       if (interaction.commandName !== 'pagos') return;
-
-      if (!await verificarAcceso(interaction)) return;
 
       const embed = new EmbedBuilder()
         .setColor('#2b2d31')
@@ -18,7 +15,7 @@ module.exports = (client) => {
 
           '━━━━━━━━━━━━━━━━━━━━━━━━━━\n' +
 
-          '<:remitly:1547413850683609178> **REM ITLY**\n' +
+          '<:remitly:1547413850683609178> **REMITLY**\n' +
           '> Pagos internacionales de forma rápida y segura.\n' +
           '> Ideal para pagos realizados desde otro país.\n\n' +
 
